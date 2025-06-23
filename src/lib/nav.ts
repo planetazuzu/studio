@@ -1,8 +1,8 @@
-import { BookOpen, Home, Settings, Wallet } from 'lucide-react';
+import { AreaChart, BookOpen, Home, Settings } from 'lucide-react';
 
 export const navItems = [
   { href: '/dashboard', icon: Home, label: 'Dashboard' },
   { href: '/dashboard/courses', icon: BookOpen, label: 'Cursos' },
-  { href: '/dashboard/cost-tracking', icon: Wallet, label: 'Costes' },
+  { href: '/dashboard/analytics', icon: AreaChart, label: 'Análisis' },
   { href: '/dashboard/settings', icon: Settings, label: 'Ajustes' },
 ];
