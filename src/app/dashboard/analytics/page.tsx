@@ -1,4 +1,5 @@
 'use client';
+import { redirect } from 'next/navigation';
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Download, ListFilter, CircleDollarSign, CreditCard, CalendarClock, Scale } from 'lucide-react';
 import {
@@ -7,7 +8,7 @@ import {
   ChartTooltip as ChartTooltipProvider,
   ChartTooltipContent,
 } from '@/components/ui/chart';
-import { costs } from '@/lib/data';
+import { costs, user } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -67,6 +68,10 @@ const lineChartConfig = {
 
 
 export default function AnalyticsPage() {
+  if (!['Coordinador de Formación', 'Administrador'].includes(user.role)) {
+    redirect('/dashboard');
+  }
+
   return (
     <div className="space-y-8">
       <div className="flex items-start justify-between">

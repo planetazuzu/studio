@@ -21,7 +21,11 @@ export function SidebarContents() {
   const { isOpen } = useSidebar();
   const pathname = usePathname();
 
-  const activeItem = navItems
+  const visibleNavItems = navItems.filter((item) =>
+    item.roles.includes(user.role)
+  );
+
+  const activeItem = visibleNavItems
     .filter((item) => pathname.startsWith(item.href))
     .sort((a, b) => b.href.length - a.href.length)[0];
 
@@ -35,7 +39,7 @@ export function SidebarContents() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu>
-          {navItems.map((item) => (
+          {visibleNavItems.map((item) => (
             <SidebarMenuItem key={item.href}>
               <Link href={item.href}>
                 <SidebarMenuButton

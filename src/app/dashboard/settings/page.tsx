@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { user } from '@/lib/data';
 
 function ProfileSettings() {
     return (
@@ -125,6 +126,8 @@ function NotificationSettings() {
 
 
 export default function SettingsPage() {
+  const isManager = ['Coordinador de Formación', 'Administrador'].includes(user.role);
+
   return (
     <div className="space-y-8">
       <div>
@@ -133,24 +136,24 @@ export default function SettingsPage() {
       </div>
       <div className="grid grid-cols-1 gap-8">
          <Tabs defaultValue="profile" className="w-full">
-            <TabsList className="grid w-full grid-cols-4 max-w-2xl">
+            <TabsList className={`grid w-full ${isManager ? 'grid-cols-4' : 'grid-cols-2'} max-w-2xl`}>
                 <TabsTrigger value="profile">Perfil</TabsTrigger>
-                <TabsTrigger value="general">General</TabsTrigger>
+                {isManager && <TabsTrigger value="general">General</TabsTrigger>}
                 <TabsTrigger value="notifications">Notificaciones</TabsTrigger>
-                <TabsTrigger value="api">APIs</TabsTrigger>
+                {isManager && <TabsTrigger value="api">APIs</TabsTrigger>}
             </TabsList>
             <TabsContent value="profile" className="mt-4">
                 <ProfileSettings />
             </TabsContent>
-            <TabsContent value="general" className="mt-4">
+            {isManager && <TabsContent value="general" className="mt-4">
                 <GeneralSettings />
-            </TabsContent>
+            </TabsContent>}
             <TabsContent value="notifications" className="mt-4">
                 <NotificationSettings />
             </TabsContent>
-            <TabsContent value="api" className="mt-4">
+            {isManager && <TabsContent value="api" className="mt-4">
                 <ApiSettings />
-            </TabsContent>
+            </TabsContent>}
         </Tabs>
       </div>
        <div className="flex justify-end">

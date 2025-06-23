@@ -12,7 +12,7 @@ export const user: User = {
   name: 'Elena Vargas',
   email: 'elena.vargas@example.com',
   avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704d',
-  role: 'Coordinador de Formación',
+  role: 'Técnico de Emergencias',
 };
 
 export const courses: Course[] = [
