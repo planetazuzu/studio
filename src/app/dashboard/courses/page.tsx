@@ -1,3 +1,6 @@
+'use client';
+
+import { useState } from 'react';
 import Link from 'next/link';
 import { PlusCircle, ListFilter } from 'lucide-react';
 import { courses, user } from '@/lib/data';
@@ -11,9 +14,24 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import type { Course } from '@/lib/types';
 
 export default function CoursesPage() {
   const canCreateCourse = ['Jefe de Formación', 'Administrador General'].includes(user.role);
+
+  const [filters, setFilters] = useState({
+    Online: true,
+    Presencial: true,
+    Mixta: true,
+  });
+
+  const handleFilterChange = (modality: keyof typeof filters, checked: boolean) => {
+    setFilters(prev => ({ ...prev, [modality]: checked }));
+  };
+
+  const filteredCourses = courses.filter(course => filters[course.modality]);
+
+  const allModalities: (keyof typeof filters)[] = ['Online', 'Presencial', 'Mixta'];
 
   return (
     <div className="space-y-8">
@@ -33,9 +51,15 @@ export default function CoursesPage() {
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Filtrar por modalidad</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuCheckboxItem checked>Online</DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem>Presencial</DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem>Mixta</DropdownMenuCheckboxItem>
+                {allModalities.map(modality => (
+                  <DropdownMenuCheckboxItem
+                    key={modality}
+                    checked={filters[modality]}
+                    onCheckedChange={(checked) => handleFilterChange(modality, !!checked)}
+                  >
+                    {modality}
+                  </DropdownMenuCheckboxItem>
+                ))}
               </DropdownMenuContent>
             </DropdownMenu>
             {canCreateCourse && (
@@ -50,9 +74,13 @@ export default function CoursesPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {courses.map((course) => (
-          <CourseCard key={course.id} course={course} />
-        ))}
+        {filteredCourses.length > 0 ? (
+          filteredCourses.map((course) => (
+            <CourseCard key={course.id} course={course} />
+          ))
+        ) : (
+          <p className="col-span-full text-center text-muted-foreground">No se encontraron cursos con los filtros seleccionados.</p>
+        )}
       </div>
     </div>
   );
