@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, BookOpen, Wallet, Settings } from 'lucide-react';
 
 import { useSidebar } from '@/components/ui/sidebar';
 import {
@@ -16,17 +15,15 @@ import {
 import { AppLogo } from '@/components/icons';
 import { user } from '@/lib/data';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-
-const navItems = [
-  { href: '/dashboard', icon: Home, label: 'Dashboard' },
-  { href: '/dashboard/courses', icon: BookOpen, label: 'Cursos' },
-  { href: '/dashboard/cost-tracking', icon: Wallet, label: 'Costes' },
-  { href: '/dashboard/settings', icon: Settings, label: 'Ajustes' },
-];
+import { navItems } from '@/lib/nav';
 
 export function SidebarContents() {
   const { isOpen } = useSidebar();
   const pathname = usePathname();
+
+  const activeItem = navItems
+    .filter((item) => pathname.startsWith(item.href))
+    .sort((a, b) => b.href.length - a.href.length)[0];
 
   return (
     <>
@@ -42,7 +39,7 @@ export function SidebarContents() {
             <SidebarMenuItem key={item.href}>
               <Link href={item.href}>
                 <SidebarMenuButton
-                  isActive={pathname === item.href}
+                  isActive={item.href === activeItem?.href}
                   tooltip={item.label}
                 >
                   <item.icon />
@@ -54,15 +51,19 @@ export function SidebarContents() {
         </SidebarMenu>
       </SidebarContent>
       <SidebarFooter>
-         <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors">
-            <Avatar className="h-10 w-10">
-                <AvatarImage src={user.avatar} alt={user.name} />
-                <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-            </Avatar>
-            {isOpen && <div className="overflow-hidden">
-                <p className="font-semibold truncate">{user.name}</p>
-                <p className="text-xs text-muted-foreground truncate">{user.role}</p>
-            </div>}
+        <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors">
+          <Avatar className="h-10 w-10">
+            <AvatarImage src={user.avatar} alt={user.name} />
+            <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+          </Avatar>
+          {isOpen && (
+            <div className="overflow-hidden">
+              <p className="font-semibold truncate">{user.name}</p>
+              <p className="text-xs text-muted-foreground truncate">
+                {user.role}
+              </p>
+            </div>
+          )}
         </div>
       </SidebarFooter>
     </>

@@ -1,7 +1,6 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { BookOpen, Home, Settings, Wallet } from 'lucide-react';
 
 import {
   SidebarProvider,
@@ -10,13 +9,7 @@ import {
 } from '@/components/ui/sidebar';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { SidebarContents } from '@/components/sidebar-contents';
-
-const navItems = [
-  { href: '/dashboard', icon: Home, label: 'Dashboard' },
-  { href: '/dashboard/courses', icon: BookOpen, label: 'Cursos' },
-  { href: '/dashboard/cost-tracking', icon: Wallet, label: 'Costes' },
-  { href: '/dashboard/settings', icon: Settings, label: 'Ajustes' },
-];
+import { navItems } from '@/lib/nav';
 
 export default function DashboardLayout({
   children,
@@ -24,7 +17,10 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const pageTitle = navItems.find(item => item.href === pathname)?.label || 'Dashboard';
+  const pageTitle =
+    navItems
+      .filter((item) => pathname.startsWith(item.href))
+      .sort((a, b) => b.href.length - a.href.length)[0]?.label || 'Dashboard';
 
   return (
     <SidebarProvider>
