@@ -71,16 +71,27 @@ export const SidebarHeader = React.forwardRef<HTMLDivElement, React.HTMLAttribut
     const { isOpen } = useSidebar();
     
     const clonedChildren = React.Children.map(children, (child) => {
-        if (React.isValidElement(child) && child.props.children) {
-            const newGrandChildren = React.Children.map(React.Children.toArray(child.props.children), (grandChild) => {
-                if(React.isValidElement(grandChild) && grandChild.type === 'span') {
-                    return isOpen ? grandChild : null;
-                }
-                return grandChild;
-            });
-            return React.cloneElement(child, { children: newGrandChildren });
+      if (!React.isValidElement(child)) {
+        return child;
+      }
+      
+      const childProps = child.props as { children?: React.ReactNode; };
+
+      if (!childProps.children) {
+        return child;
+      }
+
+      const newGrandChildren = React.Children.map(
+        React.Children.toArray(childProps.children), 
+        (grandChild) => {
+          if (React.isValidElement(grandChild) && grandChild.type === 'span') {
+              return isOpen ? grandChild : null;
+          }
+          return grandChild;
         }
-        return child
+      );
+      
+      return React.cloneElement(child, { children: newGrandChildren });
     });
 
     return (
@@ -151,20 +162,32 @@ export const SidebarFooter = React.forwardRef<HTMLDivElement, React.HTMLAttribut
     const { isOpen } = useSidebar()
     
     const clonedChildren = React.Children.map(children, (child) => {
-        if (React.isValidElement(child) && child.props.children) {
-            const newGrandChildren = React.Children.map(React.Children.toArray(child.props.children), (grandChild) => {
-                if(React.isValidElement(grandChild) && grandChild.type === 'div') {
-                    return isOpen ? grandChild : null;
-                }
-                return grandChild;
-            });
-            const clonedChild = React.cloneElement(child, {
-                className: cn((child.props as any).className, !isOpen && "justify-center"),
-                children: newGrandChildren
-            });
-            return clonedChild;
+      if (!React.isValidElement(child)) {
+        return child;
+      }
+      
+      const childProps = child.props as { children?: React.ReactNode, className?: string };
+
+      if (!childProps.children) {
+        return React.cloneElement(child, {
+          className: cn(childProps.className, !isOpen && "justify-center"),
+        });
+      }
+
+      const newGrandChildren = React.Children.map(
+        React.Children.toArray(childProps.children), 
+        (grandChild) => {
+            if (React.isValidElement(grandChild) && grandChild.type === 'div') {
+                return isOpen ? grandChild : null;
+            }
+            return grandChild;
         }
-        return child
+      );
+      
+      return React.cloneElement(child, {
+          className: cn(childProps.className, !isOpen && "justify-center"),
+          children: newGrandChildren
+      });
     });
     
     return (
