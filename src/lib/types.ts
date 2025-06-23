@@ -4,12 +4,21 @@ export type Role =
   | 'Coordinador de Formación'
   | 'Administrador';
 
+export type ProfessionalProfile = 
+  | 'Técnico Avanzado'
+  | 'Técnico Básico'
+  | 'Jefe de Equipo'
+  | 'Gestor de Flota'
+  | 'Teleoperador Senior'
+  | 'Coordinador General';
+
 export type User = {
   id: string;
   name: string;
   email: string;
   avatar: string;
   role: Role;
+  professionalProfile?: ProfessionalProfile;
 };
 
 export type Course = {

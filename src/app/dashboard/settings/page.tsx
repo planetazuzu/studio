@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { user } from '@/lib/data';
+import { user, roles, professionalProfiles } from '@/lib/data';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 function ProfileSettings() {
     return (
@@ -16,15 +17,43 @@ function ProfileSettings() {
             <CardContent className="space-y-4">
                 <div className="space-y-2">
                     <Label htmlFor="name">Nombre</Label>
-                    <Input id="name" defaultValue="Elena Vargas" />
+                    <Input id="name" defaultValue={user.name} />
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="email">Correo Electrónico</Label>
-                    <Input id="email" type="email" defaultValue="elena.vargas@example.com" />
+                    <Input id="email" type="email" defaultValue={user.email} />
                 </div>
                  <div className="space-y-2">
                     <Label htmlFor="avatar">URL del Avatar</Label>
-                    <Input id="avatar" defaultValue="https://i.pravatar.cc/150?u=a042581f4e29026704d" />
+                    <Input id="avatar" defaultValue={user.avatar} />
+                </div>
+                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="role">Rol</Label>
+                      <Select defaultValue={user.role}>
+                        <SelectTrigger id="role" className="w-full">
+                          <SelectValue placeholder="Selecciona un rol" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {roles.map(role => (
+                            <SelectItem key={role} value={role}>{role}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {user.professionalProfile && <div className="space-y-2">
+                      <Label htmlFor="profile">Perfil Profesional</Label>
+                      <Select defaultValue={user.professionalProfile}>
+                        <SelectTrigger id="profile" className="w-full">
+                          <SelectValue placeholder="Selecciona un perfil" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {professionalProfiles.map(profile => (
+                            <SelectItem key={profile} value={profile}>{profile}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>}
                 </div>
             </CardContent>
         </Card>

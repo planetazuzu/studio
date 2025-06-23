@@ -1,4 +1,4 @@
-import { User, Course, Role, Cost } from './types';
+import { User, Course, Role, Cost, ProfessionalProfile } from './types';
 
 export const roles: Role[] = [
   'Técnico de Emergencias',
@@ -7,12 +7,22 @@ export const roles: Role[] = [
   'Administrador',
 ];
 
+export const professionalProfiles: ProfessionalProfile[] = [
+    'Técnico Avanzado',
+    'Técnico Básico',
+    'Jefe de Equipo',
+    'Gestor de Flota',
+    'Teleoperador Senior',
+    'Coordinador General',
+];
+
 export const user: User = {
   id: 'user_1',
   name: 'Elena Vargas',
   email: 'elena.vargas@example.com',
   avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704d',
   role: 'Técnico de Emergencias',
+  professionalProfile: 'Técnico Avanzado',
 };
 
 export const courses: Course[] = [
