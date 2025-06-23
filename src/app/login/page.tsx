@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,25 +25,33 @@ const demoUsers: User[] = [
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, user } = useAuth();
   const { toast } = useToast();
   const [email, setEmail] = useState('elena.vargas@example.com');
   const [password, setPassword] = useState('password123');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  useEffect(() => {
+    // This effect handles redirection if the user is already logged in
+    // or after a successful login.
+    if (user) {
+      router.push('/dashboard');
+    }
+  }, [user, router]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
     try {
-      const user = await login(email, password);
-      if (user) {
+      const loggedInUser = await login(email, password);
+      if (loggedInUser) {
         toast({
-            title: `Bienvenido, ${user.name.split(' ')[0]}`,
+            title: `Bienvenido, ${loggedInUser.name.split(' ')[0]}`,
             description: "Has iniciado sesión correctamente.",
         });
-        router.push('/dashboard');
+        // The redirect is now handled by the useEffect hook, which waits for the `user` state to update.
       } else {
         setError('Credenciales incorrectas. Por favor, inténtalo de nuevo.');
       }
