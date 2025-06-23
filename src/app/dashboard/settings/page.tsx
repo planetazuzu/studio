@@ -3,7 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 
 function ProfileSettings() {
     return (
@@ -89,6 +89,40 @@ function ApiSettings() {
     )
 }
 
+function NotificationSettings() {
+    return (
+         <Card>
+            <CardHeader>
+                <CardTitle>Notificaciones</CardTitle>
+                <CardDescription>Elige cómo quieres recibir las notificaciones.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+                <div className="flex items-center justify-between rounded-lg border p-4">
+                    <div>
+                        <Label htmlFor="course-reminders" className="font-semibold">Recordatorios de curso</Label>
+                        <p className="text-sm text-muted-foreground">Recibe recordatorios para continuar con los cursos en progreso.</p>
+                    </div>
+                    <Switch id="course-reminders" defaultChecked />
+                </div>
+                 <div className="flex items-center justify-between rounded-lg border p-4">
+                    <div>
+                        <Label htmlFor="new-courses" className="font-semibold">Nuevos cursos disponibles</Label>
+                        <p className="text-sm text-muted-foreground">Recibe notificaciones cuando se publiquen nuevos cursos.</p>
+                    </div>
+                    <Switch id="new-courses" defaultChecked />
+                </div>
+                 <div className="flex items-center justify-between rounded-lg border p-4">
+                    <div>
+                        <Label htmlFor="feedback-ready" className="font-semibold">Feedback listo</Label>
+                        <p className="text-sm text-muted-foreground">Recibe un aviso cuando tu feedback de IA esté disponible.</p>
+                    </div>
+                    <Switch id="feedback-ready" />
+                </div>
+            </CardContent>
+        </Card>
+    )
+}
+
 
 export default function SettingsPage() {
   return (
@@ -99,9 +133,10 @@ export default function SettingsPage() {
       </div>
       <div className="grid grid-cols-1 gap-8">
          <Tabs defaultValue="profile" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 max-w-lg">
+            <TabsList className="grid w-full grid-cols-4 max-w-2xl">
                 <TabsTrigger value="profile">Perfil</TabsTrigger>
                 <TabsTrigger value="general">General</TabsTrigger>
+                <TabsTrigger value="notifications">Notificaciones</TabsTrigger>
                 <TabsTrigger value="api">APIs</TabsTrigger>
             </TabsList>
             <TabsContent value="profile" className="mt-4">
@@ -109,6 +144,9 @@ export default function SettingsPage() {
             </TabsContent>
             <TabsContent value="general" className="mt-4">
                 <GeneralSettings />
+            </TabsContent>
+            <TabsContent value="notifications" className="mt-4">
+                <NotificationSettings />
             </TabsContent>
             <TabsContent value="api" className="mt-4">
                 <ApiSettings />
