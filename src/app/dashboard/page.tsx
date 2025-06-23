@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
-import { Activity, BookCheck, BotMessageSquare, GraduationCap, Lightbulb, Loader2 } from 'lucide-react';
+import { Activity, BookCheck, BotMessageSquare, GraduationCap, Lightbulb, Loader2, Wallet } from 'lucide-react';
 import { personalizedCourseRecommendations } from '@/ai/flows/course-suggestion';
 import { StatCard } from '@/components/stat-card';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
