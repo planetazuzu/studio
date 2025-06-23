@@ -70,18 +70,15 @@ export const SidebarHeader = React.forwardRef<HTMLDivElement, React.HTMLAttribut
   ({ className, children, ...props }, ref) => {
     const { isOpen } = useSidebar();
     
-    // We conditionally hide the span inside the header when the sidebar is closed
     const clonedChildren = React.Children.map(children, (child) => {
-        if (React.isValidElement(child)) {
-            const grandChildren = (child.props as any).children;
-            return React.cloneElement(child, {
-                children: React.Children.map(grandChildren, (grandChild) => {
-                    if(React.isValidElement(grandChild) && grandChild.type === 'span') {
-                        return isOpen ? grandChild : null;
-                    }
-                    return grandChild;
-                })
-            })
+        if (React.isValidElement(child) && child.props.children) {
+            const newGrandChildren = React.Children.map(React.Children.toArray(child.props.children), (grandChild) => {
+                if(React.isValidElement(grandChild) && grandChild.type === 'span') {
+                    return isOpen ? grandChild : null;
+                }
+                return grandChild;
+            });
+            return React.cloneElement(child, { children: newGrandChildren });
         }
         return child
     });
@@ -154,17 +151,18 @@ export const SidebarFooter = React.forwardRef<HTMLDivElement, React.HTMLAttribut
     const { isOpen } = useSidebar()
     
     const clonedChildren = React.Children.map(children, (child) => {
-        if (React.isValidElement(child)) {
-            const grandChildren = (child.props as any).children;
-            return React.cloneElement(child, {
+        if (React.isValidElement(child) && child.props.children) {
+            const newGrandChildren = React.Children.map(React.Children.toArray(child.props.children), (grandChild) => {
+                if(React.isValidElement(grandChild) && grandChild.type === 'div') {
+                    return isOpen ? grandChild : null;
+                }
+                return grandChild;
+            });
+            const clonedChild = React.cloneElement(child, {
                 className: cn((child.props as any).className, !isOpen && "justify-center"),
-                children: React.Children.map(grandChildren, (grandChild) => {
-                    if(React.isValidElement(grandChild) && grandChild.type === 'div') {
-                        return isOpen ? grandChild : null;
-                    }
-                    return grandChild;
-                })
-            })
+                children: newGrandChildren
+            });
+            return clonedChild;
         }
         return child
     });
