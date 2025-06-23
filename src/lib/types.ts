@@ -34,6 +34,8 @@ export type Course = {
   aiHint: string;
   progress: number;
   modules: Module[];
+  startDate?: string; // ISO date string
+  endDate?: string; // ISO date string
   category?: string;
   capacity?: number;
   isSynced?: boolean;

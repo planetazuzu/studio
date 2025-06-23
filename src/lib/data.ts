@@ -88,6 +88,8 @@ export const courses: Course[] = [
     image: 'https://placehold.co/600x400.png',
     aiHint: 'paramedic cpr',
     progress: 85,
+    startDate: new Date(new Date().setDate(new Date().getDate() + 5)).toISOString(),
+    endDate: new Date(new Date().setDate(new Date().getDate() + 5)).toISOString(),
     modules: [
         { id: 'm1_1', title: 'Cadena de Supervivencia', duration: '1 hora', content: 'Contenido sobre la cadena de supervivencia.' },
         { id: 'm1_2', title: 'Maniobras de RCP en Adultos y Niños', duration: '4 horas', content: 'Contenido sobre maniobras de RCP.' },
@@ -105,6 +107,8 @@ export const courses: Course[] = [
     image: 'https://placehold.co/600x400.png',
     aiHint: 'ambulance driving',
     progress: 30,
+    startDate: new Date(new Date().setDate(new Date().getDate() + 15)).toISOString(),
+    endDate: new Date(new Date().setDate(new Date().getDate() + 16)).toISOString(),
     modules: [
       { id: 'm2_1', title: 'Normativa y Seguridad Vial', duration: '4 horas', content: 'Contenido sobre normativa.' },
       { id: 'm2_2', title: 'Técnicas de Conducción Segura', duration: '8 horas', content: 'Contenido sobre técnicas de conducción.' },
@@ -122,6 +126,8 @@ export const courses: Course[] = [
     image: 'https://placehold.co/600x400.png',
     aiHint: 'emergency dispatcher',
     progress: 50,
+    startDate: new Date(new Date().setDate(new Date().getDate() + 10)).toISOString(),
+    endDate: new Date(new Date().setDate(new Date().getDate() + 10)).toISOString(),
     modules: [
       { id: 'm3_1', title: 'Protocolo de Comunicaciones', duration: '3 horas', content: 'Contenido sobre protocolos.' },
       { id: 'm3_2', title: 'Triage Telefónico', duration: '5 horas', content: 'Contenido sobre triage.' },
@@ -139,6 +145,7 @@ export const courses: Course[] = [
     image: 'https://placehold.co/600x400.png',
     aiHint: 'mental health support',
     progress: 10,
+    startDate: new Date(new Date().setDate(new Date().getDate() + 25)).toISOString(),
     modules: [
       { id: 'm4_1', title: 'Fisiología del Estrés', duration: '2 horas', content: 'Contenido sobre estrés.' },
       { id: 'm4_2', title: 'Técnicas de Afrontamiento', duration: '5 horas', content: 'Contenido sobre técnicas de afrontamiento.' },

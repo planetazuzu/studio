@@ -1,4 +1,4 @@
-import { AreaChart, BookOpen, Home, Settings, Users, type LucideIcon } from 'lucide-react';
+import { AreaChart, BookOpen, Home, Settings, Users, Calendar, type LucideIcon } from 'lucide-react';
 import type { Role } from './types';
 
 export type NavItem = {
@@ -17,20 +17,28 @@ const allRoles: Role[] = [
   'Administrador General',
 ];
 
+const managerRoles: Role[] = ['Gestor de RRHH', 'Jefe de Formación', 'Administrador General'];
+
 export const navItems: NavItem[] = [
   { href: '/dashboard', icon: Home, label: 'Dashboard', roles: allRoles },
   { href: '/dashboard/courses', icon: BookOpen, label: 'Cursos', roles: allRoles },
   {
+    href: '/dashboard/calendar',
+    icon: Calendar,
+    label: 'Calendario',
+    roles: managerRoles,
+  },
+  {
     href: '/dashboard/users',
     icon: Users,
     label: 'Usuarios',
-    roles: ['Gestor de RRHH', 'Jefe de Formación', 'Administrador General'],
+    roles: managerRoles,
   },
   {
     href: '/dashboard/analytics',
     icon: AreaChart,
     label: 'Análisis',
-    roles: ['Gestor de RRHH', 'Jefe de Formación', 'Administrador General'],
+    roles: managerRoles,
   },
   { href: '/dashboard/settings', icon: Settings, label: 'Ajustes', roles: allRoles },
 ];
