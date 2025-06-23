@@ -138,6 +138,46 @@ function NotificationSettings() {
     )
 }
 
+function PermissionSettings() {
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Permisos</CardTitle>
+                <CardDescription>Gestiona qué puede ver y hacer cada rol en la aplicación (WIP).</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <p className="text-muted-foreground">Esta sección está en desarrollo. En el futuro, permitirá configurar la visibilidad de menús y funcionalidades para cada rol de usuario.</p>
+                 <div className="rounded-lg border p-4">
+                    <h3 className="font-semibold mb-4">Rol: Trabajador</h3>
+                    <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                            <Label htmlFor="perm-worker-analytics" className="text-muted-foreground">Ver Análisis de Costes</Label>
+                            <Switch id="perm-worker-analytics" disabled checked={false} />
+                        </div>
+                         <div className="flex items-center justify-between">
+                            <Label htmlFor="perm-worker-users" className="text-muted-foreground">Gestionar Usuarios</Label>
+                            <Switch id="perm-worker-users" disabled checked={false} />
+                        </div>
+                    </div>
+                </div>
+                 <div className="rounded-lg border p-4">
+                    <h3 className="font-semibold mb-4">Rol: Jefe de Formación</h3>
+                    <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                            <Label htmlFor="perm-manager-analytics">Ver Análisis de Costes</Label>
+                            <Switch id="perm-manager-analytics" disabled checked={true} />
+                        </div>
+                         <div className="flex items-center justify-between">
+                            <Label htmlFor="perm-manager-users">Gestionar Usuarios</Label>
+                            <Switch id="perm-manager-users" disabled checked={true}/>
+                        </div>
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
 
 export default function SettingsPage() {
   const isAdmin = currentUser.role === 'Administrador General';
@@ -150,11 +190,12 @@ export default function SettingsPage() {
       </div>
       <div className="grid grid-cols-1 gap-8">
          <Tabs defaultValue="profile" className="w-full">
-            <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-4' : 'grid-cols-2'} max-w-2xl`}>
+            <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-5' : 'grid-cols-2'} max-w-3xl`}>
                 <TabsTrigger value="profile">Perfil</TabsTrigger>
                 {isAdmin && <TabsTrigger value="general">General</TabsTrigger>}
                 <TabsTrigger value="notifications">Notificaciones</TabsTrigger>
                 {isAdmin && <TabsTrigger value="api">APIs</TabsTrigger>}
+                {isAdmin && <TabsTrigger value="permissions">Permisos</TabsTrigger>}
             </TabsList>
             <TabsContent value="profile" className="mt-4">
                 <ProfileSettings />
@@ -167,6 +208,9 @@ export default function SettingsPage() {
             </TabsContent>
             {isAdmin && <TabsContent value="api" className="mt-4">
                 <ApiSettings />
+            </TabsContent>}
+            {isAdmin && <TabsContent value="permissions" className="mt-4">
+                <PermissionSettings />
             </TabsContent>}
         </Tabs>
       </div>

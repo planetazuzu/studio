@@ -95,6 +95,8 @@ function AiSuggestions() {
 }
 
 export default function DashboardPage() {
+  const canViewCosts = ['Gestor de RRHH', 'Jefe de Formación', 'Administrador General'].includes(currentUser.role);
+
   return (
     <div className="flex flex-col gap-8">
       <div>
@@ -105,7 +107,7 @@ export default function DashboardPage() {
         <StatCard title="Cursos Activos" value="4" icon={Activity} description="+2 desde el mes pasado" />
         <StatCard title="Formaciones Completadas" value="12" icon={BookCheck} description="Año actual" />
         <StatCard title="Certificados Obtenidos" value="8" icon={GraduationCap} description="Pendientes: 2" />
-        <StatCard title="Coste Total" value="8,950€" icon={Wallet} description="Presupuesto: 15,000€" />
+        {canViewCosts && <StatCard title="Coste Total" value="8,950€" icon={Wallet} description="Presupuesto: 15,000€" />}
       </div>
       <div className="grid gap-4 lg:grid-cols-3">
         <UpcomingCourses />
