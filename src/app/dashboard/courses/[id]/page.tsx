@@ -7,6 +7,7 @@ import { CheckCircle, Clock, FileText, MessageCircle, Bot, Loader2, Sparkles, Se
 import { GenerateTestQuestionsOutput } from '@/ai/flows/generate-test-questions';
 import { personalizedFeedback } from '@/ai/flows/feedback-personalization';
 import { generateTestQuestions } from '@/ai/flows/generate-test-questions';
+import { courseTutor } from '@/ai/flows/course-tutor';
 import { getCourseById } from '@/lib/data';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,7 +16,6 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { user } from '@/lib/data';
 
@@ -112,6 +112,82 @@ function TestGenerator({ courseContent }: { courseContent: string }) {
   );
 }
 
+interface ChatMessage {
+    sender: 'user' | 'ai';
+    text: string;
+}
+
+function CourseChat({ courseTitle, courseContent }: { courseTitle: string, courseContent: string }) {
+    const [messages, setMessages] = useState<ChatMessage[]>([]);
+    const [input, setInput] = useState('');
+    const [loading, setLoading] = useState(false);
+
+    const handleSendMessage = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!input.trim()) return;
+
+        const userMessage: ChatMessage = { sender: 'user', text: input };
+        setMessages(prev => [...prev, userMessage]);
+        setInput('');
+        setLoading(true);
+
+        try {
+            const result = await courseTutor({ courseContent, question: input });
+            const aiMessage: ChatMessage = { sender: 'ai', text: result.answer };
+            setMessages(prev => [...prev, aiMessage]);
+        } catch (error) {
+            const errorMessage: ChatMessage = { sender: 'ai', text: 'Lo siento, no he podido procesar tu pregunta. Por favor, inténtalo de nuevo.' };
+            setMessages(prev => [...prev, errorMessage]);
+            console.error('Error with course tutor:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <Card className="shadow-lg h-[500px] flex flex-col">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                    <Bot /> Tutor de IA para "{courseTitle}"
+                </CardTitle>
+                <CardDescription>Haz preguntas sobre el contenido del curso.</CardDescription>
+            </CardHeader>
+            <CardContent className="flex-grow overflow-y-auto space-y-4 p-4">
+                {messages.map((msg, index) => (
+                    <div key={index} className={`flex items-start gap-2.5 ${msg.sender === 'user' ? 'justify-end' : ''}`}>
+                        {msg.sender === 'ai' && <Bot className="h-6 w-6 text-primary flex-shrink-0" />}
+                        <div className={`flex flex-col w-full max-w-md leading-1.5 p-4 border-gray-200 ${msg.sender === 'user' ? 'bg-primary text-primary-foreground rounded-s-xl rounded-ee-xl' : 'bg-gray-100 rounded-e-xl rounded-es-xl'}`}>
+                            <p className="text-sm font-normal text-current">{msg.text}</p>
+                        </div>
+                    </div>
+                ))}
+                {loading && (
+                     <div className="flex items-start gap-2.5">
+                        <Bot className="h-6 w-6 text-primary flex-shrink-0" />
+                        <div className="flex flex-col w-full max-w-md leading-1.5 p-4 border-gray-200 bg-gray-100 rounded-e-xl rounded-es-xl">
+                            <Loader2 className="h-5 w-5 animate-spin"/>
+                        </div>
+                    </div>
+                )}
+            </CardContent>
+            <CardFooter className="p-4 pt-2 border-t">
+                <form onSubmit={handleSendMessage} className="relative w-full">
+                    <Input
+                        placeholder="Escribe tu pregunta..."
+                        className="pr-12"
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        disabled={loading}
+                    />
+                    <Button size="icon" type="submit" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8" disabled={loading || !input.trim()}>
+                        <Send className="h-4 w-4" />
+                    </Button>
+                </form>
+            </CardFooter>
+        </Card>
+    );
+}
+
 export default function CourseDetailPage({ params }: { params: { id: string } }) {
   const course = getCourseById(params.id);
 
@@ -137,7 +213,7 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
               <TabsTrigger value="overview">Descripción</TabsTrigger>
               <TabsTrigger value="modules">Módulos</TabsTrigger>
               <TabsTrigger value="test">Test IA</TabsTrigger>
-              <TabsTrigger value="chat">Chat</TabsTrigger>
+              <TabsTrigger value="chat">Tutor IA</TabsTrigger>
             </TabsList>
             <TabsContent value="overview" className="mt-4">
               <Card className="shadow-lg">
@@ -171,40 +247,7 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
               <TestGenerator courseContent={course.longDescription} />
             </TabsContent>
             <TabsContent value="chat" className="mt-4">
-              <Card className="shadow-lg h-[500px] flex flex-col">
-                <CardHeader>
-                  <CardTitle>Chat del Curso</CardTitle>
-                  <CardDescription>Comunícate con el formador y otros compañeros.</CardDescription>
-                </CardHeader>
-                <CardContent className="flex-grow overflow-y-auto space-y-4">
-                    <div className="flex items-start gap-2.5">
-                        <div className="flex flex-col w-full max-w-[320px] leading-1.5 p-4 border-gray-200 bg-gray-100 rounded-e-xl rounded-es-xl">
-                            <div className="flex items-center space-x-2 rtl:space-x-reverse">
-                                <span className="text-sm font-semibold text-gray-900">Carlos Mendoza</span>
-                                <span className="text-sm font-normal text-gray-500">11:46</span>
-                            </div>
-                            <p className="text-sm font-normal py-2.5 text-gray-900">¡Hola equipo! ¿Alguna duda sobre el primer módulo?</p>
-                        </div>
-                    </div>
-                    <div className="flex items-start gap-2.5 justify-end">
-                        <div className="flex flex-col w-full max-w-[320px] leading-1.5 p-4 border-gray-200 bg-primary text-primary-foreground rounded-s-xl rounded-ee-xl">
-                             <div className="flex items-center space-x-2 rtl:space-x-reverse justify-end">
-                                <span className="text-sm font-semibold">Tú</span>
-                                <span className="text-sm font-normal opacity-80">11:47</span>
-                            </div>
-                            <p className="text-sm font-normal py-2.5">Todo claro por ahora, ¡gracias!</p>
-                        </div>
-                    </div>
-                </CardContent>
-                <CardFooter className="p-4 pt-2 border-t">
-                    <div className="relative w-full">
-                        <Input placeholder="Escribe un mensaje..." className="pr-12" />
-                        <Button size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8">
-                            <Send className="h-4 w-4" />
-                        </Button>
-                    </div>
-                </CardFooter>
-              </Card>
+              <CourseChat courseTitle={course.title} courseContent={course.longDescription} />
             </TabsContent>
           </Tabs>
         </div>
