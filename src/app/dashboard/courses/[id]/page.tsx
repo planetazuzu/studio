@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
-import { CheckCircle, Clock, FileText, MessageCircle, Bot, Loader2, Sparkles, Send } from 'lucide-react';
+import { CheckCircle, Clock, FileText, Bot, Loader2, Sparkles, Send, PlusCircle } from 'lucide-react';
 import { GenerateTestQuestionsOutput } from '@/ai/flows/generate-test-questions';
 import { personalizedFeedback } from '@/ai/flows/feedback-personalization';
 import { generateTestQuestions } from '@/ai/flows/generate-test-questions';
@@ -17,9 +17,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { currentUser } from '@/lib/data';
+import { useAuth } from '@/contexts/auth';
+import * as db from '@/lib/db';
+import { useToast } from '@/hooks/use-toast';
 
-function TestGenerator({ courseContent }: { courseContent: string }) {
+function TestGenerator({ courseContent, studentName }: { courseContent: string; studentName: string }) {
   const [loading, setLoading] = useState(false);
   const [testData, setTestData] = useState<GenerateTestQuestionsOutput | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -48,7 +50,7 @@ function TestGenerator({ courseContent }: { courseContent: string }) {
     setFeedback('');
     try {
       const result = await personalizedFeedback({
-        studentName: currentUser.name,
+        studentName: studentName,
         assignmentName: 'Test de SVB',
         studentAnswer: 'Respuesta del estudiante (simulada sobre RCP)',
         correctAnswer: testData.questions[0].correctAnswer,
@@ -189,10 +191,30 @@ function CourseChat({ courseTitle, courseContent }: { courseTitle: string, cours
 }
 
 export default function CourseDetailPage({ params }: { params: { id: string } }) {
+  const { user } = useAuth();
+  const { toast } = useToast();
   const course = getCourseById(params.id);
 
   if (!course) {
     notFound();
+  }
+
+  const handleEnrollmentRequest = async () => {
+    if (!user) return;
+    try {
+        await db.requestEnrollment(course.id, user.id);
+        toast({
+            title: "Solicitud enviada",
+            description: "Tu solicitud de inscripción ha sido enviada para su aprobación.",
+        });
+    } catch (error) {
+        console.error("Failed to request enrollment", error);
+        toast({
+            title: "Error",
+            description: "No se pudo enviar la solicitud. Inténtalo de nuevo.",
+            variant: "destructive",
+        })
+    }
   }
 
   return (
@@ -244,7 +266,7 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
               </Card>
             </TabsContent>
             <TabsContent value="test" className="mt-4">
-              <TestGenerator courseContent={course.longDescription} />
+              <TestGenerator courseContent={course.longDescription} studentName={user?.name || 'Estudiante'} />
             </TabsContent>
             <TabsContent value="chat" className="mt-4">
               <CourseChat courseTitle={course.title} courseContent={course.longDescription} />
@@ -252,6 +274,17 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
           </Tabs>
         </div>
         <div className="space-y-8 lg:col-span-1">
+           <Card className="shadow-lg">
+              <CardHeader>
+                  <CardTitle>Inscripción</CardTitle>
+              </CardHeader>
+              <CardContent>
+                  <Button className="w-full" onClick={handleEnrollmentRequest}>
+                      <PlusCircle className="mr-2 h-4 w-4" />
+                      Solicitar Inscripción
+                  </Button>
+              </CardContent>
+            </Card>
           <Card className="shadow-lg">
             <CardHeader>
                 <CardTitle>Tu Progreso</CardTitle>

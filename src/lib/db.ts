@@ -1,6 +1,8 @@
 import Dexie, { type Table } from 'dexie';
-import type { Course, User, Enrollment, UserProgress } from './types';
+import type { Course, User, Enrollment, UserProgress, PendingEnrollmentDetails } from './types';
 import { courses as initialCourses, users as initialUsers } from './data';
+
+const LOGGED_IN_USER_KEY = 'loggedInUserId';
 
 export class AcademiaAIDB extends Dexie {
   courses!: Table<Course>;
@@ -11,10 +13,10 @@ export class AcademiaAIDB extends Dexie {
   constructor() {
     super('AcademiaAIDB');
     this.version(1).stores({
-      courses: 'id, isSynced', // 'id' is the primary key, 'isSynced' is an index
-      users: 'id, email, isSynced', // 'id' is the primary key, 'email' and 'isSynced' are indices
-      enrollments: '++id, studentId, courseId, isSynced', // auto-incrementing pk, plus indices
-      userProgress: '++id, [userId+courseId], progress, isSynced', // auto-incrementing pk, plus indices. Composite index for user/course lookups.
+      courses: 'id, isSynced',
+      users: 'id, email, isSynced',
+      enrollments: '++id, studentId, courseId, status, isSynced',
+      userProgress: '++id, [userId+courseId], progress, isSynced',
     });
   }
 }
@@ -24,27 +26,44 @@ export const db = new AcademiaAIDB();
 // --- Database Population ---
 
 export async function populateDatabase() {
-  const courseCount = await db.courses.count();
-  if (courseCount === 0) {
+  const userCount = await db.users.count();
+  if (userCount === 0) {
     console.log("Populating database with initial data...");
-    // Set isSynced to true for initial data as it's not new
     await db.courses.bulkAdd(initialCourses.map(c => ({...c, isSynced: true})));
     await db.users.bulkAdd(initialUsers.map(u => ({...u, isSynced: true})));
     console.log("Database populated.");
   }
 }
 
+// --- Authentication Functions ---
+
+export async function login(email: string, password?: string): Promise<User | null> {
+    const user = await db.users.where('email').equalsIgnoreCase(email).first();
+    if (user && user.password === password) {
+        localStorage.setItem(LOGGED_IN_USER_KEY, user.id);
+        return user;
+    }
+    return null;
+}
+
+export function logout(): void {
+    localStorage.removeItem(LOGGED_IN_USER_KEY);
+}
+
+export async function getLoggedInUser(): Promise<User | null> {
+    const userId = localStorage.getItem(LOGGED_IN_USER_KEY);
+    if (!userId) return null;
+    const user = await db.users.get(userId);
+    return user || null;
+}
+
+
 // --- Data Access Functions ---
 
-/**
- * Adds a new course to the database.
- * The course will be marked as not synced.
- * @param course The course data to add, without fields that are auto-generated.
- */
 export async function addCourse(course: Omit<Course, 'id' | 'isSynced' | 'updatedAt' | 'progress' | 'modules'> & { modules: any[] }) {
   const newCourse: Course = {
     ...course,
-    id: `course_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`, // Simple unique ID
+    id: `course_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
     progress: 0,
     isSynced: false,
     updatedAt: new Date().toISOString(),
@@ -52,32 +71,49 @@ export async function addCourse(course: Omit<Course, 'id' | 'isSynced' | 'update
   return await db.courses.add(newCourse);
 }
 
-
-/**
- * Retrieves all courses from the database.
- * @returns A promise that resolves to an array of all courses.
- */
 export async function getAllCourses(): Promise<Course[]> {
   return await db.courses.toArray();
 }
 
-/**
- * Adds a new enrollment record.
- * @param enrollment The enrollment data.
- */
-export async function addEnrollment(enrollment: Omit<Enrollment, 'id' | 'isSynced' | 'updatedAt'>) {
+// --- Enrollment Functions ---
+
+export async function requestEnrollment(courseId: string, studentId: string): Promise<number> {
     const newEnrollment: Enrollment = {
-        ...enrollment,
+        studentId,
+        courseId,
+        requestDate: new Date().toISOString(),
+        status: 'pending',
         isSynced: false,
         updatedAt: new Date().toISOString(),
     };
     return await db.enrollments.add(newEnrollment);
 }
 
-/**
- * Adds or updates a user's progress on a course.
- * @param progressUpdate The progress data.
- */
+export async function getPendingEnrollmentsWithDetails(): Promise<PendingEnrollmentDetails[]> {
+  const pendingEnrollments = await db.enrollments.where('status').equals('pending').toArray();
+  if (pendingEnrollments.length === 0) return [];
+  
+  const userIds = [...new Set(pendingEnrollments.map(e => e.studentId))];
+  const courseIds = [...new Set(pendingEnrollments.map(e => e.courseId))];
+
+  const users = await db.users.where('id').anyOf(userIds).toArray();
+  const courses = await db.courses.where('id').anyOf(courseIds).toArray();
+
+  const userMap = new Map(users.map(u => [u.id, u]));
+  const courseMap = new Map(courses.map(c => [c.id, c]));
+
+  return pendingEnrollments.map(e => ({
+    ...e,
+    userName: userMap.get(e.studentId)?.name || 'Usuario desconocido',
+    courseTitle: courseMap.get(e.courseId)?.title || 'Curso desconocido',
+  }));
+}
+
+export async function updateEnrollmentStatus(enrollmentId: number, status: 'approved' | 'rejected'): Promise<number> {
+    return await db.enrollments.update(enrollmentId, { status, updatedAt: new Date().toISOString(), isSynced: false });
+}
+
+
 export async function updateUserProgress(progressUpdate: { userId: string; courseId: string; progress: number; status: UserProgress['status'] }) {
     const { userId, courseId, progress, status } = progressUpdate;
     

@@ -12,6 +12,7 @@ export type User = {
   id: string;
   name: string;
   email: string;
+  password?: string; // Added for authentication
   avatar: string;
   role: Role;
   department: Department;
@@ -72,4 +73,10 @@ export type Cost = {
   category: 'Formadores' | 'Plataforma' | 'Equipamiento' | 'Logística' | 'Otro';
   amount: number;
   date: string;
+};
+
+// For displaying pending enrollments with user and course names
+export type PendingEnrollmentDetails = Enrollment & {
+  userName: string;
+  courseTitle: string;
 };

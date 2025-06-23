@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { PlusCircle, ListFilter, Loader2 } from 'lucide-react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { getAllCourses } from '@/lib/db';
-import { currentUser } from '@/lib/data';
+import { useAuth } from '@/contexts/auth';
 import { CourseCard } from '@/components/course-card';
 import { Button } from '@/components/ui/button';
 import {
@@ -19,7 +19,7 @@ import {
 import type { Course } from '@/lib/types';
 
 export default function CoursesPage() {
-  const canCreateCourse = ['Jefe de Formación', 'Administrador General'].includes(currentUser.role);
+  const { user } = useAuth();
   
   // Fetch courses from Dexie using useLiveQuery
   const courses = useLiveQuery(getAllCourses);
@@ -29,6 +29,10 @@ export default function CoursesPage() {
     Presencial: true,
     Mixta: true,
   });
+
+  if (!user) return null; // Should be handled by layout guard
+  
+  const canCreateCourse = ['Jefe de Formación', 'Administrador General'].includes(user.role);
 
   const handleFilterChange = (modality: keyof typeof filters, checked: boolean) => {
     setFilters(prev => ({ ...prev, [modality]: checked }));
@@ -40,7 +44,7 @@ export default function CoursesPage() {
       <div className="flex justify-center items-center h-full">
         <div className="text-center">
           <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
-          <p className="mt-4 text-muted-foreground">Cargando base de datos local...</p>
+          <p className="mt-4 text-muted-foreground">Cargando cursos...</p>
         </div>
       </div>
     );

@@ -7,9 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { currentUser, roles } from '@/lib/data';
+import { roles } from '@/lib/data';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/auth';
+import { Skeleton } from '@/components/ui/skeleton';
 
 // Helper function to convert HEX to HSL components (string "H S% L%")
 function hexToHsl(hex: string): string {
@@ -55,6 +57,8 @@ function hslToHex(h: number, s: number, l: number): string {
 
 
 function ProfileSettings({ profile, setProfile }: { profile: any, setProfile: Function }) {
+    if (!profile) return <Skeleton className="h-96 w-full" />
+    
     return (
         <Card>
             <CardHeader>
@@ -228,19 +232,13 @@ function PermissionSettings() {
 
 export default function SettingsPage() {
     const { toast } = useToast();
-    const isAdmin = currentUser.role === 'Administrador General';
-
-    const [profile, setProfile] = useState({
-        name: currentUser.name,
-        email: currentUser.email,
-        avatar: currentUser.avatar,
-        role: currentUser.role,
-    });
-
+    const { user } = useAuth();
+    
+    const [profile, setProfile] = useState<any>(null);
     const [general, setGeneral] = useState({
         orgName: 'AmbuVital S.L.',
-        primaryColor: hslToHex(207, 99, 58), // Default from CSS
-        accentColor: hslToHex(145, 58, 70), // Default from CSS
+        primaryColor: '#2E9AFE',
+        accentColor: '#82E0AA',
     });
     
     const [notifications, setNotifications] = useState({
@@ -250,14 +248,47 @@ export default function SettingsPage() {
     });
 
     useEffect(() => {
+        if (user) {
+            setProfile({
+                name: user.name,
+                email: user.email,
+                avatar: user.avatar,
+                role: user.role,
+            })
+        }
+    }, [user]);
+
+    useEffect(() => {
+        // This effect needs to run on the client after mount.
+        if (typeof window !== 'undefined') {
+            const root = document.documentElement;
+            // Set initial colors from CSS variables to sync state with theme
+            const initialPrimary = hslToHex(
+                parseFloat(getComputedStyle(root).getPropertyValue('--primary').split(' ')[0]),
+                parseFloat(getComputedStyle(root).getPropertyValue('--primary').split(' ')[1]),
+                parseFloat(getComputedStyle(root).getPropertyValue('--primary').split(' ')[2])
+            );
+            const initialAccent = hslToHex(
+                 parseFloat(getComputedStyle(root).getPropertyValue('--accent').split(' ')[0]),
+                 parseFloat(getComputedStyle(root).getPropertyValue('--accent').split(' ')[1]),
+                 parseFloat(getComputedStyle(root).getPropertyValue('--accent').split(' ')[2])
+            );
+            setGeneral(g => ({...g, primaryColor: initialPrimary, accentColor: initialAccent }));
+        }
+    }, []);
+
+    useEffect(() => {
         if (typeof window !== 'undefined') {
             document.documentElement.style.setProperty('--primary', hexToHsl(general.primaryColor));
             document.documentElement.style.setProperty('--accent', hexToHsl(general.accentColor));
         }
     }, [general.primaryColor, general.accentColor]);
 
+    if (!user) return <p>Cargando...</p>;
+
+    const isAdmin = user.role === 'Administrador General';
+
     const handleSaveChanges = () => {
-        // In a real app, you would save these settings to a backend.
         console.log("Saving settings:", { profile, general, notifications });
         toast({
             title: "Ajustes Guardados",

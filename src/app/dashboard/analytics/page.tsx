@@ -1,5 +1,5 @@
 'use client';
-import { redirect } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, XAxis, YAxis } from 'recharts';
 import { Download, ListFilter, CircleDollarSign, CreditCard, CalendarClock, Scale, CheckSquare, Users, Clock } from 'lucide-react';
 import {
@@ -8,7 +8,7 @@ import {
   ChartTooltip as ChartTooltipProvider,
   ChartTooltipContent,
 } from '@/components/ui/chart';
-import { costs, currentUser, courses, users, departments } from '@/lib/data';
+import { costs, courses, users as allUsers, departments } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -22,6 +22,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useAuth } from '@/contexts/auth';
 
 // --- Cost Data Calculations ---
 const spendingByCategory = costs.reduce((acc, cost) => {
@@ -74,7 +75,7 @@ const totalTrainingHours = courses.reduce((acc, course) => {
     const hours = parseInt(course.duration);
     return acc + (isNaN(hours) ? 0 : hours);
 }, 0);
-const activeUsers = users.length;
+const activeUsers = allUsers.length;
 
 // Note: In a real app, this data would come from a database.
 const departmentProgress = departments.map(dept => ({
@@ -91,8 +92,14 @@ const departmentChartConfig = {
 
 
 export default function AnalyticsPage() {
-  if (!['Gestor de RRHH', 'Jefe de Formación', 'Administrador General'].includes(currentUser.role)) {
-    redirect('/dashboard');
+  const { user } = useAuth();
+  const router = useRouter();
+
+  if (!user) return null;
+
+  if (!['Gestor de RRHH', 'Jefe de Formación', 'Administrador General'].includes(user.role)) {
+    router.push('/dashboard');
+    return null;
   }
 
   return (

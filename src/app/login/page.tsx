@@ -1,20 +1,47 @@
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AppLogo } from '@/components/icons';
-import { roles } from '@/lib/data';
+import { useAuth } from '@/contexts/auth';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Terminal } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login } = useAuth();
+  const { toast } = useToast();
+  const [email, setEmail] = useState('elena.vargas@example.com');
+  const [password, setPassword] = useState('password123');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    router.push('/dashboard');
+    setError('');
+    setIsLoading(true);
+    try {
+      const user = await login(email, password);
+      if (user) {
+        toast({
+            title: `Bienvenido, ${user.name.split(' ')[0]}`,
+            description: "Has iniciado sesión correctamente.",
+        });
+        router.push('/dashboard');
+      } else {
+        setError('Credenciales incorrectas. Por favor, inténtalo de nuevo.');
+      }
+    } catch (err) {
+      setError('Ha ocurrido un error inesperado durante el inicio de sesión.');
+      console.error(err);
+    } finally {
+        setIsLoading(false);
+    }
   };
 
   return (
@@ -29,29 +56,36 @@ export default function LoginPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-6">
+             {error && (
+                <Alert variant="destructive">
+                    <Terminal className="h-4 w-4" />
+                    <AlertTitle>Error de Autenticación</AlertTitle>
+                    <AlertDescription>{error}</AlertDescription>
+                </Alert>
+            )}
             <div className="space-y-2">
               <Label htmlFor="email">Correo electrónico</Label>
-              <Input id="email" type="email" placeholder="nombre@empresa.com" defaultValue="elena.vargas@example.com" required />
+              <Input 
+                id="email" 
+                type="email" 
+                placeholder="nombre@empresa.com" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required 
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Contraseña</Label>
-              <Input id="password" type="password" defaultValue="password" required />
+              <Input 
+                id="password" 
+                type="password" 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required 
+                />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="role">Rol</Label>
-              <Select defaultValue="Trabajador">
-                <SelectTrigger id="role">
-                  <SelectValue placeholder="Selecciona un rol" />
-                </SelectTrigger>
-                <SelectContent>
-                  {roles.map(role => (
-                    <SelectItem key={role} value={role}>{role}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <Button type="submit" className="w-full text-lg h-12">
-              Iniciar Sesión
+            <Button type="submit" className="w-full text-lg h-12" disabled={isLoading}>
+              {isLoading ? 'Iniciando...' : 'Iniciar Sesión'}
             </Button>
             <div className="text-center text-sm">
               <a href="#" className="text-primary hover:underline">

@@ -13,16 +13,28 @@ import {
   SidebarFooter,
 } from '@/components/ui/sidebar';
 import { AppLogo } from '@/components/icons';
-import { currentUser } from '@/lib/data';
+import { useAuth } from '@/contexts/auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { navItems } from '@/lib/nav';
+import { Skeleton } from './ui/skeleton';
 
 export function SidebarContents() {
   const { isOpen } = useSidebar();
   const pathname = usePathname();
+  const { user } = useAuth();
+
+  if (!user) {
+    return (
+        <div className="p-4 space-y-4">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+        </div>
+    )
+  }
 
   const visibleNavItems = navItems.filter((item) =>
-    item.roles.includes(currentUser.role)
+    item.roles.includes(user.role)
   );
 
   const activeItem = visibleNavItems
@@ -57,14 +69,14 @@ export function SidebarContents() {
       <SidebarFooter>
         <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors">
           <Avatar className="h-10 w-10">
-            <AvatarImage src={currentUser.avatar} alt={currentUser.name} />
-            <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
+            <AvatarImage src={user.avatar} alt={user.name} />
+            <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
           </Avatar>
           {isOpen && (
             <div className="overflow-hidden">
-              <p className="font-semibold truncate">{currentUser.name}</p>
+              <p className="font-semibold truncate">{user.name}</p>
               <p className="text-xs text-muted-foreground truncate">
-                {currentUser.role}
+                {user.role}
               </p>
             </div>
           )}

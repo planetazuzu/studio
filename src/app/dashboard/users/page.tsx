@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { redirect } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { MoreHorizontal, PlusCircle, ListFilter } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -24,8 +24,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { currentUser, users, roles, departments } from '@/lib/data';
-import type { Role, Department } from '@/lib/types';
+import { users, roles, departments } from '@/lib/data';
+import type { Role, Department, User } from '@/lib/types';
+import { useAuth } from '@/contexts/auth';
 
 const roleBadgeVariant: Record<Role, 'default' | 'secondary' | 'outline' | 'destructive'> = {
     'Administrador General': 'destructive',
@@ -37,9 +38,8 @@ const roleBadgeVariant: Record<Role, 'default' | 'secondary' | 'outline' | 'dest
 };
 
 export default function UsersPage() {
-    if (!['Gestor de RRHH', 'Jefe de Formación', 'Administrador General'].includes(currentUser.role)) {
-        redirect('/dashboard');
-    }
+    const { user } = useAuth();
+    const router = useRouter();
 
     const [roleFilters, setRoleFilters] = useState<Record<Role, boolean>>(() => 
         Object.fromEntries(roles.map(r => [r, true])) as Record<Role, boolean>
@@ -49,6 +49,13 @@ export default function UsersPage() {
         Object.fromEntries(departments.map(d => [d, true])) as Record<Department, boolean>
     );
     
+    if (!user) return null; // Or a loader
+
+    if (!['Gestor de RRHH', 'Jefe de Formación', 'Administrador General'].includes(user.role)) {
+        router.push('/dashboard'); // Or show an unauthorized message
+        return null;
+    }
+
     const handleRoleFilterChange = (role: Role, checked: boolean) => {
         setRoleFilters(prev => ({ ...prev, [role]: checked }));
     };
@@ -57,7 +64,7 @@ export default function UsersPage() {
         setDepartmentFilters(prev => ({ ...prev, [department]: checked }));
     }
 
-    const filteredUsers = users.filter(user => roleFilters[user.role] && departmentFilters[user.department]);
+    const filteredUsers = users.filter(u => roleFilters[u.role] && departmentFilters[u.department]);
 
     return (
         <div className="space-y-8">
@@ -140,24 +147,24 @@ export default function UsersPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {filteredUsers.map(user => (
-                                <TableRow key={user.id}>
+                            {filteredUsers.map(u => (
+                                <TableRow key={u.id}>
                                     <TableCell className="font-medium">
                                         <div className="flex items-center gap-3">
                                             <Avatar className="h-9 w-9">
-                                                <AvatarImage src={user.avatar} alt={user.name} />
-                                                <AvatarFallback>{user.name.slice(0, 2)}</AvatarFallback>
+                                                <AvatarImage src={u.avatar} alt={u.name} />
+                                                <AvatarFallback>{u.name.slice(0, 2)}</AvatarFallback>
                                             </Avatar>
                                             <div className="grid gap-0.5">
-                                                <p className="font-semibold">{user.name}</p>
-                                                <p className="text-xs text-muted-foreground">{user.email}</p>
+                                                <p className="font-semibold">{u.name}</p>
+                                                <p className="text-xs text-muted-foreground">{u.email}</p>
                                             </div>
                                         </div>
                                     </TableCell>
                                     <TableCell>
-                                        <Badge variant={roleBadgeVariant[user.role]}>{user.role}</Badge>
+                                        <Badge variant={roleBadgeVariant[u.role]}>{u.role}</Badge>
                                     </TableCell>
-                                    <TableCell>{user.department}</TableCell>
+                                    <TableCell>{u.department}</TableCell>
                                     <TableCell>
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>

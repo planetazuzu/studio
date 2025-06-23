@@ -17,22 +17,23 @@ export const departments: Department[] = [
     'Logística',
 ];
 
-// This represents the currently logged-in user.
-export const currentUser: User = {
-  id: 'user_1',
-  name: 'Elena Vargas',
-  email: 'elena.vargas@example.com',
-  avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704d',
-  role: 'Administrador General',
-  department: 'Técnicos de Emergencias',
-};
+// NOTE: The `currentUser` constant is removed. User state is now managed through AuthContext.
 
 export const users: User[] = [
-    currentUser,
+    {
+        id: 'user_1',
+        name: 'Elena Vargas',
+        email: 'elena.vargas@example.com',
+        password: 'password123',
+        avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704d',
+        role: 'Administrador General',
+        department: 'Técnicos de Emergencias',
+    },
     {
         id: 'user_2',
         name: 'Carlos Ruiz',
         email: 'carlos.ruiz@example.com',
+        password: 'password123',
         avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704e',
         role: 'Trabajador',
         department: 'Técnicos de Emergencias',
@@ -41,6 +42,7 @@ export const users: User[] = [
         id: 'user_3',
         name: 'Ana Gómez',
         email: 'ana.gomez@example.com',
+        password: 'password123',
         avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704f',
         role: 'Trabajador',
         department: 'Teleoperadores',
@@ -49,6 +51,7 @@ export const users: User[] = [
         id: 'user_4',
         name: 'Dr. Alejandro Torres',
         email: 'alejandro.torres@example.com',
+        password: 'password123',
         avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704a',
         role: 'Formador',
         department: 'Formación',
@@ -57,6 +60,7 @@ export const users: User[] = [
         id: 'user_5',
         name: 'Lucía Fernández',
         email: 'lucia.fernandez@example.com',
+        password: 'password123',
         avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704b',
         role: 'Jefe de Formación',
         department: 'Formación',
@@ -65,6 +69,7 @@ export const users: User[] = [
         id: 'user_6',
         name: 'Marcos Solís',
         email: 'marcos.solis@example.com',
+        password: 'password123',
         avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704c',
         role: 'Gestor de RRHH',
         department: 'Administración',
@@ -73,6 +78,7 @@ export const users: User[] = [
         id: 'user_7',
         name: 'Sofía Castillo',
         email: 'sofia.castillo@example.com',
+        password: 'password123',
         avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704d',
         role: 'Administrador General',
         department: 'Administración',

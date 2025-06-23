@@ -1,8 +1,9 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-
+import { Loader2 } from 'lucide-react';
+import { useAuth } from '@/contexts/auth';
 import {
   SidebarProvider,
   Sidebar,
@@ -18,16 +19,33 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const { user, isLoading } = useAuth();
+  const router = useRouter();
   const pathname = usePathname();
+
+  useEffect(() => {
+    populateDatabase();
+  }, []);
+
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.push('/login');
+    }
+  }, [user, isLoading, router]);
+
+  if (isLoading || !user) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="h-16 w-16 animate-spin text-primary" />
+      </div>
+    );
+  }
+  
   const pageTitle =
     navItems
       .filter((item) => pathname.startsWith(item.href))
       .sort((a, b) => b.href.length - a.href.length)[0]?.label || 'Dashboard';
 
-  // Populate the database on initial client load
-  useEffect(() => {
-    populateDatabase();
-  }, []);
 
   return (
     <SidebarProvider>
