@@ -1,8 +1,8 @@
+import Link from 'next/link';
 import { PlusCircle, ListFilter } from 'lucide-react';
-import { courses } from '@/lib/data';
+import { courses, user } from '@/lib/data';
 import { CourseCard } from '@/components/course-card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -13,6 +13,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 export default function CoursesPage() {
+  const canCreateCourse = ['Jefe de Formación', 'Administrador General'].includes(user.role);
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
@@ -36,10 +38,14 @@ export default function CoursesPage() {
                 <DropdownMenuCheckboxItem>Mixta</DropdownMenuCheckboxItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <Button size="sm" className="h-9 gap-1">
-                <PlusCircle className="h-4 w-4" />
-                <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Crear Curso</span>
-            </Button>
+            {canCreateCourse && (
+              <Button size="sm" className="h-9 gap-1" asChild>
+                  <Link href="/dashboard/courses/new">
+                    <PlusCircle className="h-4 w-4" />
+                    <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Crear Curso</span>
+                  </Link>
+              </Button>
+            )}
         </div>
       </div>
 
