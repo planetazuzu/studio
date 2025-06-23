@@ -2,8 +2,10 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { PlusCircle, ListFilter } from 'lucide-react';
-import { courses, currentUser } from '@/lib/data';
+import { PlusCircle, ListFilter, Loader2 } from 'lucide-react';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { getAllCourses } from '@/lib/db';
+import { currentUser } from '@/lib/data';
 import { CourseCard } from '@/components/course-card';
 import { Button } from '@/components/ui/button';
 import {
@@ -18,6 +20,9 @@ import type { Course } from '@/lib/types';
 
 export default function CoursesPage() {
   const canCreateCourse = ['Jefe de Formación', 'Administrador General'].includes(currentUser.role);
+  
+  // Fetch courses from Dexie using useLiveQuery
+  const courses = useLiveQuery(getAllCourses);
 
   const [filters, setFilters] = useState({
     Online: true,
@@ -28,6 +33,18 @@ export default function CoursesPage() {
   const handleFilterChange = (modality: keyof typeof filters, checked: boolean) => {
     setFilters(prev => ({ ...prev, [modality]: checked }));
   };
+
+  // Handle loading state while Dexie initializes
+  if (!courses) {
+    return (
+      <div className="flex justify-center items-center h-full">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
+          <p className="mt-4 text-muted-foreground">Cargando base de datos local...</p>
+        </div>
+      </div>
+    );
+  }
 
   const filteredCourses = courses.filter(course => filters[course.modality]);
 
