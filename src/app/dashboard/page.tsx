@@ -6,7 +6,7 @@ import { personalizedCourseRecommendations } from '@/ai/flows/course-suggestion'
 import { StatCard } from '@/components/stat-card';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { courses, user } from '@/lib/data';
+import { courses, currentUser } from '@/lib/data';
 import Image from 'next/image';
 
 function UpcomingCourses() {
@@ -48,7 +48,7 @@ function AiSuggestions() {
     setRecommendations([]);
     try {
       const result = await personalizedCourseRecommendations({
-        userProfile: `Rol: ${user.role}, Intereses: Soporte Vital, Comunicaciones de emergencia`,
+        userProfile: `Rol: ${currentUser.role}, Intereses: Soporte Vital, Comunicaciones de emergencia`,
         learningHistory: 'Completado: Conducción de Vehículos de Emergencia, En Progreso: Soporte Vital Básico',
       });
       setRecommendations(result.courseRecommendations);
@@ -98,7 +98,7 @@ export default function DashboardPage() {
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <h1 className="text-3xl font-bold">Bienvenido, {user.name.split(' ')[0]}</h1>
+        <h1 className="text-3xl font-bold">Bienvenido, {currentUser.name.split(' ')[0]}</h1>
         <p className="text-muted-foreground">Aquí tienes un resumen de tu actividad formativa.</p>
       </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

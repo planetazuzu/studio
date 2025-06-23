@@ -17,7 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { user } from '@/lib/data';
+import { currentUser } from '@/lib/data';
 
 function TestGenerator({ courseContent }: { courseContent: string }) {
   const [loading, setLoading] = useState(false);
@@ -48,7 +48,7 @@ function TestGenerator({ courseContent }: { courseContent: string }) {
     setFeedback('');
     try {
       const result = await personalizedFeedback({
-        studentName: user.name,
+        studentName: currentUser.name,
         assignmentName: 'Test de SVB',
         studentAnswer: 'Respuesta del estudiante (simulada sobre RCP)',
         correctAnswer: testData.questions[0].correctAnswer,

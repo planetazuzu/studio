@@ -8,7 +8,7 @@ import {
   ChartTooltip as ChartTooltipProvider,
   ChartTooltipContent,
 } from '@/components/ui/chart';
-import { costs, user } from '@/lib/data';
+import { costs, currentUser } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -68,7 +68,7 @@ const lineChartConfig = {
 
 
 export default function AnalyticsPage() {
-  if (!['Gestor de RRHH', 'Jefe de Formación', 'Administrador General'].includes(user.role)) {
+  if (!['Gestor de RRHH', 'Jefe de Formación', 'Administrador General'].includes(currentUser.role)) {
     redirect('/dashboard');
   }
 

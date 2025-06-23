@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { user, roles } from '@/lib/data';
+import { currentUser, roles } from '@/lib/data';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 function ProfileSettings() {
@@ -17,19 +17,19 @@ function ProfileSettings() {
             <CardContent className="space-y-4">
                 <div className="space-y-2">
                     <Label htmlFor="name">Nombre</Label>
-                    <Input id="name" defaultValue={user.name} />
+                    <Input id="name" defaultValue={currentUser.name} />
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="email">Correo Electrónico</Label>
-                    <Input id="email" type="email" defaultValue={user.email} />
+                    <Input id="email" type="email" defaultValue={currentUser.email} />
                 </div>
                  <div className="space-y-2">
                     <Label htmlFor="avatar">URL del Avatar</Label>
-                    <Input id="avatar" defaultValue={user.avatar} />
+                    <Input id="avatar" defaultValue={currentUser.avatar} />
                 </div>
                  <div className="space-y-2">
                     <Label htmlFor="role">Rol</Label>
-                    <Select defaultValue={user.role}>
+                    <Select defaultValue={currentUser.role}>
                     <SelectTrigger id="role" className="w-full">
                         <SelectValue placeholder="Selecciona un rol" />
                     </SelectTrigger>
@@ -140,7 +140,7 @@ function NotificationSettings() {
 
 
 export default function SettingsPage() {
-  const isAdmin = user.role === 'Administrador General';
+  const isAdmin = currentUser.role === 'Administrador General';
 
   return (
     <div className="space-y-8">

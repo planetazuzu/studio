@@ -6,12 +6,15 @@ export type Role =
   | 'Jefe de Formación'
   | 'Administrador General';
 
+export type Department = 'Técnicos de Emergencias' | 'Teleoperadores' | 'Administración' | 'Formación' | 'Logística';
+
 export type User = {
   id: string;
   name: string;
   email: string;
   avatar: string;
   role: Role;
+  department: Department;
 };
 
 export type Course = {

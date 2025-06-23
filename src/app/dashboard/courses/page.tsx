@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { PlusCircle, ListFilter } from 'lucide-react';
-import { courses, user } from '@/lib/data';
+import { courses, currentUser } from '@/lib/data';
 import { CourseCard } from '@/components/course-card';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,7 +17,7 @@ import {
 import type { Course } from '@/lib/types';
 
 export default function CoursesPage() {
-  const canCreateCourse = ['Jefe de Formación', 'Administrador General'].includes(user.role);
+  const canCreateCourse = ['Jefe de Formación', 'Administrador General'].includes(currentUser.role);
 
   const [filters, setFilters] = useState({
     Online: true,

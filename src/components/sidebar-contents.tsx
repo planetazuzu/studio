@@ -13,7 +13,7 @@ import {
   SidebarFooter,
 } from '@/components/ui/sidebar';
 import { AppLogo } from '@/components/icons';
-import { user } from '@/lib/data';
+import { currentUser } from '@/lib/data';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { navItems } from '@/lib/nav';
 
@@ -22,7 +22,7 @@ export function SidebarContents() {
   const pathname = usePathname();
 
   const visibleNavItems = navItems.filter((item) =>
-    item.roles.includes(user.role)
+    item.roles.includes(currentUser.role)
   );
 
   const activeItem = visibleNavItems
@@ -57,14 +57,14 @@ export function SidebarContents() {
       <SidebarFooter>
         <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors">
           <Avatar className="h-10 w-10">
-            <AvatarImage src={user.avatar} alt={user.name} />
-            <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+            <AvatarImage src={currentUser.avatar} alt={currentUser.name} />
+            <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
           </Avatar>
           {isOpen && (
             <div className="overflow-hidden">
-              <p className="font-semibold truncate">{user.name}</p>
+              <p className="font-semibold truncate">{currentUser.name}</p>
               <p className="text-xs text-muted-foreground truncate">
-                {user.role}
+                {currentUser.role}
               </p>
             </div>
           )}
