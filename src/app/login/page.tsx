@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -11,6 +12,16 @@ import { useAuth } from '@/contexts/auth';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { users } from '@/lib/data';
+import type { User } from '@/lib/types';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+
+const demoUsers: User[] = [
+    users.find(u => u.role === 'Administrador General')!,
+    users.find(u => u.role === 'Jefe de Formación')!,
+    users.find(u => u.role === 'Formador')!,
+    users.find(u => u.role === 'Trabajador' && u.department === 'Técnicos de Emergencias')!,
+].filter(Boolean); // Filter out potential undefined if a role isn't found
 
 export default function LoginPage() {
   const router = useRouter();
@@ -41,6 +52,13 @@ export default function LoginPage() {
       console.error(err);
     } finally {
         setIsLoading(false);
+    }
+  };
+  
+  const handleDemoUserLogin = (user: User) => {
+    if (user.email && user.password) {
+        setEmail(user.email);
+        setPassword(user.password);
     }
   };
 
@@ -93,6 +111,33 @@ export default function LoginPage() {
               </a>
             </div>
           </form>
+          
+           <div className="mt-8">
+              <div className="relative">
+                  <div className="absolute inset-0 flex items-center"><span className="w-full border-t"></span></div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-card px-2 text-muted-foreground">Cuentas de Demostración</span>
+                  </div>
+              </div>
+              <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  {demoUsers.map((demoUser) => (
+                      <button
+                          key={demoUser.id}
+                          onClick={() => handleDemoUserLogin(demoUser)}
+                          className="flex items-center gap-3 w-full p-3 rounded-lg border bg-background hover:bg-muted/50 transition-colors text-left"
+                      >
+                          <Avatar className="h-9 w-9">
+                              <AvatarImage src={demoUser.avatar} alt={demoUser.name} />
+                              <AvatarFallback>{demoUser.name.charAt(0)}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                              <p className="text-sm font-semibold">{demoUser.name}</p>
+                              <p className="text-xs text-muted-foreground">{demoUser.role}</p>
+                          </div>
+                      </button>
+                  ))}
+              </div>
+          </div>
         </CardContent>
       </Card>
     </div>
