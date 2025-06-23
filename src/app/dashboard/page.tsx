@@ -14,7 +14,7 @@ function UpcomingCourses() {
     return (
         <Card className="shadow-lg col-span-1 lg:col-span-2">
             <CardHeader>
-                <CardTitle>Próximos Cursos</CardTitle>
+                <CardTitle>Próximas Formaciones</CardTitle>
                 <CardDescription>Cursos programados para empezar pronto.</CardDescription>
             </CardHeader>
             <CardContent>
@@ -48,8 +48,8 @@ function AiSuggestions() {
     setRecommendations([]);
     try {
       const result = await personalizedCourseRecommendations({
-        userProfile: `Rol: ${user.role}, Intereses: Liderazgo, Nuevas Tecnologías`,
-        learningHistory: 'Completado: Excel Avanzado, En Progreso: Gestión de Proyectos',
+        userProfile: `Rol: ${user.role}, Intereses: Soporte Vital, Comunicaciones de emergencia`,
+        learningHistory: 'Completado: Conducción de Vehículos de Emergencia, En Progreso: Soporte Vital Básico',
       });
       setRecommendations(result.courseRecommendations);
     } catch (e) {
@@ -67,7 +67,7 @@ function AiSuggestions() {
           <BotMessageSquare className="h-6 w-6 text-primary" />
           <CardTitle>Sugerencias de la IA</CardTitle>
         </div>
-        <CardDescription>Cursos recomendados para tu perfil.</CardDescription>
+        <CardDescription>Formaciones recomendadas para tu perfil.</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col items-center justify-center text-center space-y-4 min-h-[200px]">
         {loading ? (

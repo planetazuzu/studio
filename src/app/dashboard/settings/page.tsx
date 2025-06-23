@@ -35,12 +35,12 @@ function GeneralSettings() {
         <Card>
             <CardHeader>
                 <CardTitle>General</CardTitle>
-                <CardDescription>Configura los datos generales de la institución.</CardDescription>
+                <CardDescription>Configura los datos generales de la empresa.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
                 <div className="space-y-2">
-                    <Label htmlFor="orgName">Nombre de la Institución</Label>
-                    <Input id="orgName" defaultValue="Mi Empresa S.A." />
+                    <Label htmlFor="orgName">Nombre de la Empresa</Label>
+                    <Input id="orgName" defaultValue="AmbuVital S.L." />
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="logo">Logo</Label>

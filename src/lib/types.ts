@@ -1,10 +1,8 @@
 export type Role =
-  | 'Trabajador'
-  | 'Personal Externo'
-  | 'Formador'
-  | 'Gestor de RRHH'
-  | 'Jefe de Formación'
-  | 'Administrador General';
+  | 'Técnico de Emergencias'
+  | 'Teleoperador de Emergencias'
+  | 'Coordinador de Formación'
+  | 'Administrador';
 
 export type User = {
   id: string;
@@ -21,7 +19,7 @@ export type Course = {
   longDescription: string;
   instructor: string;
   duration: string;
-  modality: 'Online' | 'Presencial';
+  modality: 'Online' | 'Presencial' | 'Mixta';
   image: string;
   aiHint: string;
   progress: number;
@@ -38,7 +36,7 @@ export type Module = {
 export type Cost = {
   id: string;
   item: string;
-  category: 'Instructor' | 'Platform' | 'Materials' | 'Marketing' | 'Other';
+  category: 'Formadores' | 'Plataforma' | 'Equipamiento' | 'Logística' | 'Otro';
   amount: number;
   date: string;
 };

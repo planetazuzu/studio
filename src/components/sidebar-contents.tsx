@@ -30,7 +30,7 @@ export function SidebarContents() {
       <SidebarHeader>
         <div className="flex items-center gap-2 p-2">
           <AppLogo className="h-8 w-8 text-primary" />
-          {isOpen && <span className="text-xl font-semibold">AcademiaAI</span>}
+          {isOpen && <span className="text-xl font-semibold">EmergenciaAI</span>}
         </div>
       </SidebarHeader>
       <SidebarContent>

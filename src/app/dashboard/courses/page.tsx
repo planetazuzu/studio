@@ -17,8 +17,8 @@ export default function CoursesPage() {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Catálogo de Cursos</h1>
-          <p className="text-muted-foreground">Explora, inscríbete y avanza en tu carrera.</p>
+          <h1 className="text-3xl font-bold">Catálogo de Formaciones</h1>
+          <p className="text-muted-foreground">Explora, inscríbete y mejora tus competencias.</p>
         </div>
         <div className="flex items-center gap-2">
             <DropdownMenu>
@@ -29,10 +29,11 @@ export default function CoursesPage() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Filtrar por</DropdownMenuLabel>
+                <DropdownMenuLabel>Filtrar por modalidad</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuCheckboxItem checked>Online</DropdownMenuCheckboxItem>
                 <DropdownMenuCheckboxItem>Presencial</DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem>Mixta</DropdownMenuCheckboxItem>
               </DropdownMenuContent>
             </DropdownMenu>
             <Button size="sm" className="h-9 gap-1">

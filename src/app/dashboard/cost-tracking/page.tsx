@@ -81,10 +81,10 @@ export default function CostTrackingPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StatCard title="Presupuesto Anual" value="15,000€" icon={CircleDollarSign} className="bg-green-500/10 border-green-500" />
+        <StatCard title="Presupuesto Anual" value="25,000€" icon={CircleDollarSign} className="bg-green-500/10 border-green-500" />
         <StatCard title="Gasto Total" value="8,950€" icon={CreditCard} className="bg-red-500/10 border-red-500" />
-        <StatCard title="Gasto (Últ. 30 días)" value="3,400€" icon={CalendarClock} className="bg-yellow-500/10 border-yellow-500" />
-        <StatCard title="Presupuesto Restante" value="6,050€" icon={Scale} className="bg-blue-500/10 border-blue-500" />
+        <StatCard title="Gasto (Últ. 30 días)" value="1,550€" icon={CalendarClock} className="bg-yellow-500/10 border-yellow-500" />
+        <StatCard title="Presupuesto Restante" value="16,050€" icon={Scale} className="bg-blue-500/10 border-blue-500" />
       </div>
 
       <div className="grid gap-8 lg:grid-cols-2">
@@ -145,9 +145,10 @@ export default function CostTrackingPage() {
                     <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Filtrar por categoría</DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuCheckboxItem checked>Instructor</DropdownMenuCheckboxItem>
-                        <DropdownMenuCheckboxItem>Platform</DropdownMenuCheckboxItem>
-                        <DropdownMenuCheckboxItem>Materials</DropdownMenuCheckboxItem>
+                        <DropdownMenuCheckboxItem checked>Formadores</DropdownMenuCheckboxItem>
+                        <DropdownMenuCheckboxItem>Plataforma</DropdownMenuCheckboxItem>
+                        <DropdownMenuCheckboxItem>Equipamiento</DropdownMenuCheckboxItem>
+                        <DropdownMenuCheckboxItem>Logística</DropdownMenuCheckboxItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
             </div>

@@ -24,8 +24,8 @@ export default function LoginPage() {
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
             <AppLogo className="h-8 w-8" />
           </div>
-          <CardTitle className="text-3xl font-bold">AcademiaAI</CardTitle>
-          <CardDescription>Plataforma de formación institucional</CardDescription>
+          <CardTitle className="text-3xl font-bold">EmergenciaAI</CardTitle>
+          <CardDescription>Plataforma de formación para emergencias sanitarias</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-6">
@@ -39,7 +39,7 @@ export default function LoginPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="role">Rol</Label>
-              <Select defaultValue="Jefe de Formación">
+              <Select defaultValue="Coordinador de Formación">
                 <SelectTrigger id="role">
                   <SelectValue placeholder="Selecciona un rol" />
                 </SelectTrigger>

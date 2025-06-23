@@ -49,8 +49,8 @@ function TestGenerator({ courseContent }: { courseContent: string }) {
     try {
       const result = await personalizedFeedback({
         studentName: user.name,
-        assignmentName: 'Test de autoevaluación',
-        studentAnswer: 'Respuesta del estudiante (simulada)',
+        assignmentName: 'Test de SVB',
+        studentAnswer: 'Respuesta del estudiante (simulada sobre RCP)',
         correctAnswer: testData.questions[0].correctAnswer,
       });
       setFeedback(result.feedback);

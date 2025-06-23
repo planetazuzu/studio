@@ -3,8 +3,8 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
-  title: 'AcademiaAI',
-  description: 'Plataforma institucional de formación para trabajadores y personal externo',
+  title: 'EmergenciaAI',
+  description: 'Plataforma de formación para técnicos y teleoperadores de emergencias sanitarias.',
 };
 
 export default function RootLayout({

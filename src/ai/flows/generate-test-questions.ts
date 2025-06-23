@@ -47,7 +47,7 @@ const prompt = ai.definePrompt({
   name: 'generateTestQuestionsPrompt',
   input: {schema: GenerateTestQuestionsInputSchema},
   output: {schema: GenerateTestQuestionsOutputSchema},
-  prompt: `You are an expert educator specializing in creating tests and quizzes.
+  prompt: `You are an expert medical educator specializing in creating tests and quizzes for emergency personnel (EMTs, dispatchers).
 
 You will use the provided course content to generate {{numberOfQuestions}} test questions of {{difficulty}} difficulty.
 
