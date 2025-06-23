@@ -67,37 +67,14 @@ export const Sidebar = React.forwardRef<HTMLElement, React.HTMLAttributes<HTMLEl
 Sidebar.displayName = "Sidebar"
 
 export const SidebarHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ className, children, ...props }, ref) => {
+  ({ className, ...props }, ref) => {
     const { isOpen } = useSidebar();
-    
-    const clonedChildren = React.Children.map(children, (child) => {
-      if (!React.isValidElement(child)) {
-        return child;
-      }
-      
-      const childProps = child.props as { children?: React.ReactNode; };
-
-      if (!childProps.children) {
-        return child;
-      }
-
-      const newGrandChildren = React.Children.map(
-        React.Children.toArray(childProps.children), 
-        (grandChild) => {
-          if (React.isValidElement(grandChild) && grandChild.type === 'span') {
-              return isOpen ? grandChild : null;
-          }
-          return grandChild;
-        }
-      );
-      
-      return React.cloneElement(child, { children: newGrandChildren });
-    });
-
     return (
-      <div ref={ref} className={cn("flex h-16 items-center border-b", isOpen ? "" : "justify-center", className)} {...props}>
-          {clonedChildren}
-      </div>
+        <div 
+            ref={ref} 
+            className={cn("flex h-16 items-center border-b", isOpen ? "" : "justify-center", className)} 
+            {...props}
+        />
     )
   }
 )
@@ -158,44 +135,9 @@ export const SidebarMenuButton = React.forwardRef<
 SidebarMenuButton.displayName = "SidebarMenuButton"
 
 export const SidebarFooter = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
-  ({ className, children, ...props }, ref) => {
-    const { isOpen } = useSidebar()
-    
-    const clonedChildren = React.Children.map(children, (child) => {
-      if (!React.isValidElement(child)) {
-        return child;
-      }
-      
-      const childProps = child.props as { children?: React.ReactNode, className?: string };
-
-      if (!childProps.children) {
-        return React.cloneElement(child, {
-          className: cn(childProps.className, !isOpen && "justify-center"),
-        });
-      }
-
-      const newGrandChildren = React.Children.map(
-        React.Children.toArray(childProps.children), 
-        (grandChild) => {
-            if (React.isValidElement(grandChild) && grandChild.type === 'div') {
-                return isOpen ? grandChild : null;
-            }
-            return grandChild;
-        }
-      );
-      
-      return React.cloneElement(child, {
-          className: cn(childProps.className, !isOpen && "justify-center"),
-          children: newGrandChildren
-      });
-    });
-    
-    return (
-      <div ref={ref} className={cn("mt-auto border-t", className)} {...props}>
-          {clonedChildren}
-      </div>
-    )
-  }
+  ({ className, ...props }, ref) => (
+    <div ref={ref} className={cn("mt-auto border-t", className)} {...props} />
+  )
 )
 SidebarFooter.displayName = "SidebarFooter"
 
