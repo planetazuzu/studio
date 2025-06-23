@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { user, roles, professionalProfiles } from '@/lib/data';
+import { user, roles } from '@/lib/data';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 function ProfileSettings() {
@@ -27,33 +27,18 @@ function ProfileSettings() {
                     <Label htmlFor="avatar">URL del Avatar</Label>
                     <Input id="avatar" defaultValue={user.avatar} />
                 </div>
-                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="role">Rol</Label>
-                      <Select defaultValue={user.role}>
-                        <SelectTrigger id="role" className="w-full">
-                          <SelectValue placeholder="Selecciona un rol" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {roles.map(role => (
-                            <SelectItem key={role} value={role}>{role}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    {user.professionalProfile && <div className="space-y-2">
-                      <Label htmlFor="profile">Perfil Profesional</Label>
-                      <Select defaultValue={user.professionalProfile}>
-                        <SelectTrigger id="profile" className="w-full">
-                          <SelectValue placeholder="Selecciona un perfil" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {professionalProfiles.map(profile => (
-                            <SelectItem key={profile} value={profile}>{profile}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>}
+                 <div className="space-y-2">
+                    <Label htmlFor="role">Rol</Label>
+                    <Select defaultValue={user.role}>
+                    <SelectTrigger id="role" className="w-full">
+                        <SelectValue placeholder="Selecciona un rol" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {roles.map(role => (
+                        <SelectItem key={role} value={role}>{role}</SelectItem>
+                        ))}
+                    </SelectContent>
+                    </Select>
                 </div>
             </CardContent>
         </Card>
@@ -155,7 +140,7 @@ function NotificationSettings() {
 
 
 export default function SettingsPage() {
-  const isManager = ['Coordinador de Formación', 'Administrador'].includes(user.role);
+  const isAdmin = user.role === 'Administrador General';
 
   return (
     <div className="space-y-8">
@@ -165,22 +150,22 @@ export default function SettingsPage() {
       </div>
       <div className="grid grid-cols-1 gap-8">
          <Tabs defaultValue="profile" className="w-full">
-            <TabsList className={`grid w-full ${isManager ? 'grid-cols-4' : 'grid-cols-2'} max-w-2xl`}>
+            <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-4' : 'grid-cols-2'} max-w-2xl`}>
                 <TabsTrigger value="profile">Perfil</TabsTrigger>
-                {isManager && <TabsTrigger value="general">General</TabsTrigger>}
+                {isAdmin && <TabsTrigger value="general">General</TabsTrigger>}
                 <TabsTrigger value="notifications">Notificaciones</TabsTrigger>
-                {isManager && <TabsTrigger value="api">APIs</TabsTrigger>}
+                {isAdmin && <TabsTrigger value="api">APIs</TabsTrigger>}
             </TabsList>
             <TabsContent value="profile" className="mt-4">
                 <ProfileSettings />
             </TabsContent>
-            {isManager && <TabsContent value="general" className="mt-4">
+            {isAdmin && <TabsContent value="general" className="mt-4">
                 <GeneralSettings />
             </TabsContent>}
             <TabsContent value="notifications" className="mt-4">
                 <NotificationSettings />
             </TabsContent>
-            {isManager && <TabsContent value="api" className="mt-4">
+            {isAdmin && <TabsContent value="api" className="mt-4">
                 <ApiSettings />
             </TabsContent>}
         </Tabs>

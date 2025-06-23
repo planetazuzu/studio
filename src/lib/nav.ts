@@ -9,10 +9,12 @@ export type NavItem = {
 };
 
 const allRoles: Role[] = [
-  'Técnico de Emergencias',
-  'Teleoperador de Emergencias',
-  'Coordinador de Formación',
-  'Administrador',
+  'Trabajador',
+  'Personal Externo',
+  'Formador',
+  'Gestor de RRHH',
+  'Jefe de Formación',
+  'Administrador General',
 ];
 
 export const navItems: NavItem[] = [
@@ -22,7 +24,7 @@ export const navItems: NavItem[] = [
     href: '/dashboard/analytics',
     icon: AreaChart,
     label: 'Análisis',
-    roles: ['Coordinador de Formación', 'Administrador'],
+    roles: ['Gestor de RRHH', 'Jefe de Formación', 'Administrador General'],
   },
   { href: '/dashboard/settings', icon: Settings, label: 'Ajustes', roles: allRoles },
 ];

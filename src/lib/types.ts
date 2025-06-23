@@ -1,16 +1,10 @@
 export type Role =
-  | 'Técnico de Emergencias'
-  | 'Teleoperador de Emergencias'
-  | 'Coordinador de Formación'
-  | 'Administrador';
-
-export type ProfessionalProfile = 
-  | 'Técnico Avanzado'
-  | 'Técnico Básico'
-  | 'Jefe de Equipo'
-  | 'Gestor de Flota'
-  | 'Teleoperador Senior'
-  | 'Coordinador General';
+  | 'Trabajador'
+  | 'Personal Externo'
+  | 'Formador'
+  | 'Gestor de RRHH'
+  | 'Jefe de Formación'
+  | 'Administrador General';
 
 export type User = {
   id: string;
@@ -18,7 +12,6 @@ export type User = {
   email: string;
   avatar: string;
   role: Role;
-  professionalProfile?: ProfessionalProfile;
 };
 
 export type Course = {

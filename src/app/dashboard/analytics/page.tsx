@@ -68,7 +68,7 @@ const lineChartConfig = {
 
 
 export default function AnalyticsPage() {
-  if (!['Coordinador de Formación', 'Administrador'].includes(user.role)) {
+  if (!['Gestor de RRHH', 'Jefe de Formación', 'Administrador General'].includes(user.role)) {
     redirect('/dashboard');
   }
 

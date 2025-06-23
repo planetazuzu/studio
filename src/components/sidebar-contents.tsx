@@ -66,11 +66,6 @@ export function SidebarContents() {
               <p className="text-xs text-muted-foreground truncate">
                 {user.role}
               </p>
-              {user.professionalProfile && (
-                <p className="text-xs text-muted-foreground/80 truncate font-medium">
-                  {user.professionalProfile}
-                </p>
-              )}
             </div>
           )}
         </div>

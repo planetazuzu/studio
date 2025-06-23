@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AppLogo } from '@/components/icons';
-import { roles, professionalProfiles } from '@/lib/data';
+import { roles } from '@/lib/data';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -37,33 +37,18 @@ export default function LoginPage() {
               <Label htmlFor="password">Contraseña</Label>
               <Input id="password" type="password" defaultValue="password" required />
             </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="role">Rol</Label>
-                  <Select defaultValue="Técnico de Emergencias">
-                    <SelectTrigger id="role">
-                      <SelectValue placeholder="Selecciona un rol" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {roles.map(role => (
-                        <SelectItem key={role} value={role}>{role}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="profile">Perfil Profesional</Label>
-                  <Select defaultValue="Técnico Avanzado">
-                    <SelectTrigger id="profile">
-                      <SelectValue placeholder="Selecciona un perfil" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {professionalProfiles.map(profile => (
-                        <SelectItem key={profile} value={profile}>{profile}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+            <div className="space-y-2">
+              <Label htmlFor="role">Rol</Label>
+              <Select defaultValue="Trabajador">
+                <SelectTrigger id="role">
+                  <SelectValue placeholder="Selecciona un rol" />
+                </SelectTrigger>
+                <SelectContent>
+                  {roles.map(role => (
+                    <SelectItem key={role} value={role}>{role}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <Button type="submit" className="w-full text-lg h-12">
               Iniciar Sesión
