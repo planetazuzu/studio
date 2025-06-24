@@ -2,44 +2,76 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Activity, BookCheck, BotMessageSquare, GraduationCap, Lightbulb, Loader2, Wallet, Check, X, Inbox } from 'lucide-react';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { personalizedCourseRecommendations } from '@/ai/flows/course-suggestion';
 import { StatCard } from '@/components/stat-card';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { courses } from '@/lib/data';
+import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/contexts/auth';
 import * as db from '@/lib/db';
 import Image from 'next/image';
-import type { PendingEnrollmentDetails } from '@/lib/types';
+import type { PendingEnrollmentDetails, Course } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
-function UpcomingCourses() {
-    const upcoming = courses.slice(0, 3);
+function MyCourses({ user }) {
+  const enrolledCourses = useLiveQuery(
+    () => db.getEnrolledCoursesForUser(user.id),
+    [user.id], 
+    [] as Course[]
+  );
+
+  if (!enrolledCourses) {
     return (
-        <Card className="shadow-lg col-span-1 lg:col-span-2">
-            <CardHeader>
-                <CardTitle>Próximas Formaciones</CardTitle>
-                <CardDescription>Cursos programados para empezar pronto.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <ul className="space-y-4">
-                    {upcoming.map((course) => (
-                        <li key={course.id} className="flex items-center gap-4">
-                            <Image src={course.image} alt={course.title} width={80} height={60} className="rounded-md object-cover" data-ai-hint={course.aiHint} />
-                            <div className="flex-grow">
-                                <h3 className="font-semibold">{course.title}</h3>
-                                <p className="text-sm text-muted-foreground">{course.instructor}</p>
-                            </div>
-                            <Button asChild variant="outline" size="sm">
-                                <Link href={`/dashboard/courses/${course.id}`}>Ver</Link>
-                            </Button>
-                        </li>
-                    ))}
-                </ul>
-            </CardContent>
-        </Card>
+      <Card className="shadow-lg col-span-1 lg:col-span-2">
+        <CardHeader>
+          <CardTitle>Mis Cursos</CardTitle>
+          <CardDescription>Tus formaciones activas.</CardDescription>
+        </CardHeader>
+        <CardContent className="flex justify-center items-center h-48">
+          <Loader2 className="mx-auto h-8 w-8 animate-spin" />
+        </CardContent>
+      </Card>
     );
+  }
+  
+  return (
+    <Card className="shadow-lg col-span-1 lg:col-span-2">
+      <CardHeader>
+        <CardTitle>Mis Cursos</CardTitle>
+        <CardDescription>Tus formaciones activas y en progreso.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {enrolledCourses.length > 0 ? (
+          <ul className="space-y-4">
+            {enrolledCourses.map((course) => (
+              <li key={course.id} className="flex items-center gap-4 p-2 rounded-lg hover:bg-muted/50">
+                <Image src={course.image} alt={course.title} width={80} height={60} className="rounded-md object-cover" data-ai-hint={course.aiHint} />
+                <div className="flex-grow">
+                  <h3 className="font-semibold">{course.title}</h3>
+                  <Progress value={course.progress} className="h-2 mt-2" />
+                  <p className="text-xs text-muted-foreground mt-1">{course.progress}% completado</p>
+                </div>
+                <Button asChild variant="outline" size="sm">
+                  <Link href={`/dashboard/courses/${course.id}`}>Continuar</Link>
+                </Button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div className="text-center py-8 text-muted-foreground">
+            <GraduationCap className="mx-auto h-12 w-12" />
+            <p className="mt-2">Aún no estás inscrito en ningún curso.</p>
+            <Button asChild size="sm" className="mt-4">
+                <Link href="/dashboard/courses">Explorar Cursos</Link>
+            </Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
 }
+
 
 function AiSuggestions({ user }) {
   const [loading, setLoading] = useState(false);
@@ -182,7 +214,7 @@ export default function DashboardPage() {
       </div>
       <div className="grid gap-4 lg:grid-cols-3">
         {isAdmin && <AdminApprovalPanel />}
-        {!isAdmin && <UpcomingCourses />}
+        {!isAdmin && <MyCourses user={user} />}
         <AiSuggestions user={user} />
       </div>
     </div>

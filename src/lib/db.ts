@@ -113,6 +113,20 @@ export async function updateEnrollmentStatus(enrollmentId: number, status: 'appr
     return await db.enrollments.update(enrollmentId, { status, updatedAt: new Date().toISOString(), isSynced: false });
 }
 
+export async function getEnrolledCoursesForUser(userId: string): Promise<Course[]> {
+  const approvedEnrollments = await db.enrollments
+    .where({ studentId: userId, status: 'approved' })
+    .toArray();
+  
+  if (approvedEnrollments.length === 0) return [];
+
+  const courseIds = approvedEnrollments.map(e => e.courseId);
+  
+  const enrolledCourses = await db.courses.where('id').anyOf(courseIds).toArray();
+
+  return enrolledCourses;
+}
+
 
 export async function updateUserProgress(progressUpdate: { userId: string; courseId: string; progress: number; status: UserProgress['status'] }) {
     const { userId, courseId, progress, status } = progressUpdate;
@@ -129,7 +143,7 @@ export async function updateUserProgress(progressUpdate: { userId: string; cours
     };
     
     if (existingProgress?.id) {
-        return await db.userProgress.update(existingProgress.id, progressData);
+        return await db.userProgress.update(existingProgress.id, progressData as UserProgress);
     } else {
         return await db.userProgress.add(progressData as UserProgress);
     }
