@@ -1,6 +1,6 @@
 import Dexie, { type Table } from 'dexie';
-import type { Course, User, Enrollment, UserProgress, PendingEnrollmentDetails, ForumMessage, ForumMessageWithReplies, Notification, Resource, CourseResource, Announcement } from './types';
-import { courses as initialCourses, users as initialUsers } from './data';
+import type { Course, User, Enrollment, UserProgress, PendingEnrollmentDetails, ForumMessage, ForumMessageWithReplies, Notification, Resource, CourseResource, Announcement, ChatChannel, ChatMessage } from './types';
+import { courses as initialCourses, users as initialUsers, initialChatChannels } from './data';
 
 const LOGGED_IN_USER_KEY = 'loggedInUserId';
 
@@ -14,6 +14,8 @@ export class AcademiaAIDB extends Dexie {
   resources!: Table<Resource>;
   courseResources!: Table<CourseResource>;
   announcements!: Table<Announcement>;
+  chatChannels!: Table<ChatChannel>;
+  chatMessages!: Table<ChatMessage>;
 
 
   constructor() {
@@ -44,6 +46,10 @@ export class AcademiaAIDB extends Dexie {
     this.version(7).stores({
         announcements: '++id, timestamp',
     });
+    this.version(8).stores({
+        chatChannels: 'id, name',
+        chatMessages: '++id, channelId, timestamp'
+    });
   }
 }
 
@@ -61,6 +67,12 @@ export async function populateDatabase() {
     } catch(e) {
         console.error("Failed to bulk add users, maybe duplicates in data.ts", e);
     }
+  }
+
+  const channelCount = await db.chatChannels.count();
+  if (channelCount === 0) {
+    console.log("Populating chat channels...");
+    await db.chatChannels.bulkAdd(initialChatChannels);
   }
 }
 
@@ -422,4 +434,23 @@ export async function getVisibleAnnouncementsForUser(user: User): Promise<Announ
         a.channels.includes(user.role) || 
         a.channels.includes(user.department)
     );
+}
+
+// --- Chat Functions ---
+
+export async function addChatMessage(message: Omit<ChatMessage, 'id' | 'isSynced' | 'updatedAt'>): Promise<number> {
+    const newChatMessage: ChatMessage = {
+        ...message,
+        isSynced: false,
+        updatedAt: new Date().toISOString(),
+    }
+    return await db.chatMessages.add(newChatMessage);
+}
+
+export async function getChatMessages(channelId: string): Promise<ChatMessage[]> {
+    return await db.chatMessages.where('channelId').equals(channelId).sortBy('timestamp');
+}
+
+export async function getAllChatChannels(): Promise<ChatChannel[]> {
+    return await db.chatChannels.orderBy('name').toArray();
 }

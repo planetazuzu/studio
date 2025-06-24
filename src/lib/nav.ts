@@ -1,4 +1,4 @@
-import { AreaChart, BookOpen, Home, Settings, Users, Calendar, Library, Megaphone, type LucideIcon } from 'lucide-react';
+import { AreaChart, BookOpen, Home, Settings, Users, Calendar, Library, Megaphone, MessagesSquare, type LucideIcon } from 'lucide-react';
 import type { Role } from './types';
 
 export type NavItem = {
@@ -52,5 +52,6 @@ export const navItems: NavItem[] = [
     label: 'Análisis',
     roles: managerRoles,
   },
+  { href: '/dashboard/chat', icon: MessagesSquare, label: 'Chat', roles: allRoles },
   { href: '/dashboard/settings', icon: Settings, label: 'Ajustes', roles: allRoles },
 ];

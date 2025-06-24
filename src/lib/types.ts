@@ -142,3 +142,23 @@ export type Announcement = {
   isSynced?: boolean;
   updatedAt?: string; // ISO date string
 };
+
+export type ChatChannel = {
+  id: string;
+  name: string;
+  description?: string;
+  isSynced?: boolean;
+  updatedAt?: string;
+};
+
+export type ChatMessage = {
+  id?: number;
+  channelId: string;
+  userId: string;
+  userName: string;
+  userAvatar: string;
+  message: string;
+  timestamp: string; // ISO date string
+  isSynced?: boolean;
+  updatedAt?: string; // ISO date string
+};

@@ -1,4 +1,4 @@
-import { User, Course, Role, Cost, Department } from './types';
+import { User, Course, Role, Cost, Department, ChatChannel } from './types';
 
 export const roles: Role[] = [
   'Trabajador',
@@ -161,5 +161,28 @@ export const costs: Cost[] = [
     { id: 'cost_6', item: 'Suscripción Plataforma E-learning', category: 'Plataforma', amount: 400, date: '2024-06-05' },
     { id: 'cost_7', item: 'Catering curso SVB', category: 'Logística', amount: 800, date: '2024-05-21' },
 ];
+
+export const initialChatChannels: ChatChannel[] = [
+    {
+        id: 'channel_general',
+        name: 'general',
+        description: 'Canal para temas generales y avisos para toda la empresa.'
+    },
+    {
+        id: 'channel_emergencias',
+        name: 'casos-clinicos',
+        description: 'Discusión de casos clínicos y procedimientos.'
+    },
+    {
+        id: 'channel_formacion',
+        name: 'dudas-formacion',
+        description: 'Preguntas y respuestas sobre los cursos de la plataforma.'
+    },
+    {
+        id: 'channel_random',
+        name: 'random',
+        description: 'Para conversaciones distendidas y temas no relacionados con el trabajo.'
+    }
+]
 
 export const getCourseById = (id: string) => initialCourses.find(c => c.id === id);
