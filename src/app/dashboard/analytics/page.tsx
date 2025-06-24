@@ -1,18 +1,20 @@
 
 'use client';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, XAxis, YAxis } from 'recharts';
-import { Download, ListFilter, CircleDollarSign, CreditCard, CalendarClock, Scale, CheckSquare, Users, Clock } from 'lucide-react';
+import { Download, ListFilter, CircleDollarSign, CreditCard, CalendarClock, Scale, CheckSquare, Users, Clock, Loader2 } from 'lucide-react';
 import {
   ChartConfig,
   ChartContainer,
   ChartTooltip as ChartTooltipProvider,
   ChartTooltipContent,
 } from '@/components/ui/chart';
-import { costs, courses, users as allUsers, departments, roles } from '@/lib/data';
+import * as db from '@/lib/db';
+import { costs } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -28,125 +30,21 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/auth';
 
-// --- Cost Data Calculations ---
-const spendingByCategory = costs.reduce((acc, cost) => {
-  if (!acc[cost.category]) {
-    acc[cost.category] = 0;
-  }
-  acc[cost.category] += cost.amount;
-  return acc;
-}, {} as Record<string, number>);
-
-const barChartData = Object.keys(spendingByCategory).map(category => ({
-  category,
-  amount: spendingByCategory[category],
-}));
-
-const barChartConfig = {
-  amount: {
-    label: 'Importe (€)',
-    color: 'hsl(var(--chart-1))',
-  },
-} satisfies ChartConfig;
-
-const monthlySpending = costs.reduce((acc, cost) => {
-    const date = new Date(cost.date);
-    const monthKey = format(date, 'yyyy-MM');
-    if (!acc[monthKey]) {
-        acc[monthKey] = { amount: 0, month: format(date, 'MMM', { locale: es }) };
-    }
-    acc[monthKey].amount += cost.amount;
-    return acc;
-}, {} as Record<string, { amount: number, month: string }>);
-
-const lineChartData = Object.keys(monthlySpending)
-    .sort()
-    .map(key => ({
-        month: monthlySpending[key].month,
-        amount: monthlySpending[key].amount
-    }));
-
-const lineChartConfig = {
-    amount: {
-        label: "Importe (€)",
-        color: "hsl(var(--chart-2))"
-    }
-} satisfies ChartConfig;
-
-
-// --- Training Data Calculations ---
-const averageCompletionRate = courses.reduce((acc, course) => acc + course.progress, 0) / courses.length;
-const totalTrainingHours = courses.reduce((acc, course) => {
-    const hours = parseInt(course.duration);
-    return acc + (isNaN(hours) ? 0 : hours);
-}, 0);
-const activeUsers = allUsers.length;
-
-const departmentProgress = departments.map(dept => ({
-    department: dept,
-    progress: Math.floor(Math.random() * (95 - 40 + 1) + 40)
-}));
-
-const departmentChartConfig = {
-  progress: {
-    label: 'Progreso (%)',
-    color: 'hsl(var(--chart-1))',
-  },
-} satisfies ChartConfig;
-
-const roleProgress = roles
-    .filter(r => r !== 'Personal Externo')
-    .map(role => ({
-        role: role.replace(' ', '\n'),
-        progress: Math.floor(Math.random() * (90 - 35 + 1) + 35)
-    }));
-
-const roleChartConfig = {
-  progress: {
-    label: 'Progreso (%)',
-    color: 'hsl(var(--chart-2))',
-  },
-} satisfies ChartConfig;
-
-
-const monthlyActivity = courses.reduce((acc, course) => {
-    if (!course.startDate) return acc;
-    const date = parseISO(course.startDate);
-    const monthKey = format(date, 'yyyy-MM');
-    if (!acc[monthKey]) {
-        acc[monthKey] = { month: format(date, 'MMM', { locale: es }), iniciados: 0, completados: 0 };
-    }
-    acc[monthKey].iniciados += 1;
-    if (course.progress > 99) {
-      acc[monthKey].completados += 1;
-    }
-    return acc;
-}, {} as Record<string, { month: string, iniciados: number, completados: number }>);
-
-const activityChartData = Object.keys(monthlyActivity)
-  .sort()
-  .map(key => monthlyActivity[key]);
-
-const activityChartConfig = {
-  iniciados: {
-    label: 'Iniciados',
-    color: 'hsl(var(--chart-1))',
-  },
-  completados: {
-    label: 'Completados',
-    color: 'hsl(var(--chart-3))',
-  },
-} satisfies ChartConfig;
-
 
 export default function AnalyticsPage() {
   const { user } = useAuth();
   const router = useRouter();
 
-  // --- State and handlers for cost filters ---
-  const allCategories = [...new Set(costs.map((cost) => cost.category))];
+  // --- Data Fetching ---
+  const allCourses = useLiveQuery(() => db.getAllCourses(), []);
+  const allUsers = useLiveQuery(() => db.getAllUsers(), []);
+  const allProgress = useLiveQuery(() => db.db.userProgress.toArray(), []);
+  const allEnrollments = useLiveQuery(() => db.db.enrollments.toArray(), []);
+
+  // --- Cost Data Calculations (unchanged) ---
+  const allCostCategories = [...new Set(costs.map((cost) => cost.category))];
   const [categoryFilters, setCategoryFilters] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(allCategories.map((cat) => [cat, true]))
+    Object.fromEntries(allCostCategories.map((cat) => [cat, true]))
   );
 
   const handleCategoryFilterChange = (category: string, checked: boolean) => {
@@ -154,7 +52,164 @@ export default function AnalyticsPage() {
   };
   
   const filteredCosts = costs.filter((cost) => categoryFilters[cost.category]);
-  // ---
+
+  const spendingByCategory = useMemo(() => costs.reduce((acc, cost) => {
+    if (!acc[cost.category]) {
+      acc[cost.category] = 0;
+    }
+    acc[cost.category] += cost.amount;
+    return acc;
+  }, {} as Record<string, number>), [costs]);
+
+  const barChartData = useMemo(() => Object.keys(spendingByCategory).map(category => ({
+    category,
+    amount: spendingByCategory[category],
+  })), [spendingByCategory]);
+
+  const barChartConfig = {
+    amount: { label: 'Importe (€)', color: 'hsl(var(--chart-1))' },
+  } satisfies ChartConfig;
+
+  const monthlySpending = useMemo(() => costs.reduce((acc, cost) => {
+      const date = new Date(cost.date);
+      const monthKey = format(date, 'yyyy-MM');
+      if (!acc[monthKey]) {
+          acc[monthKey] = { amount: 0, month: format(date, 'MMM', { locale: es }) };
+      }
+      acc[monthKey].amount += cost.amount;
+      return acc;
+  }, {} as Record<string, { amount: number, month: string }>), [costs]);
+
+  const lineChartData = useMemo(() => Object.keys(monthlySpending)
+      .sort()
+      .map(key => ({
+          month: monthlySpending[key].month,
+          amount: monthlySpending[key].amount
+      })), [monthlySpending]);
+
+  const lineChartConfig = {
+      amount: { label: "Importe (€)", color: "hsl(var(--chart-2))" },
+  } satisfies ChartConfig;
+
+
+  // --- Training Data Calculations ---
+  const trainingData = useMemo(() => {
+    if (!allCourses || !allUsers || !allProgress || !allEnrollments) {
+        return null;
+    }
+
+    const courseModuleCounts = new Map(allCourses.map(c => [c.id, c.modules?.length || 0]));
+
+    // --- Stat Cards Data ---
+    const individualProgressPercentages = allProgress.map(p => {
+        const totalModules = courseModuleCounts.get(p.courseId) || 0;
+        return totalModules > 0 ? (p.completedModules.length / totalModules) * 100 : 0;
+    });
+    const averageCompletionRate = individualProgressPercentages.length > 0
+        ? individualProgressPercentages.reduce((a, b) => a + b, 0) / individualProgressPercentages.length
+        : 0;
+    
+    const totalTrainingHours = allCourses.reduce((acc, course) => {
+        const hours = parseInt(course.duration) || 0;
+        return acc + hours;
+    }, 0);
+    
+    const activeUsers = allUsers.length;
+
+    // --- Department Progress ---
+    const progressByDepartment: Record<string, { totalProgress: number; count: number; }> = {};
+    const allDepartments = [...new Set(allUsers.map(u => u.department))];
+    allDepartments.forEach(dept => {
+        progressByDepartment[dept] = { totalProgress: 0, count: 0 };
+    });
+
+    for (const progress of allProgress) {
+        const user = allUsers.find(u => u.id === progress.userId);
+        if (user) {
+            const totalModules = courseModuleCounts.get(progress.courseId) || 0;
+            if (totalModules > 0) {
+                const percentage = (progress.completedModules.length / totalModules) * 100;
+                 if (progressByDepartment[user.department]) {
+                    progressByDepartment[user.department].totalProgress += percentage;
+                    progressByDepartment[user.department].count += 1;
+                }
+            }
+        }
+    }
+    const departmentProgress = Object.entries(progressByDepartment).map(([department, data]) => ({
+        department,
+        progress: data.count > 0 ? Math.round(data.totalProgress / data.count) : 0,
+    })).sort((a, b) => b.progress - a.progress);
+
+
+    // --- Role Progress ---
+    const progressByRole: Record<string, { totalProgress: number; count: number; }> = {};
+    const allRoles = [...new Set(allUsers.map(u => u.role))];
+    allRoles.forEach(role => {
+        progressByRole[role] = { totalProgress: 0, count: 0 };
+    });
+
+    for (const progress of allProgress) {
+        const user = allUsers.find(u => u.id === progress.userId);
+        if (user) {
+            const totalModules = courseModuleCounts.get(progress.courseId) || 0;
+            if (totalModules > 0) {
+                const percentage = (progress.completedModules.length / totalModules) * 100;
+                 if (progressByRole[user.role]) {
+                    progressByRole[user.role].totalProgress += percentage;
+                    progressByRole[user.role].count += 1;
+                }
+            }
+        }
+    }
+    const roleProgress = Object.entries(progressByRole)
+        .filter(([role, data]) => role !== 'Personal Externo')
+        .map(([role, data]) => ({
+            role: role.replace(' ', '\n'),
+            progress: data.count > 0 ? Math.round(data.totalProgress / data.count) : 0,
+    })).sort((a, b) => b.progress - a.progress);
+
+
+    // --- Monthly Activity ---
+    const monthlyActivity: Record<string, { month: string; iniciados: number; completados: number }> = {};
+    
+    // Process enrollments for "iniciados"
+    allEnrollments.filter(e => e.status === 'approved').forEach(enrollment => {
+        const date = enrollment.updatedAt ? parseISO(enrollment.updatedAt) : new Date();
+        const monthKey = format(date, 'yyyy-MM');
+        if (!monthlyActivity[monthKey]) {
+            monthlyActivity[monthKey] = { month: format(date, 'MMM', { locale: es }), iniciados: 0, completados: 0 };
+        }
+        monthlyActivity[monthKey].iniciados += 1;
+    });
+
+    // Process progress for "completados"
+    allProgress.forEach(progress => {
+        const totalModules = courseModuleCounts.get(progress.courseId) || 0;
+        if (totalModules > 0 && progress.completedModules.length === totalModules) {
+            const date = progress.updatedAt ? parseISO(progress.updatedAt) : new Date();
+            const monthKey = format(date, 'yyyy-MM');
+             if (!monthlyActivity[monthKey]) {
+                monthlyActivity[monthKey] = { month: format(date, 'MMM', { locale: es }), iniciados: 0, completados: 0 };
+            }
+            monthlyActivity[monthKey].completados += 1;
+        }
+    });
+    
+    const activityChartData = Object.keys(monthlyActivity)
+      .sort()
+      .map(key => monthlyActivity[key]);
+
+    return {
+        averageCompletionRate,
+        totalTrainingHours,
+        activeUsers,
+        departmentProgress,
+        roleProgress,
+        activityChartData,
+    };
+  }, [allCourses, allUsers, allProgress, allEnrollments]);
+
 
   if (!user) return null;
 
@@ -162,6 +217,28 @@ export default function AnalyticsPage() {
     router.push('/dashboard');
     return null;
   }
+
+  if (!trainingData) {
+      return (
+        <div className="flex h-[80vh] items-center justify-center">
+            <Loader2 className="h-16 w-16 animate-spin text-primary" />
+        </div>
+      );
+  }
+
+  const departmentChartConfig = {
+    progress: { label: 'Progreso (%)', color: 'hsl(var(--chart-1))' },
+  } satisfies ChartConfig;
+
+  const roleChartConfig = {
+    progress: { label: 'Progreso (%)', color: 'hsl(var(--chart-2))' },
+  } satisfies ChartConfig;
+  
+  const activityChartConfig = {
+    iniciados: { label: 'Iniciados', color: 'hsl(var(--chart-1))' },
+    completados: { label: 'Completados', color: 'hsl(var(--chart-3))' },
+  } satisfies ChartConfig;
+
 
   return (
     <div className="space-y-8">
@@ -184,9 +261,9 @@ export default function AnalyticsPage() {
         
         <TabsContent value="training" className="mt-6 space-y-8">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                <StatCard title="Tasa de Finalización Media" value={`${averageCompletionRate.toFixed(0)}%`} icon={CheckSquare} description="En todos los cursos" />
-                <StatCard title="Horas de Formación Totales" value={`${totalTrainingHours}`} icon={Clock} description="Programadas en el catálogo" />
-                <StatCard title="Usuarios Activos" value={activeUsers.toString()} icon={Users} description="En la plataforma" />
+                <StatCard title="Tasa de Finalización Media" value={`${trainingData.averageCompletionRate.toFixed(0)}%`} icon={CheckSquare} description="En todos los cursos" />
+                <StatCard title="Horas de Formación Totales" value={`${trainingData.totalTrainingHours}`} icon={Clock} description="Programadas en el catálogo" />
+                <StatCard title="Usuarios Activos" value={trainingData.activeUsers.toString()} icon={Users} description="En la plataforma" />
             </div>
 
             <div className="grid gap-8 lg:grid-cols-2">
@@ -198,7 +275,7 @@ export default function AnalyticsPage() {
                     <CardContent>
                         <ChartContainer config={departmentChartConfig} className="h-96 w-full">
                             <ResponsiveContainer>
-                                <BarChart data={departmentProgress} layout="vertical" margin={{ left: 20 }}>
+                                <BarChart data={trainingData.departmentProgress} layout="vertical" margin={{ left: 20 }}>
                                     <CartesianGrid horizontal={false} />
                                     <YAxis dataKey="department" type="category" tickLine={false} axisLine={false} tickMargin={10} width={150} />
                                     <XAxis type="number" dataKey="progress" domain={[0, 100]} unit="%"/>
@@ -217,7 +294,7 @@ export default function AnalyticsPage() {
                     <CardContent>
                         <ChartContainer config={roleChartConfig} className="h-96 w-full">
                             <ResponsiveContainer>
-                                <BarChart data={roleProgress} margin={{ left: 0, right: 20, bottom: 60 }}>
+                                <BarChart data={trainingData.roleProgress} margin={{ left: 0, right: 20, bottom: 60 }}>
                                     <CartesianGrid vertical={false} />
                                     <XAxis dataKey="role" type="category" tickLine={false} axisLine={false} tickMargin={10} angle={-45} textAnchor="end" interval={0} />
                                     <YAxis type="number" domain={[0, 100]} unit="%"/>
@@ -238,7 +315,7 @@ export default function AnalyticsPage() {
                 <CardContent>
                     <ChartContainer config={activityChartConfig} className="h-80 w-full">
                         <ResponsiveContainer>
-                            <LineChart data={activityChartData} margin={{ top: 20, right: 20, bottom: 5, left: 0 }}>
+                            <LineChart data={trainingData.activityChartData} margin={{ top: 20, right: 20, bottom: 5, left: 0 }}>
                                 <CartesianGrid vertical={false} />
                                 <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
                                 <YAxis />
@@ -319,7 +396,7 @@ export default function AnalyticsPage() {
                             <DropdownMenuContent align="end">
                                 <DropdownMenuLabel>Filtrar por categoría</DropdownMenuLabel>
                                 <DropdownMenuSeparator />
-                                {allCategories.map((category) => (
+                                {allCostCategories.map((category) => (
                                     <DropdownMenuCheckboxItem
                                         key={category}
                                         checked={categoryFilters[category] ?? true}
@@ -360,3 +437,5 @@ export default function AnalyticsPage() {
     </div>
   );
 }
+
+    
