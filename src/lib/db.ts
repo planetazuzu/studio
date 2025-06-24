@@ -161,18 +161,29 @@ export async function deleteUser(id: string): Promise<void> {
 
 // --- Data Access Functions ---
 
-export async function addCourse(course: Omit<Course, 'id' | 'modules' | 'status' | 'isSynced' | 'updatedAt'>) {
+export async function addCourse(course: Partial<Omit<Course, 'id' | 'status' | 'isSynced' | 'updatedAt'>>) {
   const newCourse: Course = {
-    ...course,
     id: `course_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-    modules: [], // Start with no modules, they can be added later
+    title: course.title || 'Sin Título',
+    description: course.description || '',
+    longDescription: course.longDescription || '',
+    instructor: course.instructor || 'Por definir',
+    duration: course.duration || 'Por definir',
+    modality: course.modality || 'Online',
+    image: course.image || 'https://placehold.co/600x400.png',
+    aiHint: course.aiHint || '',
+    modules: course.modules || [],
     status: 'draft',
     mandatoryForRoles: course.mandatoryForRoles || [],
     isSynced: false,
     updatedAt: new Date().toISOString(),
+    ...(course.startDate && { startDate: course.startDate }),
+    ...(course.endDate && { endDate: course.endDate }),
   };
+  
   return await db.courses.add(newCourse);
 }
+
 
 export async function getAllCourses(): Promise<Course[]> {
   return await db.courses.toArray();
