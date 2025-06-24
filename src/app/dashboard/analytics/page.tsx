@@ -1,6 +1,7 @@
 
 'use client';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, XAxis, YAxis } from 'recharts';
@@ -141,6 +142,19 @@ const activityChartConfig = {
 export default function AnalyticsPage() {
   const { user } = useAuth();
   const router = useRouter();
+
+  // --- State and handlers for cost filters ---
+  const allCategories = [...new Set(costs.map((cost) => cost.category))];
+  const [categoryFilters, setCategoryFilters] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(allCategories.map((cat) => [cat, true]))
+  );
+
+  const handleCategoryFilterChange = (category: string, checked: boolean) => {
+    setCategoryFilters((prev) => ({ ...prev, [category]: checked }));
+  };
+  
+  const filteredCosts = costs.filter((cost) => categoryFilters[cost.category]);
+  // ---
 
   if (!user) return null;
 
@@ -305,10 +319,15 @@ export default function AnalyticsPage() {
                             <DropdownMenuContent align="end">
                                 <DropdownMenuLabel>Filtrar por categoría</DropdownMenuLabel>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuCheckboxItem checked>Formadores</DropdownMenuCheckboxItem>
-                                <DropdownMenuCheckboxItem>Plataforma</DropdownMenuCheckboxItem>
-                                <DropdownMenuCheckboxItem>Equipamiento</DropdownMenuCheckboxItem>
-                                <DropdownMenuCheckboxItem>Logística</DropdownMenuCheckboxItem>
+                                {allCategories.map((category) => (
+                                    <DropdownMenuCheckboxItem
+                                        key={category}
+                                        checked={categoryFilters[category] ?? true}
+                                        onCheckedChange={(checked) => handleCategoryFilterChange(category, !!checked)}
+                                    >
+                                        {category}
+                                    </DropdownMenuCheckboxItem>
+                                ))}
                             </DropdownMenuContent>
                         </DropdownMenu>
                     </div>
@@ -324,7 +343,7 @@ export default function AnalyticsPage() {
                     </TableRow>
                     </TableHeader>
                     <TableBody>
-                    {costs.map((cost) => (
+                    {filteredCosts.map((cost) => (
                         <TableRow key={cost.id}>
                         <TableCell className="font-medium">{cost.item}</TableCell>
                         <TableCell>{cost.category}</TableCell>
