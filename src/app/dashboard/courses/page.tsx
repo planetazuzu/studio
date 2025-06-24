@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { PlusCircle, ListFilter, Loader2 } from 'lucide-react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { getAllCourses } from '@/lib/db';
+import { getAllCourses, getUserProgressForUser } from '@/lib/db';
 import { useAuth } from '@/contexts/auth';
 import { CourseCard } from '@/components/course-card';
 import { Button } from '@/components/ui/button';
@@ -21,8 +21,9 @@ import type { Course } from '@/lib/types';
 export default function CoursesPage() {
   const { user } = useAuth();
   
-  // Fetch courses from Dexie using useLiveQuery
   const courses = useLiveQuery(getAllCourses);
+  const userProgressData = useLiveQuery(() => user ? getUserProgressForUser(user.id) : [], [user?.id]);
+
 
   const [filters, setFilters] = useState({
     Online: true,
@@ -37,6 +38,24 @@ export default function CoursesPage() {
   const handleFilterChange = (modality: keyof typeof filters, checked: boolean) => {
     setFilters(prev => ({ ...prev, [modality]: checked }));
   };
+
+  const progressMap = useMemo(() => {
+    if (!userProgressData || !courses) return new Map<string, number>();
+
+    const courseModuleCounts = new Map(courses.map(c => [c.id, c.modules.length]));
+
+    return userProgressData.reduce((map, progress) => {
+        const totalModules = courseModuleCounts.get(progress.courseId) || 0;
+        if (totalModules > 0) {
+            const percentage = Math.round((progress.completedModules.length / totalModules) * 100);
+            map.set(progress.courseId, percentage);
+        } else {
+            map.set(progress.courseId, 0);
+        }
+        return map;
+    }, new Map<string, number>());
+
+  }, [userProgressData, courses]);
 
   // Handle loading state while Dexie initializes
   if (!courses) {
@@ -97,7 +116,12 @@ export default function CoursesPage() {
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {filteredCourses.length > 0 ? (
           filteredCourses.map((course) => (
-            <CourseCard key={course.id} course={course} canManage={canCreateCourse} />
+            <CourseCard 
+                key={course.id} 
+                course={course}
+                progress={progressMap.get(course.id) || 0}
+                canManage={canCreateCourse} 
+            />
           ))
         ) : (
           <p className="col-span-full text-center text-muted-foreground">No se encontraron cursos con los filtros seleccionados.</p>

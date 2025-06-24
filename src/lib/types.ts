@@ -32,7 +32,6 @@ export type Course = {
   modality: 'Online' | 'Presencial' | 'Mixta';
   image: string;
   aiHint: string;
-  progress: number;
   modules: Module[];
   startDate?: string; // ISO date string
   endDate?: string; // ISO date string
@@ -56,8 +55,7 @@ export type UserProgress = {
     id?: number; // auto-incremented primary key
     userId: string;
     courseId: string;
-    progress: number; // 0-100
-    status: 'not-started' | 'in-progress' | 'completed';
+    completedModules: string[]; // Array of completed module IDs
     isSynced?: boolean;
     updatedAt?: string; // ISO date string
 }

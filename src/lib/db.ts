@@ -21,6 +21,10 @@ export class AcademiaAIDB extends Dexie {
     this.version(2).stores({
       users: 'id, &email, isSynced', // Email is now a unique index
     });
+     this.version(3).stores({
+      // Remove old progress table definition if structure changes
+      userProgress: '++id, [userId+courseId], userId, courseId',
+    });
   }
 }
 
@@ -110,11 +114,10 @@ export async function deleteUser(id: string): Promise<void> {
 
 // --- Data Access Functions ---
 
-export async function addCourse(course: Omit<Course, 'id' | 'progress' | 'modules' | 'isSynced' | 'updatedAt' | 'startDate' | 'endDate'>) {
+export async function addCourse(course: Omit<Course, 'id' | 'modules' | 'isSynced' | 'updatedAt' | 'startDate' | 'endDate'>) {
   const newCourse: Course = {
     ...course,
     id: `course_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-    progress: 0,
     modules: [], // Start with no modules, they can be added later
     isSynced: false,
     updatedAt: new Date().toISOString(),
@@ -196,23 +199,36 @@ export async function getEnrolledCoursesForUser(userId: string): Promise<Course[
 }
 
 
-export async function updateUserProgress(progressUpdate: { userId: string; courseId: string; progress: number; status: UserProgress['status'] }) {
-    const { userId, courseId, progress, status } = progressUpdate;
-    
+// --- User Progress Functions ---
+
+export async function getUserProgress(userId: string, courseId: string): Promise<UserProgress | undefined> {
+    return await db.userProgress.where({ userId, courseId }).first();
+}
+
+export async function getUserProgressForUser(userId: string): Promise<UserProgress[]> {
+    return await db.userProgress.where({ userId }).toArray();
+}
+
+export async function markModuleAsCompleted(userId: string, courseId: string, moduleId: string): Promise<void> {
     const existingProgress = await db.userProgress.where({ userId, courseId }).first();
 
-    const progressData = {
-        userId,
-        courseId,
-        progress,
-        status,
-        isSynced: false,
-        updatedAt: new Date().toISOString(),
-    };
-    
-    if (existingProgress?.id) {
-        return await db.userProgress.update(existingProgress.id, progressData as UserProgress);
+    if (existingProgress) {
+        // Add moduleId to the set to avoid duplicates
+        const completed = new Set(existingProgress.completedModules);
+        completed.add(moduleId);
+        
+        await db.userProgress.update(existingProgress.id!, { 
+            completedModules: Array.from(completed),
+            updatedAt: new Date().toISOString(),
+            isSynced: false,
+        });
     } else {
-        return await db.userProgress.add(progressData as UserProgress);
+        await db.userProgress.add({
+            userId,
+            courseId,
+            completedModules: [moduleId],
+            updatedAt: new Date().toISOString(),
+            isSynced: false,
+        });
     }
 }

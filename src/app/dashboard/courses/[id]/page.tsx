@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { format } from 'date-fns';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { CheckCircle, Clock, FileText, Bot, Loader2, Sparkles, Send, PlusCircle, CheckCircle2, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { GenerateTestQuestionsOutput } from '@/ai/flows/generate-test-questions';
@@ -261,9 +262,22 @@ function CourseChat({ courseTitle, courseContent }: { courseTitle: string, cours
 export default function CourseDetailPage({ params }: { params: { id: string } }) {
   const { user } = useAuth();
   const { toast } = useToast();
-  const course = getCourseById(params.id);
+  // We use a state for the course, so we can refetch it and see updates.
+  const [course, setCourse] = useState(getCourseById(params.id));
   const [isDownloading, setIsDownloading] = useState(false);
   const certificateRef = useRef<HTMLDivElement>(null);
+  
+  const userProgress = useLiveQuery(
+    () => (user ? db.getUserProgress(user.id, params.id) : undefined),
+    [user?.id, params.id]
+  );
+  
+  const completedModules = useMemo(() => new Set(userProgress?.completedModules || []), [userProgress]);
+  const progressPercentage = useMemo(() => {
+    if (!course || course.modules.length === 0) return 0;
+    return Math.round((completedModules.size / course.modules.length) * 100);
+  }, [course, completedModules]);
+
 
   if (!course) {
     notFound();
@@ -286,6 +300,12 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
         })
     }
   }
+
+  const handleMarkModuleAsCompleted = async (moduleId: string) => {
+    if (!user) return;
+    await db.markModuleAsCompleted(user.id, course.id, moduleId);
+    // The useLiveQuery hook will automatically update the UI
+  };
   
   const handleDownloadCertificate = async () => {
       if (!certificateRef.current || !user) return;
@@ -370,15 +390,26 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
                   <CardTitle>Contenido del Curso</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {course.modules.map((module) => (
-                    <div key={module.id} className="flex items-start gap-4 p-4 rounded-lg border">
-                      <CheckCircle className="h-6 w-6 text-green-500 mt-1" />
-                      <div>
-                        <h3 className="font-semibold">{module.title}</h3>
-                        <p className="text-sm text-muted-foreground flex items-center gap-1.5"><Clock className="h-4 w-4" />{module.duration}</p>
-                      </div>
-                    </div>
-                  ))}
+                  {course.modules.map((module) => {
+                    const isCompleted = completedModules.has(module.id);
+                    return (
+                        <div key={module.id} className={cn("flex items-start gap-4 p-4 rounded-lg border", isCompleted && "bg-green-50 border-green-200")}>
+                        <CheckCircle className={cn("h-6 w-6 text-muted-foreground mt-1", isCompleted && "text-green-500")} />
+                        <div className="flex-grow">
+                            <h3 className={cn("font-semibold", isCompleted && "line-through")}>{module.title}</h3>
+                            <p className="text-sm text-muted-foreground flex items-center gap-1.5"><Clock className="h-4 w-4" />{module.duration}</p>
+                        </div>
+                        <Button 
+                            variant={isCompleted ? "ghost" : "secondary"}
+                            size="sm"
+                            onClick={() => handleMarkModuleAsCompleted(module.id)}
+                            disabled={isCompleted}
+                        >
+                            {isCompleted ? "Completado" : "Marcar como completado"}
+                        </Button>
+                        </div>
+                    );
+                  })}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -407,13 +438,13 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
                 <CardTitle>Tu Progreso</CardTitle>
             </CardHeader>
             <CardContent>
-                <Progress value={course.progress} className="h-3" />
-                <p className="text-center mt-2 text-sm text-muted-foreground">{course.progress}% completado</p>
+                <Progress value={progressPercentage} className="h-3" />
+                <p className="text-center mt-2 text-sm text-muted-foreground">{progressPercentage}% completado</p>
             </CardContent>
             <CardFooter>
               <Button 
                   className="w-full" 
-                  disabled={course.progress < 100 || isDownloading}
+                  disabled={progressPercentage < 100 || isDownloading}
                   onClick={handleDownloadCertificate}
                 >
                 {isDownloading ? (

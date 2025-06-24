@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { Activity, BookCheck, BotMessageSquare, GraduationCap, Lightbulb, Loader2, Wallet, Check, X, Inbox } from 'lucide-react';
 import { useLiveQuery } from 'dexie-react-hooks';
@@ -11,7 +11,7 @@ import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/contexts/auth';
 import * as db from '@/lib/db';
 import Image from 'next/image';
-import type { PendingEnrollmentDetails, Course } from '@/lib/types';
+import type { PendingEnrollmentDetails, Course, UserProgress } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
 function MyCourses({ user }) {
@@ -20,8 +20,28 @@ function MyCourses({ user }) {
     [user.id], 
     [] as Course[]
   );
+  
+  const userProgressData = useLiveQuery(() => db.getUserProgressForUser(user.id), [user.id]);
 
-  if (!enrolledCourses) {
+  const progressMap = useMemo(() => {
+    if (!userProgressData || !enrolledCourses) return new Map<string, number>();
+    
+    const courseModuleCounts = new Map(enrolledCourses.map(c => [c.id, c.modules.length]));
+
+    return userProgressData.reduce((map, progress) => {
+        const totalModules = courseModuleCounts.get(progress.courseId) || 0;
+        if (totalModules > 0) {
+            const percentage = Math.round((progress.completedModules.length / totalModules) * 100);
+            map.set(progress.courseId, percentage);
+        } else {
+             map.set(progress.courseId, 0);
+        }
+        return map;
+    }, new Map<string, number>());
+  }, [userProgressData, enrolledCourses]);
+
+
+  if (!enrolledCourses || !userProgressData) {
     return (
       <Card className="shadow-lg col-span-1 lg:col-span-2">
         <CardHeader>
@@ -44,19 +64,22 @@ function MyCourses({ user }) {
       <CardContent>
         {enrolledCourses.length > 0 ? (
           <ul className="space-y-4">
-            {enrolledCourses.map((course) => (
-              <li key={course.id} className="flex items-center gap-4 p-2 rounded-lg hover:bg-muted/50">
-                <Image src={course.image} alt={course.title} width={80} height={60} className="rounded-md object-cover" data-ai-hint={course.aiHint} />
-                <div className="flex-grow">
-                  <h3 className="font-semibold">{course.title}</h3>
-                  <Progress value={course.progress} className="h-2 mt-2" />
-                  <p className="text-xs text-muted-foreground mt-1">{course.progress}% completado</p>
-                </div>
-                <Button asChild variant="outline" size="sm">
-                  <Link href={`/dashboard/courses/${course.id}`}>Continuar</Link>
-                </Button>
-              </li>
-            ))}
+            {enrolledCourses.map((course) => {
+                const progress = progressMap.get(course.id) || 0;
+                return (
+                  <li key={course.id} className="flex items-center gap-4 p-2 rounded-lg hover:bg-muted/50">
+                    <Image src={course.image} alt={course.title} width={80} height={60} className="rounded-md object-cover" data-ai-hint={course.aiHint} />
+                    <div className="flex-grow">
+                      <h3 className="font-semibold">{course.title}</h3>
+                      <Progress value={progress} className="h-2 mt-2" />
+                      <p className="text-xs text-muted-foreground mt-1">{progress}% completado</p>
+                    </div>
+                    <Button asChild variant="outline" size="sm">
+                      <Link href={`/dashboard/courses/${course.id}`}>Continuar</Link>
+                    </Button>
+                  </li>
+                );
+            })}
           </ul>
         ) : (
           <div className="text-center py-8 text-muted-foreground">

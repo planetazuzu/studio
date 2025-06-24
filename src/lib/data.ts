@@ -76,7 +76,7 @@ export const users: User[] = [
     },
 ];
 
-export const courses: Course[] = [
+export const courses: Omit<Course, 'progress'>[] = [
   {
     id: 'course_1',
     title: 'Soporte Vital Básico (SVB) y DEA',
@@ -87,7 +87,6 @@ export const courses: Course[] = [
     modality: 'Presencial',
     image: 'https://placehold.co/600x400.png',
     aiHint: 'paramedic cpr',
-    progress: 85,
     startDate: new Date(new Date().setDate(new Date().getDate() + 5)).toISOString(),
     endDate: new Date(new Date().setDate(new Date().getDate() + 5)).toISOString(),
     modules: [
@@ -106,7 +105,6 @@ export const courses: Course[] = [
     modality: 'Mixta',
     image: 'https://placehold.co/600x400.png',
     aiHint: 'ambulance driving',
-    progress: 30,
     startDate: new Date(new Date().setDate(new Date().getDate() + 15)).toISOString(),
     endDate: new Date(new Date().setDate(new Date().getDate() + 16)).toISOString(),
     modules: [
@@ -125,7 +123,6 @@ export const courses: Course[] = [
     modality: 'Online',
     image: 'https://placehold.co/600x400.png',
     aiHint: 'emergency dispatcher',
-    progress: 50,
     startDate: new Date(new Date().setDate(new Date().getDate() + 10)).toISOString(),
     endDate: new Date(new Date().setDate(new Date().getDate() + 10)).toISOString(),
     modules: [
@@ -144,7 +141,6 @@ export const courses: Course[] = [
     modality: 'Online',
     image: 'https://placehold.co/600x400.png',
     aiHint: 'mental health support',
-    progress: 10,
     startDate: new Date(new Date().setDate(new Date().getDate() + 25)).toISOString(),
     modules: [
       { id: 'm4_1', title: 'Fisiología del Estrés', duration: '2 horas', content: 'Contenido sobre estrés.' },
@@ -164,4 +160,4 @@ export const costs: Cost[] = [
     { id: 'cost_7', item: 'Catering curso SVB', category: 'Logística', amount: 800, date: '2024-05-21' },
 ];
 
-export const getCourseById = (id: string) => courses.find(c => c.id === id);
+export const getCourseById = (id: string) => initialCourses.find(c => c.id === id);

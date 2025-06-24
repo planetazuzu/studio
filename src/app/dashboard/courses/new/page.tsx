@@ -39,7 +39,7 @@ export default function NewCoursePage() {
         return;
     }
 
-    const newCourseData: Omit<Course, 'id' | 'progress' | 'modules' | 'isSynced' | 'updatedAt' | 'startDate' | 'endDate'> = {
+    const newCourseData: Omit<Course, 'id' | 'modules' | 'isSynced' | 'updatedAt' | 'startDate' | 'endDate'> = {
         title,
         description,
         longDescription,

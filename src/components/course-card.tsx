@@ -30,10 +30,11 @@ import * as db from '@/lib/db';
 
 interface CourseCardProps {
   course: Course;
+  progress: number;
   canManage?: boolean;
 }
 
-export function CourseCard({ course, canManage = false }: CourseCardProps) {
+export function CourseCard({ course, progress, canManage = false }: CourseCardProps) {
   const { toast } = useToast();
 
   const handleDelete = async () => {
@@ -113,9 +114,9 @@ export function CourseCard({ course, canManage = false }: CourseCardProps) {
             <div className="w-full">
                 <div className="mb-1 flex justify-between text-xs text-muted-foreground">
                     <span>Progreso</span>
-                    <span>{course.progress}%</span>
+                    <span>{progress}%</span>
                 </div>
-                <Progress value={course.progress} aria-label={`${course.progress}% completado`} />
+                <Progress value={progress} aria-label={`${progress}% completado`} />
             </div>
           <Button asChild variant="outline" className="w-full">
             <Link href={`/dashboard/courses/${course.id}`}>Ver Curso</Link>
