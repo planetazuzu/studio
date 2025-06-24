@@ -1,5 +1,8 @@
+
 'use client';
 import { useRouter } from 'next/navigation';
+import { format, parseISO } from 'date-fns';
+import { es } from 'date-fns/locale';
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, XAxis, YAxis } from 'recharts';
 import { Download, ListFilter, CircleDollarSign, CreditCard, CalendarClock, Scale, CheckSquare, Users, Clock } from 'lucide-react';
 import {
@@ -8,7 +11,7 @@ import {
   ChartTooltip as ChartTooltipProvider,
   ChartTooltipContent,
 } from '@/components/ui/chart';
-import { costs, courses, users as allUsers, departments } from '@/lib/data';
+import { costs, courses, users as allUsers, departments, roles } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -46,19 +49,20 @@ const barChartConfig = {
 } satisfies ChartConfig;
 
 const monthlySpending = costs.reduce((acc, cost) => {
-    const month = new Date(cost.date).toLocaleString('default', { month: 'short' });
-    if (!acc[month]) {
-        acc[month] = 0;
+    const date = new Date(cost.date);
+    const monthKey = format(date, 'yyyy-MM');
+    if (!acc[monthKey]) {
+        acc[monthKey] = { amount: 0, month: format(date, 'MMM', { locale: es }) };
     }
-    acc[month] += cost.amount;
+    acc[monthKey].amount += cost.amount;
     return acc;
-}, {} as Record<string, number>);
+}, {} as Record<string, { amount: number, month: string }>);
 
 const lineChartData = Object.keys(monthlySpending)
-    .sort((a,b) => new Date(`1 ${a} 2024`) > new Date(`1 ${b} 2024`) ? 1 : -1)
-    .map(month => ({
-        month,
-        amount: monthlySpending[month]
+    .sort()
+    .map(key => ({
+        month: monthlySpending[key].month,
+        amount: monthlySpending[key].amount
     }));
 
 const lineChartConfig = {
@@ -77,7 +81,6 @@ const totalTrainingHours = courses.reduce((acc, course) => {
 }, 0);
 const activeUsers = allUsers.length;
 
-// Note: In a real app, this data would come from a database.
 const departmentProgress = departments.map(dept => ({
     department: dept,
     progress: Math.floor(Math.random() * (95 - 40 + 1) + 40)
@@ -87,6 +90,50 @@ const departmentChartConfig = {
   progress: {
     label: 'Progreso (%)',
     color: 'hsl(var(--chart-1))',
+  },
+} satisfies ChartConfig;
+
+const roleProgress = roles
+    .filter(r => r !== 'Personal Externo')
+    .map(role => ({
+        role: role.replace(' ', '\n'),
+        progress: Math.floor(Math.random() * (90 - 35 + 1) + 35)
+    }));
+
+const roleChartConfig = {
+  progress: {
+    label: 'Progreso (%)',
+    color: 'hsl(var(--chart-2))',
+  },
+} satisfies ChartConfig;
+
+
+const monthlyActivity = courses.reduce((acc, course) => {
+    if (!course.startDate) return acc;
+    const date = parseISO(course.startDate);
+    const monthKey = format(date, 'yyyy-MM');
+    if (!acc[monthKey]) {
+        acc[monthKey] = { month: format(date, 'MMM', { locale: es }), iniciados: 0, completados: 0 };
+    }
+    acc[monthKey].iniciados += 1;
+    if (course.progress > 99) {
+      acc[monthKey].completados += 1;
+    }
+    return acc;
+}, {} as Record<string, { month: string, iniciados: number, completados: number }>);
+
+const activityChartData = Object.keys(monthlyActivity)
+  .sort()
+  .map(key => monthlyActivity[key]);
+
+const activityChartConfig = {
+  iniciados: {
+    label: 'Iniciados',
+    color: 'hsl(var(--chart-1))',
+  },
+  completados: {
+    label: 'Completados',
+    color: 'hsl(var(--chart-3))',
   },
 } satisfies ChartConfig;
 
@@ -128,25 +175,68 @@ export default function AnalyticsPage() {
                 <StatCard title="Usuarios Activos" value={activeUsers.toString()} icon={Users} description="En la plataforma" />
             </div>
 
+            <div className="grid gap-8 lg:grid-cols-2">
+                <Card className="shadow-lg">
+                    <CardHeader>
+                        <CardTitle>Ranking de Progreso por Departamento</CardTitle>
+                        <CardDescription>Tasa de finalización media por departamento.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <ChartContainer config={departmentChartConfig} className="h-96 w-full">
+                            <ResponsiveContainer>
+                                <BarChart data={departmentProgress} layout="vertical" margin={{ left: 20 }}>
+                                    <CartesianGrid horizontal={false} />
+                                    <YAxis dataKey="department" type="category" tickLine={false} axisLine={false} tickMargin={10} width={150} />
+                                    <XAxis type="number" dataKey="progress" domain={[0, 100]} unit="%"/>
+                                    <ChartTooltipProvider cursor={false} content={<ChartTooltipContent indicator="dot" />} />
+                                    <Bar dataKey="progress" fill="var(--color-progress)" radius={4} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </ChartContainer>
+                    </CardContent>
+                </Card>
+                <Card className="shadow-lg">
+                    <CardHeader>
+                        <CardTitle>Ranking de Progreso por Rol</CardTitle>
+                        <CardDescription>Tasa de finalización media de los usuarios por rol.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <ChartContainer config={roleChartConfig} className="h-96 w-full">
+                            <ResponsiveContainer>
+                                <BarChart data={roleProgress} margin={{ left: 0, right: 20, bottom: 60 }}>
+                                    <CartesianGrid vertical={false} />
+                                    <XAxis dataKey="role" type="category" tickLine={false} axisLine={false} tickMargin={10} angle={-45} textAnchor="end" interval={0} />
+                                    <YAxis type="number" domain={[0, 100]} unit="%"/>
+                                    <ChartTooltipProvider cursor={false} content={<ChartTooltipContent indicator="dot" />} />
+                                    <Bar dataKey="progress" fill="var(--color-progress)" radius={4} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </ChartContainer>
+                    </CardContent>
+                </Card>
+            </div>
+
             <Card className="shadow-lg">
-            <CardHeader>
-                <CardTitle>Progreso por Departamento</CardTitle>
-                <CardDescription>Tasa de finalización media de los cursos por departamento.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <ChartContainer config={departmentChartConfig} className="h-96 w-full">
-                <ResponsiveContainer>
-                    <BarChart data={departmentProgress} layout="vertical" margin={{ left: 50 }}>
-                        <CartesianGrid horizontal={false} />
-                        <YAxis dataKey="department" type="category" tickLine={false} axisLine={false} tickMargin={10} width={150} />
-                        <XAxis type="number" dataKey="progress" domain={[0, 100]} unit="%"/>
-                        <ChartTooltipProvider cursor={false} content={<ChartTooltipContent indicator="dot" />} />
-                        <Bar dataKey="progress" fill="var(--color-progress)" radius={4} />
-                    </BarChart>
-                </ResponsiveContainer>
-                </ChartContainer>
-            </CardContent>
+                <CardHeader>
+                    <CardTitle>Histograma de Actividad Formativa</CardTitle>
+                    <CardDescription>Cursos iniciados y completados mensualmente.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <ChartContainer config={activityChartConfig} className="h-80 w-full">
+                        <ResponsiveContainer>
+                            <LineChart data={activityChartData} margin={{ top: 20, right: 20, bottom: 5, left: 0 }}>
+                                <CartesianGrid vertical={false} />
+                                <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
+                                <YAxis />
+                                <ChartTooltipProvider content={<ChartTooltipContent />} />
+                                <Line name="Iniciados" dataKey="iniciados" type="monotone" stroke="var(--color-iniciados)" strokeWidth={2} dot={{ fill: "var(--color-iniciados)" }} activeDot={{ r: 8 }} />
+                                <Line name="Completados" dataKey="completados" type="monotone" stroke="var(--color-completados)" strokeWidth={2} dot={{ fill: "var(--color-completados)" }} activeDot={{ r: 8 }} />
+                            </LineChart>
+                        </ResponsiveContainer>
+                    </ChartContainer>
+                </CardContent>
             </Card>
+
         </TabsContent>
 
         <TabsContent value="costs" className="mt-6 space-y-8">
