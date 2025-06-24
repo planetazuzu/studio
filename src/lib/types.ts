@@ -109,3 +109,21 @@ export type Notification = {
   isSynced?: boolean;
   updatedAt?: string; // ISO date string
 };
+
+export type ResourceType = 'pdf' | 'video' | 'link' | 'document';
+
+export type Resource = {
+  id?: number;
+  name: string;
+  type: ResourceType;
+  url: string; // For links, this is the URL. For files, it will be a data URI.
+  uploadedAt: string; // ISO date string
+  isSynced?: boolean;
+  updatedAt?: string; // ISO date string
+};
+
+export type CourseResource = {
+    id?: number;
+    courseId: string;
+    resourceId: number;
+}

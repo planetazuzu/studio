@@ -4,10 +4,11 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, PlusCircle, Edit, Trash2 } from 'lucide-react';
+import { ArrowLeft, Loader2, PlusCircle, Edit, Trash2, Link2, X } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useLiveQuery } from 'dexie-react-hooks';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,7 +21,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogC
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useToast } from "@/hooks/use-toast";
 import * as db from '@/lib/db';
-import type { Course, Module } from '@/lib/types';
+import type { Course, Module, Resource } from '@/lib/types';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const courseFormSchema = z.object({
   title: z.string().min(2, { message: "El título debe tener al menos 2 caracteres." }),
@@ -97,6 +99,74 @@ function ModuleDialog({
   );
 }
 
+// --- Associate Resource Dialog ---
+function AssociateResourceDialog({
+  open,
+  onOpenChange,
+  courseId,
+  associatedResourceIds,
+  onAssociationChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  courseId: string;
+  associatedResourceIds: number[];
+  onAssociationChange: () => void;
+}) {
+    const allResources = useLiveQuery(() => db.getAllResources(), []);
+    const [selected, setSelected] = useState<Record<number, boolean>>({});
+
+    useEffect(() => {
+        const initialSelection = associatedResourceIds.reduce((acc, id) => {
+            acc[id] = true;
+            return acc;
+        }, {} as Record<number, boolean>);
+        setSelected(initialSelection);
+    }, [associatedResourceIds]);
+    
+    const handleSave = async () => {
+        if (!allResources) return;
+        for (const resource of allResources) {
+            const isAssociated = associatedResourceIds.includes(resource.id!);
+            const isSelected = selected[resource.id!];
+            
+            if(isSelected && !isAssociated) {
+                await db.associateResourceWithCourse(courseId, resource.id!);
+            } else if (!isSelected && isAssociated) {
+                await db.dissociateResourceFromCourse(courseId, resource.id!);
+            }
+        }
+        onAssociationChange();
+        onOpenChange(false);
+    }
+    
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Asociar Recursos</DialogTitle>
+        </DialogHeader>
+        <div className="py-4 space-y-4 max-h-96 overflow-y-auto">
+            {allResources?.map(resource => (
+                <div key={resource.id} className="flex items-center space-x-2">
+                    <Checkbox
+                        id={`res-${resource.id}`}
+                        checked={selected[resource.id!] ?? false}
+                        onCheckedChange={(checked) => setSelected(prev => ({...prev, [resource.id!]: !!checked}))}
+                    />
+                    <Label htmlFor={`res-${resource.id}`} className="font-normal">{resource.name}</Label>
+                </div>
+            ))}
+        </div>
+        <DialogFooter>
+          <DialogClose asChild><Button type="button" variant="outline">Cancelar</Button></DialogClose>
+          <Button onClick={handleSave}>Guardar Asociaciones</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 
 export default function EditCoursePage() {
   const router = useRouter();
@@ -105,11 +175,17 @@ export default function EditCoursePage() {
   
   const courseId = params.id as string;
   
+  // --- Modules State ---
   const [modules, setModules] = useState<Module[]>([]);
   const [modulesDirty, setModulesDirty] = useState(false);
   const [isModuleDialogOpen, setIsModuleDialogOpen] = useState(false);
   const [currentModule, setCurrentModule] = useState<Module | null>(null);
   const [moduleToDelete, setModuleToDelete] = useState<Module | null>(null);
+
+  // --- Resources State ---
+  const [isResourceDialogOpen, setIsResourceDialogOpen] = useState(false);
+  const associatedResources = useLiveQuery(() => db.getResourcesForCourse(courseId), [courseId]);
+  const associatedResourceIds = useLiveQuery(() => db.getAssociatedResourceIdsForCourse(courseId), [courseId], []);
 
   const form = useForm<CourseFormValues>({
     resolver: zodResolver(courseFormSchema),
@@ -153,7 +229,7 @@ export default function EditCoursePage() {
             title: "Curso Actualizado",
             description: "Los datos del curso han sido guardados.",
         });
-        router.push('/dashboard/courses');
+        router.push(`/dashboard/courses/${courseId}`);
     } catch (error) {
         console.error("Failed to update course", error);
         toast({
@@ -189,6 +265,11 @@ export default function EditCoursePage() {
     }
   };
 
+  const handleDissociateResource = async (resourceId: number) => {
+    await db.dissociateResourceFromCourse(courseId, resourceId);
+    toast({ title: 'Recurso desvinculado' });
+  };
+
 
   if (isLoading) {
     return (
@@ -201,83 +282,113 @@ export default function EditCoursePage() {
   return (
     <div className="space-y-8">
         <Button variant="outline" size="sm" asChild>
-            <Link href="/dashboard/courses">
+            <Link href={`/dashboard/courses/${courseId}`}>
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Volver al Catálogo
+                Volver al Curso
             </Link>
         </Button>
       
-        <div className="space-y-8">
-            <Card className="w-full max-w-3xl mx-auto">
-                <CardHeader>
-                <CardTitle>Editar Curso</CardTitle>
-                <CardDescription>Modifica la información general de la formación.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                        <FormField control={form.control} name="title" render={({ field }) => (<FormItem><FormLabel>Título del Curso</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={form.control} name="description" render={({ field }) => (<FormItem><FormLabel>Descripción Corta</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={form.control} name="longDescription" render={({ field }) => (<FormItem><FormLabel>Descripción Larga</FormLabel><FormControl><Textarea rows={5} {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <FormField control={form.control} name="instructor" render={({ field }) => (<FormItem><FormLabel>Instructor</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                            <FormField control={form.control} name="duration" render={({ field }) => (<FormItem><FormLabel>Duración</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <FormField control={form.control} name="modality" render={({ field }) => (<FormItem><FormLabel>Modalidad</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Online">Online</SelectItem><SelectItem value="Presencial">Presencial</SelectItem><SelectItem value="Mixta">Mixta</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-                            <FormField control={form.control} name="image" render={({ field }) => (<FormItem><FormLabel>URL de la Imagen</FormLabel><FormControl><Input type="url" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        </div>
-                        {/* The submit button is moved to the bottom of the page */}
-                    </form>
-                </Form>
-                </CardContent>
-            </Card>
-
-            <Card className="w-full max-w-3xl mx-auto">
-                <CardHeader>
-                    <div className="flex justify-between items-center">
-                        <div>
-                            <CardTitle>Módulos del Curso</CardTitle>
-                            <CardDescription>Añade y gestiona el contenido del curso.</CardDescription>
-                        </div>
-                        <Button variant="outline" size="sm" onClick={() => handleOpenModuleDialog(null)}>
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            Añadir Módulo
-                        </Button>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <div className="space-y-4">
-                        {modules.length > 0 ? (
-                            modules.map(module => (
-                                <div key={module.id} className="flex items-center justify-between p-4 border rounded-lg bg-muted/50">
-                                    <div>
-                                        <p className="font-semibold">{module.title}</p>
-                                        <p className="text-sm text-muted-foreground">{module.duration}</p>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <Button variant="ghost" size="icon" onClick={() => handleOpenModuleDialog(module)}>
-                                            <Edit className="h-4 w-4" />
-                                        </Button>
-                                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => setModuleToDelete(module)}>
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                </div>
-                            ))
-                        ) : (
-                            <p className="text-center text-muted-foreground py-4">Este curso todavía no tiene módulos.</p>
-                        )}
-                    </div>
-                </CardContent>
-            </Card>
-
-            <div className="flex justify-end pt-4 max-w-3xl mx-auto">
-                <Button type="button" onClick={form.handleSubmit(onSubmit)} size="lg" disabled={isSubmitting || (!isDirty && !modulesDirty)}>
-                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Guardar Cambios
-                </Button>
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+            <div className="xl:col-span-2 space-y-8">
+                <Card>
+                    <CardHeader>
+                    <CardTitle>Editar Curso</CardTitle>
+                    <CardDescription>Modifica la información general de la formación.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                    <Form {...form}>
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                            <FormField control={form.control} name="title" render={({ field }) => (<FormItem><FormLabel>Título del Curso</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={form.control} name="description" render={({ field }) => (<FormItem><FormLabel>Descripción Corta</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={form.control} name="longDescription" render={({ field }) => (<FormItem><FormLabel>Descripción Larga</FormLabel><FormControl><Textarea rows={5} {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <FormField control={form.control} name="instructor" render={({ field }) => (<FormItem><FormLabel>Instructor</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                <FormField control={form.control} name="duration" render={({ field }) => (<FormItem><FormLabel>Duración</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <FormField control={form.control} name="modality" render={({ field }) => (<FormItem><FormLabel>Modalidad</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Online">Online</SelectItem><SelectItem value="Presencial">Presencial</SelectItem><SelectItem value="Mixta">Mixta</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+                                <FormField control={form.control} name="image" render={({ field }) => (<FormItem><FormLabel>URL de la Imagen</FormLabel><FormControl><Input type="url" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            </div>
+                        </form>
+                    </Form>
+                    </CardContent>
+                </Card>
             </div>
+            
+            <div className="xl:col-span-1 space-y-8">
+                 <Card>
+                    <CardHeader>
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <CardTitle>Módulos del Curso</CardTitle>
+                                <CardDescription>Gestiona el contenido.</CardDescription>
+                            </div>
+                            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleOpenModuleDialog(null)}>
+                                <PlusCircle className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="space-y-2">
+                            {modules.length > 0 ? (
+                                modules.map(module => (
+                                    <div key={module.id} className="flex items-center justify-between p-2 pr-1 border rounded-lg bg-muted/50 text-sm">
+                                        <p className="font-medium truncate flex-grow" title={module.title}>{module.title}</p>
+                                        <div className="flex items-center gap-1 flex-shrink-0">
+                                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleOpenModuleDialog(module)}>
+                                                <Edit className="h-4 w-4" />
+                                            </Button>
+                                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setModuleToDelete(module)}>
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <p className="text-center text-muted-foreground py-4 text-sm">Este curso no tiene módulos.</p>
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <CardTitle>Recursos del Curso</CardTitle>
+                                <CardDescription>Material de apoyo.</CardDescription>
+                            </div>
+                            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setIsResourceDialogOpen(true)}>
+                                <Link2 className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="space-y-2">
+                            {associatedResources && associatedResources.length > 0 ? (
+                                associatedResources.map(resource => (
+                                    <div key={resource.id} className="flex items-center justify-between p-2 pr-1 border rounded-lg bg-muted/50 text-sm">
+                                        <p className="font-medium truncate flex-grow" title={resource.name}>{resource.name}</p>
+                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => handleDissociateResource(resource.id!)}>
+                                            <X className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                ))
+                            ) : (
+                                 <p className="text-center text-muted-foreground py-4 text-sm">No hay recursos asociados.</p>
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+            
+        </div>
+
+        <div className="flex justify-end pt-4">
+            <Button type="button" onClick={form.handleSubmit(onSubmit)} size="lg" disabled={isSubmitting || (!isDirty && !modulesDirty)}>
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Guardar Cambios
+            </Button>
         </div>
 
         <ModuleDialog
@@ -285,6 +396,14 @@ export default function EditCoursePage() {
             onOpenChange={setIsModuleDialogOpen}
             onSave={handleSaveModule}
             module={currentModule}
+        />
+        
+        <AssociateResourceDialog
+            open={isResourceDialogOpen}
+            onOpenChange={setIsResourceDialogOpen}
+            courseId={courseId}
+            associatedResourceIds={associatedResourceIds}
+            onAssociationChange={() => { /* LiveQuery will handle update */ }}
         />
         
         <AlertDialog open={!!moduleToDelete} onOpenChange={(open) => !open && setModuleToDelete(null)}>
@@ -306,4 +425,3 @@ export default function EditCoursePage() {
     </div>
   );
 }
-

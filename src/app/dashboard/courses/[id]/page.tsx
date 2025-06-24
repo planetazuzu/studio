@@ -1,13 +1,15 @@
+
 'use client';
 
 import { useState, useRef, useEffect, useMemo } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { format } from 'date-fns';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { CheckCircle, Clock, FileText, Bot, Loader2, Sparkles, Send, PlusCircle, CheckCircle2, XCircle, MessageSquare } from 'lucide-react';
+import { CheckCircle, Clock, FileText, Bot, Loader2, Sparkles, Send, PlusCircle, CheckCircle2, XCircle, MessageSquare, Book, File, Video, Link as LinkIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { GenerateTestQuestionsOutput } from '@/ai/flows/generate-test-questions';
 import { personalizedFeedback } from '@/ai/flows/feedback-personalization';
@@ -26,7 +28,7 @@ import * as db from '@/lib/db';
 import { useToast } from '@/hooks/use-toast';
 import { CertificateTemplate } from '@/components/certificate-template';
 import { Forum } from '@/components/forum';
-import type { Course } from '@/lib/types';
+import type { Course, ResourceType } from '@/lib/types';
 
 
 function TestGenerator({ courseTitle, courseContent, studentName }: { courseTitle: string; courseContent: string; studentName: string }) {
@@ -261,6 +263,54 @@ function CourseChat({ courseTitle, courseContent }: { courseTitle: string, cours
     );
 }
 
+const resourceTypeIcons: Record<ResourceType, React.ElementType> = {
+  pdf: File,
+  document: File,
+  link: LinkIcon,
+  video: Video,
+};
+
+function CourseResources({ courseId }: { courseId: string }) {
+    const resources = useLiveQuery(() => db.getResourcesForCourse(courseId), [courseId]);
+
+    if (resources === undefined) {
+        return <div className="flex justify-center items-center h-40"><Loader2 className="h-8 w-8 animate-spin" /></div>
+    }
+
+    if (resources.length === 0) {
+        return (
+            <div className="text-center py-10 text-muted-foreground">
+                <Book className="mx-auto h-12 w-12" />
+                <p className="mt-4">No hay recursos disponibles para este curso.</p>
+            </div>
+        );
+    }
+    
+    return (
+        <div className="space-y-3">
+            {resources.map(resource => {
+                const Icon = resourceTypeIcons[resource.type];
+                return (
+                    <a 
+                        key={resource.id} 
+                        href={resource.url} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        download={resource.type !== 'link' ? resource.name : undefined}
+                        className="flex items-center gap-4 p-4 rounded-lg border bg-background hover:bg-muted/50 transition-colors"
+                    >
+                        <Icon className="h-6 w-6 text-primary" />
+                        <div className="flex-grow">
+                            <h3 className="font-semibold">{resource.name}</h3>
+                            <p className="text-sm text-muted-foreground capitalize">{resource.type}</p>
+                        </div>
+                    </a>
+                )
+            })}
+        </div>
+    )
+}
+
 export default function CourseDetailPage({ params }: { params: { id: string } }) {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -414,6 +464,7 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
             <TabsList>
               <TabsTrigger value="overview">Descripción</TabsTrigger>
               <TabsTrigger value="modules">Módulos</TabsTrigger>
+              <TabsTrigger value="resources">Recursos</TabsTrigger>
               <TabsTrigger value="test">Test IA</TabsTrigger>
               <TabsTrigger value="chat">Tutor IA</TabsTrigger>
               <TabsTrigger value="forum">Foro</TabsTrigger>
@@ -459,6 +510,17 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
                             Debes estar inscrito para marcar tu progreso.
                         </div>
                     )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+             <TabsContent value="resources" className="mt-4">
+              <Card className="shadow-lg">
+                <CardHeader>
+                  <CardTitle>Recursos de Apoyo</CardTitle>
+                  <CardDescription>Materiales de estudio y enlaces de interés para el curso.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                   <CourseResources courseId={params.id} />
                 </CardContent>
               </Card>
             </TabsContent>
@@ -530,6 +592,21 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
               </Button>
             </CardFooter>
           </Card>
+          {canManage && (
+              <Card>
+                <CardHeader>
+                    <CardTitle>Acciones de Gestión</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <Button asChild className="w-full">
+                        <Link href={`/dashboard/courses/${course.id}/edit`}>
+                            <FilePenLine className="mr-2 h-4 w-4" />
+                            Editar Curso y Contenido
+                        </Link>
+                    </Button>
+                </CardContent>
+              </Card>
+          )}
         </div>
       </div>
     </div>

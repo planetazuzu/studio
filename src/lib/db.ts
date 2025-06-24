@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie';
-import type { Course, User, Enrollment, UserProgress, PendingEnrollmentDetails, ForumMessage, ForumMessageWithReplies, Notification } from './types';
+import type { Course, User, Enrollment, UserProgress, PendingEnrollmentDetails, ForumMessage, ForumMessageWithReplies, Notification, Resource, CourseResource } from './types';
 import { courses as initialCourses, users as initialUsers } from './data';
 
 const LOGGED_IN_USER_KEY = 'loggedInUserId';
@@ -11,6 +11,9 @@ export class AcademiaAIDB extends Dexie {
   userProgress!: Table<UserProgress>;
   forumMessages!: Table<ForumMessage>;
   notifications!: Table<Notification>;
+  resources!: Table<Resource>;
+  courseResources!: Table<CourseResource>;
+
 
   constructor() {
     super('AcademiaAIDB');
@@ -33,6 +36,10 @@ export class AcademiaAIDB extends Dexie {
     this.version(5).stores({
         notifications: '++id, userId, isRead, timestamp',
     });
+    this.version(6).stores({
+        resources: '++id, name',
+        courseResources: '++id, [courseId+resourceId]',
+    })
   }
 }
 
@@ -335,4 +342,50 @@ export async function markAllNotificationsAsRead(userId: string): Promise<void> 
             changes: { isRead: true, updatedAt: new Date().toISOString(), isSynced: false }
         })));
     }
+}
+
+// --- Resource Library Functions ---
+
+export async function addResource(resource: Omit<Resource, 'id' | 'isSynced' | 'updatedAt'>): Promise<number> {
+    const newResource: Resource = {
+        ...resource,
+        isSynced: false,
+        updatedAt: new Date().toISOString(),
+    };
+    return await db.resources.add(newResource);
+}
+
+export async function getAllResources(): Promise<Resource[]> {
+    return await db.resources.orderBy('name').toArray();
+}
+
+export async function deleteResource(resourceId: number): Promise<void> {
+    return db.transaction('rw', db.resources, db.courseResources, async () => {
+        await db.courseResources.where('resourceId').equals(resourceId).delete();
+        await db.resources.delete(resourceId);
+    });
+}
+
+export async function associateResourceWithCourse(courseId: string, resourceId: number): Promise<void> {
+    const existing = await db.courseResources.where({ courseId, resourceId }).first();
+    if (!existing) {
+        await db.courseResources.add({ courseId, resourceId });
+    }
+}
+
+export async function dissociateResourceFromCourse(courseId: string, resourceId: number): Promise<void> {
+    await db.courseResources.where({ courseId, resourceId }).delete();
+}
+
+export async function getResourcesForCourse(courseId: string): Promise<Resource[]> {
+    const associations = await db.courseResources.where('courseId').equals(courseId).toArray();
+    if (associations.length === 0) return [];
+
+    const resourceIds = associations.map(a => a.resourceId);
+    return await db.resources.where('id').anyOf(resourceIds).toArray();
+}
+
+export async function getAssociatedResourceIdsForCourse(courseId: string): Promise<number[]> {
+    const associations = await db.courseResources.where('courseId').equals(courseId).toArray();
+    return associations.map(a => a.resourceId);
 }
