@@ -8,7 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { PlusCircle, Trash2, Loader2, Megaphone, AlertTriangle, Info, Wrench, ChevronDown, Check as CheckIcon } from 'lucide-react';
+import { PlusCircle, Trash2, Loader2, Megaphone, AlertTriangle, Info, Wrench, ChevronDown, Check as CheckIcon, FileText } from 'lucide-react';
 import { useAuth } from '@/contexts/auth';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -50,6 +50,13 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 
 const announcementSchema = z.object({
@@ -60,6 +67,27 @@ const announcementSchema = z.object({
 });
 
 type AnnouncementFormValues = z.infer<typeof announcementSchema>;
+
+const announcementTemplates = [
+  {
+    name: 'Nuevo Curso',
+    type: 'Informativo' as const,
+    title: '¡Nuevo Curso Disponible!: [Nombre del Curso]',
+    content: "Nos complace anunciar que un nuevo curso, '[Nombre del Curso]', ya está disponible en el catálogo de formación.\n\nEste curso cubre [Breve descripción del curso].\n\nInscríbete ahora desde la sección de 'Cursos'. ¡No pierdas la oportunidad de ampliar tus competencias!",
+  },
+  {
+    name: 'Mantenimiento Programado',
+    type: 'Mantenimiento' as const,
+    title: 'Aviso de Mantenimiento Programado',
+    content: 'Se informa que la plataforma estará en mantenimiento el día [Fecha] a las [Hora]. Durante este tiempo, el acceso podría ser intermitente.\n\nAgradecemos su comprensión.',
+  },
+  {
+    name: 'Recordatorio Urgente',
+    type: 'Urgente' as const,
+    title: 'URGENTE: Recordatorio de [Asunto]',
+    content: 'Este es un recordatorio urgente sobre [Asunto]. Es imperativo que todo el personal [Acción requerida] antes del [Fecha Límite].\n\nGracias por su cooperación.',
+  }
+];
 
 
 function AddAnnouncementDialog({ open, onOpenChange }: { open: boolean, onOpenChange: (open: boolean) => void }) {
@@ -74,6 +102,12 @@ function AddAnnouncementDialog({ open, onOpenChange }: { open: boolean, onOpenCh
     });
 
     const { isSubmitting } = form.formState;
+
+    const handleSelectTemplate = (template: typeof announcementTemplates[0]) => {
+        form.setValue('title', template.title, { shouldDirty: true });
+        form.setValue('content', template.content, { shouldDirty: true });
+        form.setValue('type', template.type, { shouldDirty: true });
+    };
 
     const onSubmit = async (data: AnnouncementFormValues) => {
         try {
@@ -130,7 +164,25 @@ function AddAnnouncementDialog({ open, onOpenChange }: { open: boolean, onOpenCh
         <Dialog open={open} onOpenChange={(isOpen) => { onOpenChange(isOpen); if (!isOpen) form.reset(); }}>
             <DialogContent className="sm:max-w-[600px]">
                 <DialogHeader>
-                    <DialogTitle>Crear Nuevo Aviso</DialogTitle>
+                    <div className="flex justify-between items-center">
+                        <DialogTitle>Crear Nuevo Aviso</DialogTitle>
+                         <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="sm">
+                                    <FileText className="mr-2 h-4 w-4" />
+                                    Usar Plantilla
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                                <DropdownMenuLabel>Seleccionar Plantilla</DropdownMenuLabel>
+                                {announcementTemplates.map(template => (
+                                    <DropdownMenuItem key={template.name} onSelect={() => handleSelectTemplate(template)}>
+                                        {template.name}
+                                    </DropdownMenuItem>
+                                ))}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
                 </DialogHeader>
                 <Form {...form}>
                     <form id="announcement-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
