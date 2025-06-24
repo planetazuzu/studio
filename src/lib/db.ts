@@ -60,11 +60,12 @@ export async function getLoggedInUser(): Promise<User | null> {
 
 // --- Data Access Functions ---
 
-export async function addCourse(course: Omit<Course, 'id' | 'isSynced' | 'updatedAt' | 'progress' | 'modules'> & { modules: any[] }) {
+export async function addCourse(course: Omit<Course, 'id' | 'progress' | 'modules' | 'isSynced' | 'updatedAt' | 'startDate' | 'endDate'>) {
   const newCourse: Course = {
     ...course,
     id: `course_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
     progress: 0,
+    modules: [], // Start with no modules, they can be added later
     isSynced: false,
     updatedAt: new Date().toISOString(),
   };
