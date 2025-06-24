@@ -126,6 +126,23 @@ export async function getAllCourses(): Promise<Course[]> {
   return await db.courses.toArray();
 }
 
+export async function getCourseById(id: string): Promise<Course | undefined> {
+    return await db.courses.get(id);
+}
+
+export async function updateCourse(id: string, data: Partial<Omit<Course, 'id' | 'isSynced'>>): Promise<number> {
+    return await db.courses.update(id, { ...data, isSynced: false, updatedAt: new Date().toISOString() });
+}
+
+export async function deleteCourse(id: string): Promise<void> {
+    return db.transaction('rw', db.courses, db.enrollments, db.userProgress, async () => {
+        await db.enrollments.where('courseId').equals(id).delete();
+        await db.userProgress.where('courseId').equals(id).delete();
+        await db.courses.delete(id);
+    });
+}
+
+
 // --- Enrollment Functions ---
 
 export async function requestEnrollment(courseId: string, studentId: string): Promise<number> {
