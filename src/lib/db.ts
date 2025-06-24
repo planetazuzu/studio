@@ -18,6 +18,9 @@ export class AcademiaAIDB extends Dexie {
       enrollments: '++id, studentId, courseId, status, isSynced',
       userProgress: '++id, [userId+courseId], progress, isSynced',
     });
+    this.version(2).stores({
+      users: 'id, &email, isSynced', // Email is now a unique index
+    });
   }
 }
 
@@ -30,8 +33,11 @@ export async function populateDatabase() {
   if (userCount === 0) {
     console.log("Populating database with initial data...");
     await db.courses.bulkAdd(initialCourses.map(c => ({...c, isSynced: true})));
-    await db.users.bulkAdd(initialUsers.map(u => ({...u, isSynced: true})));
-    console.log("Database populated.");
+    try {
+        await db.users.bulkAdd(initialUsers.map(u => ({...u, isSynced: true})));
+    } catch(e) {
+        console.error("Failed to bulk add users, maybe duplicates in data.ts", e);
+    }
   }
 }
 
@@ -55,6 +61,23 @@ export async function getLoggedInUser(): Promise<User | null> {
     if (!userId) return null;
     const user = await db.users.get(userId);
     return user || null;
+}
+
+
+// --- User Management Functions ---
+export async function addUser(user: Omit<User, 'id' | 'avatar' | 'isSynced' | 'updatedAt'>): Promise<string> {
+    const newUser: User = {
+        ...user,
+        id: `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+        avatar: `https://i.pravatar.cc/150?u=user${Date.now()}`,
+        isSynced: false,
+        updatedAt: new Date().toISOString(),
+    };
+    return await db.users.add(newUser);
+}
+
+export async function getAllUsers(): Promise<User[]> {
+    return await db.users.toArray();
 }
 
 

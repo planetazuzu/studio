@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { MoreHorizontal, PlusCircle, ListFilter } from 'lucide-react';
+import Link from 'next/link';
+import { MoreHorizontal, PlusCircle, ListFilter, Loader2 } from 'lucide-react';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -24,7 +26,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { users, roles, departments } from '@/lib/data';
+import { roles, departments } from '@/lib/data';
+import * as db from '@/lib/db';
 import type { Role, Department, User } from '@/lib/types';
 import { useAuth } from '@/contexts/auth';
 
@@ -38,8 +41,10 @@ const roleBadgeVariant: Record<Role, 'default' | 'secondary' | 'outline' | 'dest
 };
 
 export default function UsersPage() {
-    const { user } = useAuth();
+    const { user: authUser } = useAuth();
     const router = useRouter();
+
+    const users = useLiveQuery(db.getAllUsers, []);
 
     const [roleFilters, setRoleFilters] = useState<Record<Role, boolean>>(() => 
         Object.fromEntries(roles.map(r => [r, true])) as Record<Role, boolean>
@@ -49,9 +54,9 @@ export default function UsersPage() {
         Object.fromEntries(departments.map(d => [d, true])) as Record<Department, boolean>
     );
     
-    if (!user) return null; // Or a loader
+    if (!authUser) return null; // Or a loader
 
-    if (!['Gestor de RRHH', 'Jefe de Formación', 'Administrador General'].includes(user.role)) {
+    if (!['Gestor de RRHH', 'Jefe de Formación', 'Administrador General'].includes(authUser.role)) {
         router.push('/dashboard'); // Or show an unauthorized message
         return null;
     }
@@ -64,7 +69,7 @@ export default function UsersPage() {
         setDepartmentFilters(prev => ({ ...prev, [department]: checked }));
     }
 
-    const filteredUsers = users.filter(u => roleFilters[u.role] && departmentFilters[u.department]);
+    const filteredUsers = users ? users.filter(u => roleFilters[u.role] && departmentFilters[u.department]) : [];
 
     return (
         <div className="space-y-8">
@@ -75,9 +80,11 @@ export default function UsersPage() {
                     Visualiza, gestiona y asigna roles a los miembros de tu organización.
                 </p>
                 </div>
-                <Button>
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Añadir Usuario
+                <Button asChild>
+                    <Link href="/dashboard/users/new">
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Añadir Usuario
+                    </Link>
                 </Button>
             </div>
             
@@ -135,55 +142,62 @@ export default function UsersPage() {
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                            <TableHead>Usuario</TableHead>
-                            <TableHead>Rol</TableHead>
-                            <TableHead>Departamento</TableHead>
-                            <TableHead>
-                                <span className="sr-only">Acciones</span>
-                            </TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {filteredUsers.map(u => (
-                                <TableRow key={u.id}>
-                                    <TableCell className="font-medium">
-                                        <div className="flex items-center gap-3">
-                                            <Avatar className="h-9 w-9">
-                                                <AvatarImage src={u.avatar} alt={u.name} />
-                                                <AvatarFallback>{u.name.slice(0, 2)}</AvatarFallback>
-                                            </Avatar>
-                                            <div className="grid gap-0.5">
-                                                <p className="font-semibold">{u.name}</p>
-                                                <p className="text-xs text-muted-foreground">{u.email}</p>
-                                            </div>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Badge variant={roleBadgeVariant[u.role]}>{u.role}</Badge>
-                                    </TableCell>
-                                    <TableCell>{u.department}</TableCell>
-                                    <TableCell>
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                        <Button aria-haspopup="true" size="icon" variant="ghost">
-                                            <MoreHorizontal className="h-4 w-4" />
-                                            <span className="sr-only">Toggle menu</span>
-                                        </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                        <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                                        <DropdownMenuItem>Editar</DropdownMenuItem>
-                                        <DropdownMenuItem>Eliminar</DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                    </TableCell>
+                    {!users ? (
+                        <div className="flex justify-center items-center h-48">
+                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                            <p className="ml-4 text-muted-foreground">Cargando usuarios...</p>
+                        </div>
+                    ) : (
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                <TableHead>Usuario</TableHead>
+                                <TableHead>Rol</TableHead>
+                                <TableHead>Departamento</TableHead>
+                                <TableHead>
+                                    <span className="sr-only">Acciones</span>
+                                </TableHead>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                            </TableHeader>
+                            <TableBody>
+                                {filteredUsers.map(u => (
+                                    <TableRow key={u.id}>
+                                        <TableCell className="font-medium">
+                                            <div className="flex items-center gap-3">
+                                                <Avatar className="h-9 w-9">
+                                                    <AvatarImage src={u.avatar} alt={u.name} />
+                                                    <AvatarFallback>{u.name.slice(0, 2)}</AvatarFallback>
+                                                </Avatar>
+                                                <div className="grid gap-0.5">
+                                                    <p className="font-semibold">{u.name}</p>
+                                                    <p className="text-xs text-muted-foreground">{u.email}</p>
+                                                </div>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Badge variant={roleBadgeVariant[u.role]}>{u.role}</Badge>
+                                        </TableCell>
+                                        <TableCell>{u.department}</TableCell>
+                                        <TableCell>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                            <Button aria-haspopup="true" size="icon" variant="ghost">
+                                                <MoreHorizontal className="h-4 w-4" />
+                                                <span className="sr-only">Toggle menu</span>
+                                            </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                            <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                                            <DropdownMenuItem>Editar</DropdownMenuItem>
+                                            <DropdownMenuItem>Eliminar</DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    )}
                 </CardContent>
             </Card>
         </div>
