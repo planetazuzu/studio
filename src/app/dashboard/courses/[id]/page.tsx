@@ -4,12 +4,12 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 import { format } from 'date-fns';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { CheckCircle, Clock, FileText, Bot, Loader2, Sparkles, Send, PlusCircle, CheckCircle2, XCircle, MessageSquare, Book, File, Video, Link as LinkIcon } from 'lucide-react';
+import { CheckCircle, Clock, FileText, Bot, Loader2, Sparkles, Send, PlusCircle, CheckCircle2, XCircle, MessageSquare, Book, File, Video, Link as LinkIcon, FilePenLine } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { GenerateTestQuestionsOutput } from '@/ai/flows/generate-test-questions';
 import { personalizedFeedback } from '@/ai/flows/feedback-personalization';
@@ -311,7 +311,10 @@ function CourseResources({ courseId }: { courseId: string }) {
     )
 }
 
-export default function CourseDetailPage({ params }: { params: { id: string } }) {
+export default function CourseDetailPage() {
+  const params = useParams<{ id: string }>();
+  const courseId = params.id;
+  
   const { user } = useAuth();
   const { toast } = useToast();
   
@@ -327,18 +330,18 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
   useEffect(() => {
     const fetchCourse = async () => {
         setLoadingCourse(true);
-        const courseData = await db.getCourseById(params.id);
+        const courseData = await db.getCourseById(courseId);
         if (courseData) {
             setCourse(courseData);
         }
         setLoadingCourse(false);
     }
     fetchCourse();
-  }, [params.id]);
+  }, [courseId]);
   
   const userProgress = useLiveQuery(
-    () => (user ? db.getUserProgress(user.id, params.id) : undefined),
-    [user?.id, params.id]
+    () => (user ? db.getUserProgress(user.id, courseId) : undefined),
+    [user?.id, courseId]
   );
   
   const completedModules = useMemo(() => new Set(userProgress?.completedModules || []), [userProgress]);
@@ -352,12 +355,12 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
     const checkEnrollment = async () => {
         setIsCheckingEnrollment(true);
         const enrolledCourses = await db.getEnrolledCoursesForUser(user.id);
-        const enrolled = enrolledCourses.some(c => c.id === params.id);
+        const enrolled = enrolledCourses.some(c => c.id === courseId);
         setIsEnrolled(enrolled);
         setIsCheckingEnrollment(false);
     }
     checkEnrollment();
-  }, [user, params.id]);
+  }, [user, courseId]);
 
 
   if (loadingCourse) {
@@ -520,7 +523,7 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
                   <CardDescription>Materiales de estudio y enlaces de interés para el curso.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                   <CourseResources courseId={params.id} />
+                   <CourseResources courseId={courseId} />
                 </CardContent>
               </Card>
             </TabsContent>
