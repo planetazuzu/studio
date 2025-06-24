@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { PlusCircle, ListFilter, Loader2 } from 'lucide-react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { getAllCourses, getUserProgressForUser } from '@/lib/db';
@@ -18,8 +19,12 @@ import {
 } from '@/components/ui/dropdown-menu';
 import type { Course } from '@/lib/types';
 
-export default function CoursesPage() {
+
+// The main component now reads search params and filters
+function CoursesPageContent() {
   const { user } = useAuth();
+  const searchParams = useSearchParams();
+  const searchQuery = searchParams.get('q') || '';
   
   const courses = useLiveQuery(getAllCourses);
   const userProgressData = useLiveQuery(() => user ? getUserProgressForUser(user.id) : [], [user?.id]);
@@ -69,7 +74,17 @@ export default function CoursesPage() {
     );
   }
 
-  const filteredCourses = courses.filter(course => filters[course.modality]);
+  const filteredCourses = useMemo(() => {
+    if (!courses) return [];
+    return courses.filter(course => 
+      filters[course.modality] &&
+      (
+        searchQuery === '' ||
+        course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        course.description.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    );
+  }, [courses, filters, searchQuery]);
 
   const allModalities: (keyof typeof filters)[] = ['Online', 'Presencial', 'Mixta'];
 
@@ -113,6 +128,12 @@ export default function CoursesPage() {
         </div>
       </div>
 
+       {searchQuery && (
+        <p className="text-muted-foreground">
+          Mostrando resultados para: <span className="font-semibold text-foreground">"{searchQuery}"</span>
+        </p>
+      )}
+
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {filteredCourses.length > 0 ? (
           filteredCourses.map((course) => (
@@ -124,9 +145,25 @@ export default function CoursesPage() {
             />
           ))
         ) : (
-          <p className="col-span-full text-center text-muted-foreground">No se encontraron cursos con los filtros seleccionados.</p>
+          <p className="col-span-full text-center text-muted-foreground">
+             {searchQuery ? `No se encontraron cursos para "${searchQuery}".` : "No se encontraron cursos con los filtros seleccionados."}
+          </p>
         )}
       </div>
     </div>
   );
+}
+
+
+export default function CoursesPage() {
+    return (
+        <Suspense fallback={<div className="flex justify-center items-center h-full">
+            <div className="text-center">
+                <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
+                <p className="mt-4 text-muted-foreground">Cargando...</p>
+            </div>
+      </div>}>
+            <CoursesPageContent />
+        </Suspense>
+    )
 }

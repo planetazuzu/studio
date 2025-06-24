@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { Bell, Search, LogOut, Circle, CheckCheck } from 'lucide-react';
 import { useLiveQuery } from 'dexie-react-hooks';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -29,6 +31,8 @@ interface DashboardHeaderProps {
 export function DashboardHeader({ title }: DashboardHeaderProps) {
   const { user, logout } = useAuth();
   const { toast } = useToast();
+  const router = useRouter();
+  const [searchQuery, setSearchQuery] = useState('');
 
   const notifications = useLiveQuery(
     () => (user ? db.getNotificationsForUser(user.id) : []),
@@ -54,6 +58,15 @@ export function DashboardHeader({ title }: DashboardHeaderProps) {
           })
       }
   }
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const params = new URLSearchParams();
+    if (searchQuery.trim()) {
+      params.set('q', searchQuery.trim());
+    }
+    router.push(`/dashboard/courses?${params.toString()}`);
+  };
   
   return (
     <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm md:px-6">
@@ -62,13 +75,15 @@ export function DashboardHeader({ title }: DashboardHeaderProps) {
         <h1 className="text-xl font-semibold md:text-2xl">{title}</h1>
       </div>
       <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
-        <form className="ml-auto flex-1 sm:flex-initial">
+        <form className="ml-auto flex-1 sm:flex-initial" onSubmit={handleSearch}>
           <div className="relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
               placeholder="Buscar cursos..."
               className="pl-8 sm:w-[300px] md:w-[200px] lg:w-[300px]"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
         </form>
