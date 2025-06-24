@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { MoreHorizontal, PlusCircle, ListFilter, Loader2, Trash2, FilePenLine } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, ListFilter, Loader2, Trash2, FilePenLine, Upload } from 'lucide-react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -114,12 +114,20 @@ export default function UsersPage() {
                     Visualiza, gestiona y asigna roles a los miembros de tu organización.
                 </p>
                 </div>
-                <Button asChild>
-                    <Link href="/dashboard/users/new">
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Añadir Usuario
-                    </Link>
-                </Button>
+                <div className="flex items-center gap-2">
+                    <Button asChild variant="outline">
+                        <Link href="/dashboard/users/bulk-import">
+                            <Upload className="mr-2 h-4 w-4" />
+                            Importar
+                        </Link>
+                    </Button>
+                    <Button asChild>
+                        <Link href="/dashboard/users/new">
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Añadir Usuario
+                        </Link>
+                    </Button>
+                </div>
             </div>
             
             <AlertDialog onOpenChange={(open) => !open && setUserToDelete(null)}>

@@ -76,6 +76,19 @@ export async function addUser(user: Omit<User, 'id' | 'avatar' | 'isSynced' | 'u
     return await db.users.add(newUser);
 }
 
+export async function bulkAddUsers(users: Omit<User, 'id' | 'avatar' | 'isSynced' | 'updatedAt'>[]): Promise<string[]> {
+    const newUsers: User[] = users.map(user => ({
+        ...user,
+        id: `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+        avatar: `https://i.pravatar.cc/150?u=user${Date.now()}${Math.random()}`,
+        isSynced: false,
+        updatedAt: new Date().toISOString(),
+    }));
+    // The 'allKeys' option returns the primary keys of all added objects.
+    // Dexie's bulkAdd is atomic, so if one fails (e.g., duplicate email), all will be rolled back.
+    return await db.users.bulkAdd(newUsers, { allKeys: true });
+}
+
 export async function getAllUsers(): Promise<User[]> {
     return await db.users.toArray();
 }
