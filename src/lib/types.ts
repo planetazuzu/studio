@@ -80,3 +80,20 @@ export type PendingEnrollmentDetails = Enrollment & {
   userName: string;
   courseTitle: string;
 };
+
+export type ForumMessage = {
+  id?: number;
+  courseId: string;
+  userId: string;
+  userName: string;
+  userAvatar: string;
+  message: string;
+  timestamp: string; // ISO date string
+  parentId: number | null; // For threading
+  isSynced?: boolean;
+  updatedAt?: string; // ISO date string
+};
+
+export type ForumMessageWithReplies = ForumMessage & {
+  replies: ForumMessageWithReplies[];
+};

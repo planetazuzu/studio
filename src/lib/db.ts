@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie';
-import type { Course, User, Enrollment, UserProgress, PendingEnrollmentDetails } from './types';
+import type { Course, User, Enrollment, UserProgress, PendingEnrollmentDetails, ForumMessage, ForumMessageWithReplies } from './types';
 import { courses as initialCourses, users as initialUsers } from './data';
 
 const LOGGED_IN_USER_KEY = 'loggedInUserId';
@@ -9,6 +9,7 @@ export class AcademiaAIDB extends Dexie {
   users!: Table<User>;
   enrollments!: Table<Enrollment>;
   userProgress!: Table<UserProgress>;
+  forumMessages!: Table<ForumMessage>;
 
   constructor() {
     super('AcademiaAIDB');
@@ -24,6 +25,9 @@ export class AcademiaAIDB extends Dexie {
      this.version(3).stores({
       // Remove old progress table definition if structure changes
       userProgress: '++id, [userId+courseId], userId, courseId',
+    });
+    this.version(4).stores({
+      forumMessages: '++id, courseId, parentId, timestamp',
     });
   }
 }
@@ -231,4 +235,54 @@ export async function markModuleAsCompleted(userId: string, courseId: string, mo
             isSynced: false,
         });
     }
+}
+
+// --- Forum Functions ---
+
+export async function addForumMessage(message: Omit<ForumMessage, 'id' | 'isSynced' | 'updatedAt'>): Promise<number> {
+    const newMessage: ForumMessage = {
+        ...message,
+        isSynced: false,
+        updatedAt: new Date().toISOString(),
+    }
+    return await db.forumMessages.add(newMessage);
+}
+
+export async function getForumMessages(courseId: string): Promise<ForumMessageWithReplies[]> {
+    const messages = await db.forumMessages.where('courseId').equals(courseId).sortBy('timestamp');
+    
+    const messageMap = new Map<number, ForumMessageWithReplies>();
+    const rootMessages: ForumMessageWithReplies[] = [];
+
+    messages.forEach(msg => {
+        messageMap.set(msg.id!, { ...msg, replies: [] });
+    });
+
+    messages.forEach(msg => {
+        if (msg.parentId && messageMap.has(msg.parentId)) {
+            messageMap.get(msg.parentId)!.replies.push(messageMap.get(msg.id!)!);
+        } else {
+            rootMessages.push(messageMap.get(msg.id!)!);
+        }
+    });
+
+    return rootMessages;
+}
+
+export async function deleteForumMessage(messageId: number): Promise<void> {
+    return db.transaction('rw', db.forumMessages, async () => {
+        const messagesToDelete: number[] = [messageId];
+        const queue: number[] = [messageId];
+
+        while (queue.length > 0) {
+            const parentId = queue.shift()!;
+            const children = await db.forumMessages.where('parentId').equals(parentId).toArray();
+            for (const child of children) {
+                messagesToDelete.push(child.id!);
+                queue.push(child.id!);
+            }
+        }
+        
+        await db.forumMessages.bulkDelete(messagesToDelete);
+    });
 }

@@ -7,13 +7,12 @@ import { format } from 'date-fns';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { CheckCircle, Clock, FileText, Bot, Loader2, Sparkles, Send, PlusCircle, CheckCircle2, XCircle } from 'lucide-react';
+import { CheckCircle, Clock, FileText, Bot, Loader2, Sparkles, Send, PlusCircle, CheckCircle2, XCircle, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { GenerateTestQuestionsOutput } from '@/ai/flows/generate-test-questions';
 import { personalizedFeedback } from '@/ai/flows/feedback-personalization';
 import { generateTestQuestions } from '@/ai/flows/generate-test-questions';
 import { courseTutor } from '@/ai/flows/course-tutor';
-import { getCourseById } from '@/lib/data';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,6 +25,9 @@ import { useAuth } from '@/contexts/auth';
 import * as db from '@/lib/db';
 import { useToast } from '@/hooks/use-toast';
 import { CertificateTemplate } from '@/components/certificate-template';
+import { Forum } from '@/components/forum';
+import type { Course } from '@/lib/types';
+
 
 function TestGenerator({ courseTitle, courseContent, studentName }: { courseTitle: string; courseContent: string; studentName: string }) {
   const [loading, setLoading] = useState(false);
@@ -262,10 +264,27 @@ function CourseChat({ courseTitle, courseContent }: { courseTitle: string, cours
 export default function CourseDetailPage({ params }: { params: { id: string } }) {
   const { user } = useAuth();
   const { toast } = useToast();
-  // We use a state for the course, so we can refetch it and see updates.
-  const [course, setCourse] = useState(getCourseById(params.id));
+  
+  const [course, setCourse] = useState<Course | null>(null);
+  const [loadingCourse, setLoadingCourse] = useState(true);
+
   const [isDownloading, setIsDownloading] = useState(false);
   const certificateRef = useRef<HTMLDivElement>(null);
+  
+  const [isEnrolled, setIsEnrolled] = useState(false);
+  const [isCheckingEnrollment, setIsCheckingEnrollment] = useState(true);
+
+  useEffect(() => {
+    const fetchCourse = async () => {
+        setLoadingCourse(true);
+        const courseData = await db.getCourseById(params.id);
+        if (courseData) {
+            setCourse(courseData);
+        }
+        setLoadingCourse(false);
+    }
+    fetchCourse();
+  }, [params.id]);
   
   const userProgress = useLiveQuery(
     () => (user ? db.getUserProgress(user.id, params.id) : undefined),
@@ -277,11 +296,35 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
     if (!course || course.modules.length === 0) return 0;
     return Math.round((completedModules.size / course.modules.length) * 100);
   }, [course, completedModules]);
+  
+  useEffect(() => {
+    if (!user) return;
+    const checkEnrollment = async () => {
+        setIsCheckingEnrollment(true);
+        const enrolledCourses = await db.getEnrolledCoursesForUser(user.id);
+        const enrolled = enrolledCourses.some(c => c.id === params.id);
+        setIsEnrolled(enrolled);
+        setIsCheckingEnrollment(false);
+    }
+    checkEnrollment();
+  }, [user, params.id]);
 
+
+  if (loadingCourse) {
+    return (
+        <div className="flex h-full items-center justify-center">
+            <Loader2 className="h-16 w-16 animate-spin" />
+        </div>
+    );
+  }
 
   if (!course) {
     notFound();
   }
+  
+  const canManage = user && (user.role === 'Administrador General' || user.role === 'Jefe de Formación' || user.role === 'Formador');
+  const canAccessForum = canManage || isEnrolled;
+
 
   const handleEnrollmentRequest = async () => {
     if (!user) return;
@@ -373,6 +416,7 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
               <TabsTrigger value="modules">Módulos</TabsTrigger>
               <TabsTrigger value="test">Test IA</TabsTrigger>
               <TabsTrigger value="chat">Tutor IA</TabsTrigger>
+              <TabsTrigger value="forum">Foro</TabsTrigger>
             </TabsList>
             <TabsContent value="overview" className="mt-4">
               <Card className="shadow-lg">
@@ -403,13 +447,18 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
                             variant={isCompleted ? "ghost" : "secondary"}
                             size="sm"
                             onClick={() => handleMarkModuleAsCompleted(module.id)}
-                            disabled={isCompleted}
+                            disabled={isCompleted || !isEnrolled}
                         >
                             {isCompleted ? "Completado" : "Marcar como completado"}
                         </Button>
                         </div>
                     );
                   })}
+                   {!isEnrolled && user && (
+                        <div className="text-center text-sm text-amber-600 bg-amber-50 p-3 rounded-lg">
+                            Debes estar inscrito para marcar tu progreso.
+                        </div>
+                    )}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -419,20 +468,45 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
             <TabsContent value="chat" className="mt-4">
               <CourseChat courseTitle={course.title} courseContent={course.longDescription} />
             </TabsContent>
+            <TabsContent value="forum" className="mt-4">
+              {isCheckingEnrollment ? (
+                  <div className="flex justify-center items-center h-64">
+                      <Loader2 className="h-8 w-8 animate-spin" />
+                  </div>
+              ) : canAccessForum && user ? (
+                  <Forum courseId={course.id} user={user} canManage={!!canManage} />
+              ) : (
+                  <Card className="shadow-lg">
+                      <CardContent className="p-8 text-center">
+                          <MessageSquare className="mx-auto h-12 w-12 text-muted-foreground" />
+                          <h3 className="mt-4 text-lg font-semibold">Acceso al Foro</h3>
+                          <p className="mt-1 text-muted-foreground">Debes estar inscrito en este curso para ver y participar en las discusiones.</p>
+                          {!isEnrolled && (
+                            <Button className="mt-6" onClick={handleEnrollmentRequest}>
+                                <PlusCircle className="mr-2 h-4 w-4" />
+                                Solicitar Inscripción
+                            </Button>
+                          )}
+                      </CardContent>
+                  </Card>
+              )}
+          </TabsContent>
           </Tabs>
         </div>
         <div className="space-y-8 lg:col-span-1">
-           <Card className="shadow-lg">
-              <CardHeader>
-                  <CardTitle>Inscripción</CardTitle>
-              </CardHeader>
-              <CardContent>
-                  <Button className="w-full" onClick={handleEnrollmentRequest}>
-                      <PlusCircle className="mr-2 h-4 w-4" />
-                      Solicitar Inscripción
-                  </Button>
-              </CardContent>
-            </Card>
+           {!isEnrolled && (
+            <Card className="shadow-lg">
+                <CardHeader>
+                    <CardTitle>Inscripción</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <Button className="w-full" onClick={handleEnrollmentRequest}>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Solicitar Inscripción
+                    </Button>
+                </CardContent>
+              </Card>
+           )}
           <Card className="shadow-lg">
             <CardHeader>
                 <CardTitle>Tu Progreso</CardTitle>
