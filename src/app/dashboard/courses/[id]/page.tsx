@@ -1,8 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
+import { format } from 'date-fns';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import { CheckCircle, Clock, FileText, Bot, Loader2, Sparkles, Send, PlusCircle, CheckCircle2, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { GenerateTestQuestionsOutput } from '@/ai/flows/generate-test-questions';
@@ -21,6 +24,7 @@ import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/auth';
 import * as db from '@/lib/db';
 import { useToast } from '@/hooks/use-toast';
+import { CertificateTemplate } from '@/components/certificate-template';
 
 function TestGenerator({ courseTitle, courseContent, studentName }: { courseTitle: string; courseContent: string; studentName: string }) {
   const [loading, setLoading] = useState(false);
@@ -258,6 +262,8 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
   const { user } = useAuth();
   const { toast } = useToast();
   const course = getCourseById(params.id);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const certificateRef = useRef<HTMLDivElement>(null);
 
   if (!course) {
     notFound();
@@ -280,9 +286,56 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
         })
     }
   }
+  
+  const handleDownloadCertificate = async () => {
+      if (!certificateRef.current || !user) return;
+      
+      setIsDownloading(true);
+      try {
+          const canvas = await html2canvas(certificateRef.current, {
+              scale: 2, // Higher scale for better quality
+              useCORS: true,
+              backgroundColor: null,
+          });
+          const imgData = canvas.toDataURL('image/png');
+          
+          const pdf = new jsPDF({
+              orientation: 'landscape',
+              unit: 'px',
+              format: [canvas.width, canvas.height]
+          });
+          
+          pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+          pdf.save(`Certificado - ${course.title}.pdf`);
+
+      } catch (error) {
+          console.error("Error generating certificate", error);
+          toast({
+              title: "Error",
+              description: "No se pudo generar el certificado.",
+              variant: "destructive",
+          })
+      } finally {
+          setIsDownloading(false);
+      }
+  }
+
 
   return (
     <div className="space-y-8">
+      {/* Hidden component for PDF generation */}
+      <div className="absolute -z-10 -left-[9999px] top-0">
+          {user && (
+            <CertificateTemplate 
+                ref={certificateRef}
+                userName={user.name}
+                courseName={course.title}
+                completionDate={format(new Date(), 'dd/MM/yyyy')}
+                instructorName={course.instructor}
+            />
+          )}
+      </div>
+
       <header className="relative h-64 w-full rounded-lg overflow-hidden">
         <Image src={course.image} alt={course.title} layout="fill" objectFit="cover" className="brightness-50" data-ai-hint={course.aiHint} />
         <div className="absolute inset-0 flex flex-col justify-end p-8 bg-gradient-to-t from-black/70 to-transparent">
@@ -358,9 +411,17 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
                 <p className="text-center mt-2 text-sm text-muted-foreground">{course.progress}% completado</p>
             </CardContent>
             <CardFooter>
-              <Button className="w-full" disabled={course.progress < 100}>
-                <FileText className="mr-2 h-4 w-4" />
-                Descargar Certificado
+              <Button 
+                  className="w-full" 
+                  disabled={course.progress < 100 || isDownloading}
+                  onClick={handleDownloadCertificate}
+                >
+                {isDownloading ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                    <FileText className="mr-2 h-4 w-4" />
+                )}
+                {isDownloading ? 'Generando...' : 'Descargar Certificado'}
               </Button>
             </CardFooter>
           </Card>
