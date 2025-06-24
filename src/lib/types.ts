@@ -97,3 +97,15 @@ export type ForumMessage = {
 export type ForumMessageWithReplies = ForumMessage & {
   replies: ForumMessageWithReplies[];
 };
+
+export type Notification = {
+  id?: number;
+  userId: string;
+  message: string;
+  type: 'enrollment_approved' | 'new_course' | 'forum_reply';
+  relatedUrl?: string;
+  isRead: boolean;
+  timestamp: string; // ISO date string
+  isSynced?: boolean;
+  updatedAt?: string; // ISO date string
+};

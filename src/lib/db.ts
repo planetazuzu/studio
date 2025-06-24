@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie';
-import type { Course, User, Enrollment, UserProgress, PendingEnrollmentDetails, ForumMessage, ForumMessageWithReplies } from './types';
+import type { Course, User, Enrollment, UserProgress, PendingEnrollmentDetails, ForumMessage, ForumMessageWithReplies, Notification } from './types';
 import { courses as initialCourses, users as initialUsers } from './data';
 
 const LOGGED_IN_USER_KEY = 'loggedInUserId';
@@ -10,6 +10,7 @@ export class AcademiaAIDB extends Dexie {
   enrollments!: Table<Enrollment>;
   userProgress!: Table<UserProgress>;
   forumMessages!: Table<ForumMessage>;
+  notifications!: Table<Notification>;
 
   constructor() {
     super('AcademiaAIDB');
@@ -28,6 +29,9 @@ export class AcademiaAIDB extends Dexie {
     });
     this.version(4).stores({
       forumMessages: '++id, courseId, parentId, timestamp',
+    });
+    this.version(5).stores({
+        notifications: '++id, userId, isRead, timestamp',
     });
   }
 }
@@ -184,8 +188,23 @@ export async function getPendingEnrollmentsWithDetails(): Promise<PendingEnrollm
   }));
 }
 
-export async function updateEnrollmentStatus(enrollmentId: number, status: 'approved' | 'rejected'): Promise<number> {
-    return await db.enrollments.update(enrollmentId, { status, updatedAt: new Date().toISOString(), isSynced: false });
+export async function updateEnrollmentStatus(enrollmentId: number, studentId: string, courseId: string, status: 'approved' | 'rejected'): Promise<number> {
+    const result = await db.enrollments.update(enrollmentId, { status, updatedAt: new Date().toISOString(), isSynced: false });
+
+    if (status === 'approved') {
+        const course = await db.courses.get(courseId);
+        if (course) {
+            await addNotification({
+                userId: studentId,
+                message: `Tu inscripción a "${course.title}" ha sido aprobada.`,
+                type: 'enrollment_approved',
+                relatedUrl: `/dashboard/courses/${courseId}`,
+                isRead: false,
+                timestamp: new Date().toISOString(),
+            });
+        }
+    }
+    return result;
 }
 
 export async function getEnrolledCoursesForUser(userId: string): Promise<Course[]> {
@@ -266,7 +285,7 @@ export async function getForumMessages(courseId: string): Promise<ForumMessageWi
         }
     });
 
-    return rootMessages;
+    return rootMessages.reverse();
 }
 
 export async function deleteForumMessage(messageId: number): Promise<void> {
@@ -285,4 +304,35 @@ export async function deleteForumMessage(messageId: number): Promise<void> {
         
         await db.forumMessages.bulkDelete(messagesToDelete);
     });
+}
+
+
+// --- Notification Functions ---
+
+export async function addNotification(notification: Omit<Notification, 'id' | 'isSynced' | 'updatedAt'>): Promise<number> {
+    const newNotification: Notification = {
+        ...notification,
+        isSynced: false,
+        updatedAt: new Date().toISOString(),
+    }
+    return await db.notifications.add(newNotification);
+}
+
+export async function getNotificationsForUser(userId: string): Promise<Notification[]> {
+    return await db.notifications.where({ userId }).reverse().sortBy('timestamp');
+}
+
+export async function markNotificationAsRead(notificationId: number): Promise<number> {
+    return await db.notifications.update(notificationId, { isRead: true, updatedAt: new Date().toISOString(), isSynced: false });
+}
+
+export async function markAllNotificationsAsRead(userId: string): Promise<void> {
+    const unreadNotifications = await db.notifications.where({ userId, isRead: false }).toArray();
+    if (unreadNotifications.length > 0) {
+        const idsToUpdate = unreadNotifications.map(n => n.id!);
+        await db.notifications.bulkUpdate(idsToUpdate.map(id => ({
+            key: id,
+            changes: { isRead: true, updatedAt: new Date().toISOString(), isSynced: false }
+        })));
+    }
 }

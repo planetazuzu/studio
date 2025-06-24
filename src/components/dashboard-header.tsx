@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { Bell, Search, LogOut } from 'lucide-react';
+import { Bell, Search, LogOut, Circle, CheckCheck } from 'lucide-react';
+import { useLiveQuery } from 'dexie-react-hooks';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -16,6 +17,10 @@ import {
 import { Input } from '@/components/ui/input';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useAuth } from '@/contexts/auth';
+import * as db from '@/lib/db';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 interface DashboardHeaderProps {
     title: string;
@@ -23,6 +28,32 @@ interface DashboardHeaderProps {
 
 export function DashboardHeader({ title }: DashboardHeaderProps) {
   const { user, logout } = useAuth();
+  const { toast } = useToast();
+
+  const notifications = useLiveQuery(
+    () => (user ? db.getNotificationsForUser(user.id) : []),
+    [user?.id],
+    []
+  );
+
+  const unreadCount = notifications?.filter(n => !n.isRead).length || 0;
+
+  const handleNotificationClick = (notificationId?: number) => {
+    if (notificationId) {
+      db.markNotificationAsRead(notificationId);
+    }
+  };
+
+  const handleMarkAllAsRead = (e: React.MouseEvent) => {
+      e.preventDefault();
+      if(user) {
+          db.markAllNotificationsAsRead(user.id);
+          toast({
+              title: "Notificaciones leídas",
+              description: "Todas las notificaciones han sido marcadas como leídas.",
+          })
+      }
+  }
   
   return (
     <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm md:px-6">
@@ -41,10 +72,49 @@ export function DashboardHeader({ title }: DashboardHeaderProps) {
             />
           </div>
         </form>
-        <Button variant="ghost" size="icon" className="rounded-full">
-          <Bell className="h-5 w-5" />
-          <span className="sr-only">Toggle notifications</span>
-        </Button>
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="rounded-full relative">
+                    <Bell className="h-5 w-5" />
+                    {unreadCount > 0 && (
+                        <span className="absolute top-1 right-1 flex h-2.5 w-2.5">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-destructive"></span>
+                        </span>
+                    )}
+                    <span className="sr-only">Toggle notifications</span>
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-96">
+                <DropdownMenuLabel>Notificaciones</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <ScrollArea className="h-[300px]">
+                    {notifications && notifications.length > 0 ? (
+                        notifications.map(n => (
+                            <DropdownMenuItem key={n.id} asChild className="cursor-pointer" onSelect={() => handleNotificationClick(n.id)}>
+                                <Link href={n.relatedUrl || '#'} className="flex items-start gap-3 p-2">
+                                    {!n.isRead && <Circle className="h-2 w-2 mt-1.5 fill-primary text-primary flex-shrink-0" />}
+                                    <div className={cn("flex-grow space-y-1", n.isRead ? 'pl-5 text-muted-foreground' : '')}>
+                                        <p className="text-sm leading-snug whitespace-normal">{n.message}</p>
+                                        <p className="text-xs text-muted-foreground">
+                                            {new Date(n.timestamp).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                        </p>
+                                    </div>
+                                </Link>
+                            </DropdownMenuItem>
+                        ))
+                    ) : (
+                        <p className="text-center text-sm text-muted-foreground py-4">No tienes notificaciones.</p>
+                    )}
+                </ScrollArea>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleMarkAllAsRead} disabled={unreadCount === 0}>
+                    <CheckCheck className="mr-2 h-4 w-4" />
+                    <span>Marcar todas como leídas</span>
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="secondary" size="icon" className="rounded-full">

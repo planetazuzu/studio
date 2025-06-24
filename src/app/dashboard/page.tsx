@@ -169,8 +169,8 @@ function AdminApprovalPanel() {
         fetchEnrollments();
     }, []);
     
-    const handleApproval = async (id: number, approved: boolean) => {
-        await db.updateEnrollmentStatus(id, approved ? 'approved' : 'rejected');
+    const handleApproval = async (id: number, studentId: string, courseId: string, approved: boolean) => {
+        await db.updateEnrollmentStatus(id, studentId, courseId, approved ? 'approved' : 'rejected');
         toast({
             title: `Solicitud ${approved ? 'aprobada' : 'rechazada'}`,
             description: "La lista de solicitudes ha sido actualizada.",
@@ -195,10 +195,10 @@ function AdminApprovalPanel() {
                                     <p className="text-primary font-semibold">{e.courseTitle}</p>
                                 </div>
                                 <div className="flex gap-2">
-                                    <Button size="icon" variant="outline" className="text-green-600 hover:text-green-600 hover:bg-green-100" onClick={() => handleApproval(e.id!, true)}>
+                                    <Button size="icon" variant="outline" className="text-green-600 hover:text-green-600 hover:bg-green-100" onClick={() => handleApproval(e.id!, e.studentId, e.courseId, true)}>
                                         <Check className="h-4 w-4" />
                                     </Button>
-                                    <Button size="icon" variant="outline" className="text-red-600 hover:text-red-600 hover:bg-red-100" onClick={() => handleApproval(e.id!, false)}>
+                                    <Button size="icon" variant="outline" className="text-red-600 hover:text-red-600 hover:bg-red-100" onClick={() => handleApproval(e.id!, e.studentId, e.courseId, false)}>
                                         <X className="h-4 w-4"/>
                                     </Button>
                                 </div>
