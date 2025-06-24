@@ -80,6 +80,20 @@ export async function getAllUsers(): Promise<User[]> {
     return await db.users.toArray();
 }
 
+export async function getUserById(id: string): Promise<User | undefined> {
+    return await db.users.get(id);
+}
+
+export async function updateUser(id: string, data: Partial<Omit<User, 'id' | 'isSynced' | 'password'>>): Promise<number> {
+    return await db.users.update(id, { ...data, updatedAt: new Date().toISOString(), isSynced: false });
+}
+
+export async function deleteUser(id: string): Promise<void> {
+    await db.users.delete(id);
+    // In a real-world app, you might want to delete related data here as well,
+    // such as enrollments and progress, within a transaction.
+}
+
 
 // --- Data Access Functions ---
 
