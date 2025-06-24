@@ -53,6 +53,9 @@ export class AcademiaAIDB extends Dexie {
     this.version(9).stores({
         courses: 'id, isSynced, *mandatoryForRoles'
     });
+    this.version(10).stores({
+        courses: 'id, status, isSynced, *mandatoryForRoles'
+    });
   }
 }
 
@@ -158,11 +161,12 @@ export async function deleteUser(id: string): Promise<void> {
 
 // --- Data Access Functions ---
 
-export async function addCourse(course: Omit<Course, 'id' | 'modules' | 'isSynced' | 'updatedAt'>) {
+export async function addCourse(course: Omit<Course, 'id' | 'modules' | 'status' | 'isSynced' | 'updatedAt'>) {
   const newCourse: Course = {
     ...course,
     id: `course_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
     modules: [], // Start with no modules, they can be added later
+    status: 'draft',
     mandatoryForRoles: course.mandatoryForRoles || [],
     isSynced: false,
     updatedAt: new Date().toISOString(),
@@ -180,6 +184,10 @@ export async function getCourseById(id: string): Promise<Course | undefined> {
 
 export async function updateCourse(id: string, data: Partial<Omit<Course, 'id' | 'isSynced'>>): Promise<number> {
     return await db.courses.update(id, { ...data, isSynced: false, updatedAt: new Date().toISOString() });
+}
+
+export async function updateCourseStatus(id: string, status: 'draft' | 'published'): Promise<number> {
+    return await db.courses.update(id, { status, isSynced: false, updatedAt: new Date().toISOString() });
 }
 
 export async function deleteCourse(id: string): Promise<void> {
@@ -253,7 +261,7 @@ export async function getEnrolledCoursesForUser(userId: string): Promise<Course[
 
   const courseIds = approvedEnrollments.map(e => e.courseId);
   
-  const enrolledCourses = await db.courses.where('id').anyOf(courseIds).toArray();
+  const enrolledCourses = await db.courses.where('id').anyOf(courseIds).and(course => course.status === 'published').toArray();
 
   return enrolledCourses;
 }

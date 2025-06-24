@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { Clock, BookOpen, MoreVertical, FilePenLine, Trash2, AlertTriangle } from 'lucide-react';
+import { Clock, BookOpen, MoreVertical, FilePenLine, Trash2, AlertTriangle, Pencil } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -76,6 +76,11 @@ export function CourseCard({ course, user, progress, canManage = false }: Course
                  {isMandatory && progress < 100 && (
                      <Badge variant="destructive" className="w-fit animate-pulse">
                         <AlertTriangle className="mr-1 h-3 w-3" /> Obligatorio
+                    </Badge>
+                )}
+                {canManage && course.status === 'draft' && (
+                     <Badge variant="outline" className="w-fit bg-background/80">
+                        <Pencil className="mr-1 h-3 w-3" /> Borrador
                     </Badge>
                 )}
              </div>

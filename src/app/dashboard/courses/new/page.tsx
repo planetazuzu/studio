@@ -68,8 +68,8 @@ export default function NewCoursePage() {
     try {
         await db.addCourse(newCourseData);
         toast({
-        title: "Curso Creado",
-        description: "El nuevo curso ha sido añadido al catálogo.",
+        title: "Borrador Guardado",
+        description: "El nuevo curso ha sido guardado como borrador.",
         });
         router.push('/dashboard/courses');
     } catch (error) {
@@ -95,7 +95,7 @@ export default function NewCoursePage() {
             <Card className="w-full max-w-3xl">
                 <CardHeader>
                     <CardTitle>Crear Nuevo Curso</CardTitle>
-                    <CardDescription>Completa el formulario para añadir una nueva formación al catálogo.</CardDescription>
+                    <CardDescription>Completa el formulario para añadir una nueva formación al catálogo. Se guardará como borrador.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Form {...form}>
@@ -174,7 +174,7 @@ export default function NewCoursePage() {
                             <div className="flex justify-end pt-4">
                                 <Button type="submit" size="lg" disabled={isSubmitting}>
                                     {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Guardar Curso
+                                    Guardar Borrador
                                 </Button>
                             </div>
                         </form>

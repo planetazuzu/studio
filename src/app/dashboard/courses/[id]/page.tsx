@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound, useParams } from 'next/navigation';
@@ -9,7 +9,7 @@ import { format } from 'date-fns';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { CheckCircle, Clock, FileText, Bot, Loader2, Sparkles, Send, PlusCircle, CheckCircle2, XCircle, MessageSquare, Book, File, Video, Link as LinkIcon, FilePenLine, AlertTriangle } from 'lucide-react';
+import { CheckCircle, Clock, FileText, Bot, Loader2, Sparkles, Send, PlusCircle, CheckCircle2, XCircle, MessageSquare, Book, File, Video, Link as LinkIcon, FilePenLine, AlertTriangle, Pencil, Rocket, EyeOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { GenerateTestQuestionsOutput } from '@/ai/flows/generate-test-questions';
 import { personalizedFeedback } from '@/ai/flows/feedback-personalization';
@@ -17,6 +17,7 @@ import { generateTestQuestions } from '@/ai/flows/generate-test-questions';
 import { courseTutor } from '@/ai/flows/course-tutor';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -322,22 +323,24 @@ export default function CourseDetailPage() {
   const [loadingCourse, setLoadingCourse] = useState(true);
 
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
   const certificateRef = useRef<HTMLDivElement>(null);
   
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [isCheckingEnrollment, setIsCheckingEnrollment] = useState(true);
 
-  useEffect(() => {
-    const fetchCourse = async () => {
+  const fetchCourse = useCallback(async () => {
         setLoadingCourse(true);
         const courseData = await db.getCourseById(courseId);
         if (courseData) {
             setCourse(courseData);
         }
         setLoadingCourse(false);
-    }
+    }, [courseId]);
+
+  useEffect(() => {
     fetchCourse();
-  }, [courseId]);
+  }, [fetchCourse]);
   
   const userProgress = useLiveQuery(
     () => (user ? db.getUserProgress(user.id, courseId) : undefined),
@@ -404,6 +407,26 @@ export default function CourseDetailPage() {
     // The useLiveQuery hook will automatically update the UI
   };
   
+  const handleTogglePublishStatus = async () => {
+    if (!canManage) return;
+
+    setIsPublishing(true);
+    const newStatus = course.status === 'draft' ? 'published' : 'draft';
+    try {
+        await db.updateCourseStatus(course.id, newStatus);
+        toast({
+            title: `Curso ${newStatus === 'published' ? 'publicado' : 'ocultado'}`,
+            description: `El curso ahora es ${newStatus === 'published' ? 'visible para los usuarios' : 'un borrador'}.`,
+        });
+        await fetchCourse(); // Re-fetch course data to update UI
+    } catch (error) {
+        console.error(`Failed to ${newStatus} course`, error);
+        toast({ title: "Error", description: "No se pudo actualizar el estado del curso.", variant: "destructive" });
+    } finally {
+        setIsPublishing(false);
+    }
+  }
+
   const handleDownloadCertificate = async () => {
       if (!certificateRef.current || !user) return;
       
@@ -452,6 +475,16 @@ export default function CourseDetailPage() {
             />
           )}
       </div>
+
+       {canManage && course.status === 'draft' && (
+            <Alert variant="destructive" className="bg-yellow-50 border-yellow-300 text-yellow-800">
+                <Pencil className="h-4 w-4 !text-yellow-800" />
+                <AlertTitle>Modo Borrador</AlertTitle>
+                <AlertDescription>
+                    Este curso es un borrador y no es visible para los usuarios normales. Publícalo para que esté disponible en el catálogo.
+                </AlertDescription>
+            </Alert>
+        )}
 
       <header className="relative h-64 w-full rounded-lg overflow-hidden">
         <Image src={course.image} alt={course.title} layout="fill" objectFit="cover" className="brightness-50" data-ai-hint={course.aiHint} />
@@ -604,12 +637,27 @@ export default function CourseDetailPage() {
                 <CardHeader>
                     <CardTitle>Acciones de Gestión</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-2">
                     <Button asChild className="w-full">
                         <Link href={`/dashboard/courses/${course.id}/edit`}>
                             <FilePenLine className="mr-2 h-4 w-4" />
                             Editar Curso y Contenido
                         </Link>
+                    </Button>
+                    <Button
+                        variant={course.status === 'draft' ? 'default' : 'secondary'}
+                        className="w-full"
+                        onClick={handleTogglePublishStatus}
+                        disabled={isPublishing}
+                    >
+                        {isPublishing ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : course.status === 'draft' ? (
+                            <Rocket className="mr-2 h-4 w-4" />
+                        ) : (
+                            <EyeOff className="mr-2 h-4 w-4" />
+                        )}
+                        {course.status === 'draft' ? 'Publicar Curso' : 'Ocultar Curso'}
                     </Button>
                 </CardContent>
               </Card>

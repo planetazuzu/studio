@@ -77,14 +77,18 @@ function CoursesPageContent() {
   const filteredCourses = useMemo(() => {
     if (!courses) return [];
     return courses.filter(course => 
+      // Visibility Check: Managers see all, others only see published
+      (canCreateCourse || course.status === 'published') &&
+      // Modality filter
       filters[course.modality] &&
+      // Search query filter
       (
         searchQuery === '' ||
         course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         course.description.toLowerCase().includes(searchQuery.toLowerCase())
       )
     );
-  }, [courses, filters, searchQuery]);
+  }, [courses, filters, searchQuery, canCreateCourse]);
 
   const allModalities: (keyof typeof filters)[] = ['Online', 'Presencial', 'Mixta'];
 
