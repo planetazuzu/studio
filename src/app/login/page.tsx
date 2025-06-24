@@ -19,6 +19,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 const demoUsers: User[] = [
     users.find(u => u.role === 'Administrador General')!,
     users.find(u => u.role === 'Jefe de Formación')!,
+    users.find(u => u.role === 'Gestor de RRHH')!,
     users.find(u => u.role === 'Formador')!,
     users.find(u => u.role === 'Trabajador' && u.department === 'Técnicos de Emergencias')!,
 ].filter(Boolean); // Filter out potential undefined if a role isn't found
