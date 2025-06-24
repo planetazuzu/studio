@@ -155,7 +155,7 @@ export async function deleteUser(id: string): Promise<void> {
 
 // --- Data Access Functions ---
 
-export async function addCourse(course: Omit<Course, 'id' | 'modules' | 'isSynced' | 'updatedAt' | 'startDate' | 'endDate'>) {
+export async function addCourse(course: Omit<Course, 'id' | 'modules' | 'isSynced' | 'updatedAt'>) {
   const newCourse: Course = {
     ...course,
     id: `course_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,

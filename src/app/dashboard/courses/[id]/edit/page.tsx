@@ -32,6 +32,8 @@ const courseFormSchema = z.object({
   duration: z.string().min(1, { message: "La duración es obligatoria." }),
   modality: z.enum(['Online', 'Presencial', 'Mixta'], { errorMap: () => ({ message: "Debes seleccionar una modalidad." }) }),
   image: z.string().url({ message: "Debe ser una URL válida." }),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
 });
 
 type CourseFormValues = z.infer<typeof courseFormSchema>;
@@ -196,7 +198,9 @@ export default function EditCoursePage() {
         instructor: '',
         duration: '',
         modality: undefined,
-        image: ''
+        image: '',
+        startDate: '',
+        endDate: '',
     }
   });
   
@@ -304,6 +308,36 @@ export default function EditCoursePage() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <FormField control={form.control} name="instructor" render={({ field }) => (<FormItem><FormLabel>Instructor</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                                 <FormField control={form.control} name="duration" render={({ field }) => (<FormItem><FormLabel>Duración</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            </div>
+                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <FormField control={form.control} name="startDate" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Fecha de Inicio</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type="datetime-local"
+                                                {...field}
+                                                value={field.value ? field.value.slice(0, 16) : ''}
+                                                onChange={(e) => field.onChange(e.target.value || undefined)}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+                                <FormField control={form.control} name="endDate" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Fecha de Fin</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type="datetime-local"
+                                                {...field}
+                                                value={field.value ? field.value.slice(0, 16) : ''}
+                                                onChange={(e) => field.onChange(e.target.value || undefined)}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <FormField control={form.control} name="modality" render={({ field }) => (<FormItem><FormLabel>Modalidad</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Online">Online</SelectItem><SelectItem value="Presencial">Presencial</SelectItem><SelectItem value="Mixta">Mixta</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />

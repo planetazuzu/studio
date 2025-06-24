@@ -25,6 +25,8 @@ const courseFormSchema = z.object({
   duration: z.string().min(1, { message: "La duración es obligatoria." }),
   modality: z.enum(['Online', 'Presencial', 'Mixta'], { errorMap: () => ({ message: "Debes seleccionar una modalidad." }) }),
   image: z.string().url({ message: "Debe ser una URL válida." }).optional().default('https://placehold.co/600x400.png'),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
 });
 
 type CourseFormValues = z.infer<typeof courseFormSchema>;
@@ -42,7 +44,9 @@ export default function NewCoursePage() {
         instructor: '',
         duration: '',
         modality: undefined,
-        image: 'https://placehold.co/600x400.png'
+        image: 'https://placehold.co/600x400.png',
+        startDate: '',
+        endDate: '',
     },
     mode: 'onChange'
   });
@@ -96,6 +100,26 @@ export default function NewCoursePage() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <FormField control={form.control} name="instructor" render={({ field }) => (<FormItem><FormLabel>Instructor</FormLabel><FormControl><Input placeholder="Ej: Dr. Alejandro Torres" {...field} /></FormControl><FormMessage /></FormItem>)} />
                                 <FormField control={form.control} name="duration" render={({ field }) => (<FormItem><FormLabel>Duración</FormLabel><FormControl><Input placeholder="Ej: 16 horas" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <FormField control={form.control} name="startDate" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Fecha de Inicio</FormLabel>
+                                        <FormControl>
+                                            <Input type="datetime-local" {...field} onChange={(e) => field.onChange(e.target.value || undefined)} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+                                <FormField control={form.control} name="endDate" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Fecha de Fin</FormLabel>
+                                        <FormControl>
+                                            <Input type="datetime-local" {...field} onChange={(e) => field.onChange(e.target.value || undefined)} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <FormField control={form.control} name="modality" render={({ field }) => (<FormItem><FormLabel>Modalidad</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selecciona una modalidad" /></SelectTrigger></FormControl><SelectContent><SelectItem value="Online">Online</SelectItem><SelectItem value="Presencial">Presencial</SelectItem><SelectItem value="Mixta">Mixta</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
