@@ -1,8 +1,10 @@
 'use client';
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { Activity, BookCheck, BotMessageSquare, GraduationCap, Lightbulb, Loader2, Wallet, Check, X, Inbox } from 'lucide-react';
+import { Activity, BookCheck, BotMessageSquare, GraduationCap, Lightbulb, Loader2, Wallet, Check, X, Inbox, Megaphone, AlertTriangle, Info, Wrench } from 'lucide-react';
 import { useLiveQuery } from 'dexie-react-hooks';
+import { formatDistanceToNow } from 'date-fns';
+import { es } from 'date-fns/locale';
 import { personalizedCourseRecommendations } from '@/ai/flows/course-suggestion';
 import { StatCard } from '@/components/stat-card';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -11,8 +13,67 @@ import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/contexts/auth';
 import * as db from '@/lib/db';
 import Image from 'next/image';
-import type { PendingEnrollmentDetails, Course, UserProgress } from '@/lib/types';
+import type { PendingEnrollmentDetails, Course, User, Announcement, AnnouncementType } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+
+
+function AnnouncementsPanel({ user }: { user: User }) {
+    const announcements = useLiveQuery(() => db.getVisibleAnnouncementsForUser(user), [user], []);
+
+    const announcementIcons: Record<AnnouncementType, React.ElementType> = {
+        'Urgente': AlertTriangle,
+        'Informativo': Info,
+        'Mantenimiento': Wrench,
+    };
+
+    const announcementColors: Record<AnnouncementType, string> = {
+        'Urgente': 'border-destructive/50 bg-destructive/5 text-destructive',
+        'Informativo': 'border-blue-500/50 bg-blue-500/5 text-blue-600',
+        'Mantenimiento': 'border-amber-500/50 bg-amber-500/5 text-amber-600',
+    };
+
+    if (!announcements) {
+        return (
+            <Card className="shadow-lg col-span-1 lg:col-span-3">
+                 <CardContent className="flex justify-center items-center h-24">
+                    <Loader2 className="mx-auto h-8 w-8 animate-spin" />
+                </CardContent>
+            </Card>
+        )
+    }
+
+    if (announcements.length === 0) {
+        return null; // Don't show the panel if there are no announcements
+    }
+
+    return (
+        <Card className="shadow-lg col-span-1 lg:col-span-3">
+            <CardHeader>
+                <CardTitle>Avisos Importantes</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                {announcements.slice(0, 3).map(announcement => {
+                    const Icon = announcementIcons[announcement.type];
+                    return (
+                        <div key={announcement.id} className={cn("flex items-start gap-4 rounded-lg border p-4", announcementColors[announcement.type])}>
+                            <Icon className="h-6 w-6 mt-1 flex-shrink-0" />
+                            <div className="flex-grow">
+                                <h3 className="font-bold">{announcement.title}</h3>
+                                <p className="text-sm mt-1">{announcement.content}</p>
+                                <p className="text-xs text-muted-foreground mt-2">
+                                    {formatDistanceToNow(new Date(announcement.timestamp), { addSuffix: true, locale: es })}
+                                </p>
+                            </div>
+                            <Badge variant={announcement.type === 'Urgente' ? 'destructive' : 'secondary'} className="h-fit">{announcement.type}</Badge>
+                        </div>
+                    )
+                })}
+            </CardContent>
+        </Card>
+    );
+}
 
 function MyCourses({ user }) {
   const enrolledCourses = useLiveQuery(
@@ -235,6 +296,9 @@ export default function DashboardPage() {
         <StatCard title="Certificados Obtenidos" value="8" icon={GraduationCap} description="Pendientes: 2" />
         {canViewCosts && <StatCard title="Coste Total" value="8,950€" icon={Wallet} description="Presupuesto: 15,000€" />}
       </div>
+       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+         <AnnouncementsPanel user={user} />
+       </div>
       <div className="grid gap-4 lg:grid-cols-3">
         {isAdmin && <AdminApprovalPanel />}
         {!isAdmin && <MyCourses user={user} />}

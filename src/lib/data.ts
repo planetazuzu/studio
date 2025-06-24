@@ -17,6 +17,8 @@ export const departments: Department[] = [
     'Logística',
 ];
 
+export const announcementChannels: string[] = ['Todos', ...roles, ...departments];
+
 // NOTE: The `currentUser` constant is removed. User state is now managed through AuthContext.
 
 export const users: User[] = [

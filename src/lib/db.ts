@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie';
-import type { Course, User, Enrollment, UserProgress, PendingEnrollmentDetails, ForumMessage, ForumMessageWithReplies, Notification, Resource, CourseResource } from './types';
+import type { Course, User, Enrollment, UserProgress, PendingEnrollmentDetails, ForumMessage, ForumMessageWithReplies, Notification, Resource, CourseResource, Announcement } from './types';
 import { courses as initialCourses, users as initialUsers } from './data';
 
 const LOGGED_IN_USER_KEY = 'loggedInUserId';
@@ -13,6 +13,7 @@ export class AcademiaAIDB extends Dexie {
   notifications!: Table<Notification>;
   resources!: Table<Resource>;
   courseResources!: Table<CourseResource>;
+  announcements!: Table<Announcement>;
 
 
   constructor() {
@@ -39,7 +40,10 @@ export class AcademiaAIDB extends Dexie {
     this.version(6).stores({
         resources: '++id, name',
         courseResources: '++id, [courseId+resourceId]',
-    })
+    });
+    this.version(7).stores({
+        announcements: '++id, timestamp',
+    });
   }
 }
 
@@ -388,4 +392,34 @@ export async function getResourcesForCourse(courseId: string): Promise<Resource[
 export async function getAssociatedResourceIdsForCourse(courseId: string): Promise<number[]> {
     const associations = await db.courseResources.where('courseId').equals(courseId).toArray();
     return associations.map(a => a.resourceId);
+}
+
+// --- Announcement Functions ---
+
+export async function addAnnouncement(announcement: Omit<Announcement, 'id' | 'isSynced' | 'updatedAt'>): Promise<number> {
+    const newAnnouncement: Announcement = {
+        ...announcement,
+        isSynced: false,
+        updatedAt: new Date().toISOString(),
+    }
+    return await db.announcements.add(newAnnouncement);
+}
+
+export async function deleteAnnouncement(id: number): Promise<void> {
+    await db.announcements.delete(id);
+}
+
+// Gets all announcements for management view
+export async function getAllAnnouncements(): Promise<Announcement[]> {
+    return await db.announcements.reverse().sortBy('timestamp');
+}
+
+// Gets announcements relevant to a specific user
+export async function getVisibleAnnouncementsForUser(user: User): Promise<Announcement[]> {
+    const all = await db.announcements.reverse().sortBy('timestamp');
+    return all.filter(a => 
+        a.channels.includes('Todos') || 
+        a.channels.includes(user.role) || 
+        a.channels.includes(user.department)
+    );
 }

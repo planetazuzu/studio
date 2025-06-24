@@ -126,4 +126,19 @@ export type CourseResource = {
     id?: number;
     courseId: string;
     resourceId: number;
-}
+};
+
+export type AnnouncementType = 'Urgente' | 'Informativo' | 'Mantenimiento';
+
+export const announcementTypes: AnnouncementType[] = ['Urgente', 'Informativo', 'Mantenimiento'];
+
+export type Announcement = {
+  id?: number;
+  title: string;
+  content: string;
+  type: AnnouncementType;
+  channels: string[]; // Array of Role, Department names, or 'Todos'
+  timestamp: string; // ISO date string
+  isSynced?: boolean;
+  updatedAt?: string; // ISO date string
+};
