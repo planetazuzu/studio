@@ -30,6 +30,7 @@ export const users: User[] = [
         avatar: 'https://i.pravatar.cc/150?u=user1',
         role: 'Administrador General',
         department: 'Administración',
+        notificationSettings: { courseReminders: true, newCourses: true, feedbackReady: true },
     },
     {
         id: 'user_2',
@@ -39,6 +40,7 @@ export const users: User[] = [
         avatar: 'https://i.pravatar.cc/150?u=user2',
         role: 'Trabajador',
         department: 'Técnicos de Emergencias',
+        notificationSettings: { courseReminders: true, newCourses: true, feedbackReady: true },
     },
     {
         id: 'user_3',
@@ -48,6 +50,7 @@ export const users: User[] = [
         avatar: 'https://i.pravatar.cc/150?u=user3',
         role: 'Trabajador',
         department: 'Teleoperadores',
+        notificationSettings: { courseReminders: true, newCourses: true, feedbackReady: true },
     },
     {
         id: 'user_4',
@@ -57,6 +60,7 @@ export const users: User[] = [
         avatar: 'https://i.pravatar.cc/150?u=user4',
         role: 'Formador',
         department: 'Formación',
+        notificationSettings: { courseReminders: true, newCourses: true, feedbackReady: true },
     },
     {
         id: 'user_5',
@@ -66,6 +70,7 @@ export const users: User[] = [
         avatar: 'https://i.pravatar.cc/150?u=user5',
         role: 'Jefe de Formación',
         department: 'Formación',
+        notificationSettings: { courseReminders: true, newCourses: true, feedbackReady: true },
     },
     {
         id: 'user_6',
@@ -75,6 +80,7 @@ export const users: User[] = [
         avatar: 'https://i.pravatar.cc/150?u=user6',
         role: 'Gestor de RRHH',
         department: 'Administración',
+        notificationSettings: { courseReminders: true, newCourses: true, feedbackReady: false },
     },
 ];
 

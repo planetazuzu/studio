@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -12,6 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/auth';
 import { Skeleton } from '@/components/ui/skeleton';
+import * as db from '@/lib/db';
+import { Loader2 } from 'lucide-react';
 
 // Helper function to convert HEX to HSL components (string "H S% L%")
 function hexToHsl(hex: string): string {
@@ -232,7 +235,7 @@ function PermissionSettings() {
 
 export default function SettingsPage() {
     const { toast } = useToast();
-    const { user } = useAuth();
+    const { user, login } = useAuth();
     
     const [profile, setProfile] = useState<any>(null);
     const [general, setGeneral] = useState({
@@ -246,6 +249,8 @@ export default function SettingsPage() {
         newCourses: true,
         feedbackReady: false,
     });
+    
+    const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
         if (user) {
@@ -254,7 +259,12 @@ export default function SettingsPage() {
                 email: user.email,
                 avatar: user.avatar,
                 role: user.role,
-            })
+            });
+            setNotifications(user.notificationSettings || {
+                courseReminders: true,
+                newCourses: true,
+                feedbackReady: false,
+            });
         }
     }, [user]);
 
@@ -288,12 +298,48 @@ export default function SettingsPage() {
 
     const isAdmin = user.role === 'Administrador General';
 
-    const handleSaveChanges = () => {
-        console.log("Saving settings:", { profile, general, notifications });
-        toast({
-            title: "Ajustes Guardados",
-            description: "Tus cambios han sido guardados correctamente.",
-        });
+    const handleSaveChanges = async () => {
+        if (!user || !profile) return;
+
+        setIsSaving(true);
+        try {
+            const updatedData = {
+                name: profile.name,
+                email: profile.email,
+                avatar: profile.avatar,
+                role: profile.role,
+                notificationSettings: notifications,
+            };
+
+            await db.updateUser(user.id, updatedData);
+            
+            // Re-authenticate to fetch fresh user data and update the auth context
+            if (user.password) {
+              await login(profile.email, user.password);
+            }
+
+            toast({
+                title: "Ajustes Guardados",
+                description: "Tus cambios han sido guardados correctamente.",
+            });
+        } catch (error: any) {
+             if (error.name === 'ConstraintError') {
+                 toast({
+                    title: "Error al Guardar",
+                    description: "Ese correo electrónico ya está en uso por otro usuario.",
+                    variant: "destructive",
+                });
+             } else {
+                console.error("Saving settings failed", error);
+                toast({
+                    title: "Error",
+                    description: "No se pudieron guardar los cambios.",
+                    variant: "destructive",
+                });
+            }
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     return (
@@ -329,7 +375,10 @@ export default function SettingsPage() {
                 </Tabs>
             </div>
             <div className="flex justify-end">
-                <Button size="lg" onClick={handleSaveChanges}>Guardar Cambios</Button>
+                <Button size="lg" onClick={handleSaveChanges} disabled={isSaving}>
+                    {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Guardar Cambios
+                </Button>
             </div>
         </div>
     );

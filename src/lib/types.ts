@@ -20,6 +20,11 @@ export type User = {
   registrationDate?: string; // ISO date string
   isSynced?: boolean;
   updatedAt?: string; // ISO date string
+  notificationSettings?: {
+    courseReminders: boolean;
+    newCourses: boolean;
+    feedbackReady: boolean;
+  };
 };
 
 export type Course = {

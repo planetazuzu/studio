@@ -100,24 +100,34 @@ export async function getLoggedInUser(): Promise<User | null> {
 
 
 // --- User Management Functions ---
-export async function addUser(user: Omit<User, 'id' | 'avatar' | 'isSynced' | 'updatedAt'>): Promise<string> {
+export async function addUser(user: Omit<User, 'id' | 'avatar' | 'isSynced' | 'updatedAt' | 'notificationSettings'>): Promise<string> {
     const newUser: User = {
         ...user,
         id: `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
         avatar: `https://i.pravatar.cc/150?u=user${Date.now()}`,
         isSynced: false,
         updatedAt: new Date().toISOString(),
+        notificationSettings: {
+            courseReminders: true,
+            newCourses: true,
+            feedbackReady: true,
+        },
     };
     return await db.users.add(newUser);
 }
 
-export async function bulkAddUsers(users: Omit<User, 'id' | 'avatar' | 'isSynced' | 'updatedAt'>[]): Promise<string[]> {
+export async function bulkAddUsers(users: Omit<User, 'id' | 'avatar' | 'isSynced' | 'updatedAt' | 'notificationSettings'>[]): Promise<string[]> {
     const newUsers: User[] = users.map(user => ({
         ...user,
         id: `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
         avatar: `https://i.pravatar.cc/150?u=user${Date.now()}${Math.random()}`,
         isSynced: false,
         updatedAt: new Date().toISOString(),
+        notificationSettings: {
+            courseReminders: true,
+            newCourses: true,
+            feedbackReady: true,
+        },
     }));
     // The 'allKeys' option returns the primary keys of all added objects.
     // Dexie's bulkAdd is atomic, so if one fails (e.g., duplicate email), all will be rolled back.
