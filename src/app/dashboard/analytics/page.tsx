@@ -1,12 +1,14 @@
 
 'use client';
 import { useRouter } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useRef } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, XAxis, YAxis } from 'recharts';
-import { Download, ListFilter, CircleDollarSign, CreditCard, CalendarClock, Scale, CheckSquare, Users, Clock, Loader2 } from 'lucide-react';
+import { Download, ListFilter, CircleDollarSign, CreditCard, CalendarClock, Scale, CheckSquare, Users, Clock, Loader2, FilePenLine } from 'lucide-react';
 import {
   ChartConfig,
   ChartContainer,
@@ -34,6 +36,9 @@ import { useAuth } from '@/contexts/auth';
 export default function AnalyticsPage() {
   const { user } = useAuth();
   const router = useRouter();
+
+  const reportRef = useRef<HTMLDivElement>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   // --- Data Fetching ---
   const allCourses = useLiveQuery(() => db.getAllCourses(), []);
@@ -209,6 +214,41 @@ export default function AnalyticsPage() {
         activityChartData,
     };
   }, [allCourses, allUsers, allProgress, allEnrollments]);
+  
+  const handleExport = async () => {
+    if (!reportRef.current) return;
+    
+    setIsExporting(true);
+    try {
+      // Temporarily set a specific background color for the capture
+      const originalBg = reportRef.current.style.backgroundColor;
+      reportRef.current.style.backgroundColor = 'white';
+      
+      const canvas = await html2canvas(reportRef.current, {
+        scale: 2, // Higher scale for better quality
+        useCORS: true,
+      });
+
+      // Restore original background
+      reportRef.current.style.backgroundColor = originalBg;
+      
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'p',
+        unit: 'px',
+        format: [canvas.width, canvas.height],
+        hotfixes: ['px_scaling'],
+      });
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+      pdf.save('Informe_Analiticas.pdf');
+
+    } catch (error) {
+      console.error("Error generating PDF", error);
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
 
   if (!user) return null;
@@ -241,15 +281,15 @@ export default function AnalyticsPage() {
 
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8" ref={reportRef}>
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-3xl font-bold">Análisis y Reportes</h1>
           <p className="text-muted-foreground">Visualiza métricas clave de formación, costes y rendimiento.</p>
         </div>
-        <Button>
-          <Download className="mr-2 h-4 w-4" />
-          Exportar Informe
+        <Button onClick={handleExport} disabled={isExporting}>
+           {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+           {isExporting ? 'Exportando...' : 'Exportar Informe'}
         </Button>
       </div>
 
@@ -437,5 +477,7 @@ export default function AnalyticsPage() {
     </div>
   );
 }
+
+    
 
     
