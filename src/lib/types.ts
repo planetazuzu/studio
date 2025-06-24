@@ -38,6 +38,7 @@ export type Course = {
   image: string;
   aiHint: string;
   modules: Module[];
+  mandatoryForRoles?: Role[];
   startDate?: string; // ISO date string
   endDate?: string; // ISO date string
   category?: string;
@@ -166,4 +167,13 @@ export type ChatMessage = {
   timestamp: string; // ISO date string
   isSynced?: boolean;
   updatedAt?: string; // ISO date string
+};
+
+export type ComplianceReportData = {
+    userId: string;
+    userName: string;
+    userRole: Role;
+    mandatoryCoursesCount: number;
+    completedCoursesCount: number;
+    complianceRate: number;
 };

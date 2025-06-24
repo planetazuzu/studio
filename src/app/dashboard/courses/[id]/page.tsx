@@ -9,7 +9,7 @@ import { format } from 'date-fns';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { CheckCircle, Clock, FileText, Bot, Loader2, Sparkles, Send, PlusCircle, CheckCircle2, XCircle, MessageSquare, Book, File, Video, Link as LinkIcon, FilePenLine } from 'lucide-react';
+import { CheckCircle, Clock, FileText, Bot, Loader2, Sparkles, Send, PlusCircle, CheckCircle2, XCircle, MessageSquare, Book, File, Video, Link as LinkIcon, FilePenLine, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { GenerateTestQuestionsOutput } from '@/ai/flows/generate-test-questions';
 import { personalizedFeedback } from '@/ai/flows/feedback-personalization';
@@ -377,6 +377,7 @@ export default function CourseDetailPage() {
   
   const canManage = user && (user.role === 'Administrador General' || user.role === 'Jefe de Formación' || user.role === 'Formador');
   const canAccessForum = canManage || isEnrolled;
+  const isMandatory = user && course.mandatoryForRoles?.includes(user.role);
 
 
   const handleEnrollmentRequest = async () => {
@@ -455,7 +456,10 @@ export default function CourseDetailPage() {
       <header className="relative h-64 w-full rounded-lg overflow-hidden">
         <Image src={course.image} alt={course.title} layout="fill" objectFit="cover" className="brightness-50" data-ai-hint={course.aiHint} />
         <div className="absolute inset-0 flex flex-col justify-end p-8 bg-gradient-to-t from-black/70 to-transparent">
-          <Badge className="w-fit mb-2">{course.modality}</Badge>
+          <div className="flex items-center gap-2">
+            <Badge className="w-fit mb-2">{course.modality}</Badge>
+            {isMandatory && <Badge variant="destructive" className="w-fit mb-2"><AlertTriangle className="h-3 w-3 mr-1.5" />Obligatorio</Badge>}
+          </div>
           <h1 className="text-4xl font-bold text-white">{course.title}</h1>
           <p className="text-lg text-white/90">Impartido por {course.instructor}</p>
         </div>

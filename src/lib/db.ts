@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie';
-import type { Course, User, Enrollment, UserProgress, PendingEnrollmentDetails, ForumMessage, ForumMessageWithReplies, Notification, Resource, CourseResource, Announcement, ChatChannel, ChatMessage } from './types';
+import type { Course, User, Enrollment, UserProgress, PendingEnrollmentDetails, ForumMessage, ForumMessageWithReplies, Notification, Resource, CourseResource, Announcement, ChatChannel, ChatMessage, Role, ComplianceReportData } from './types';
 import { courses as initialCourses, users as initialUsers, initialChatChannels } from './data';
 
 const LOGGED_IN_USER_KEY = 'loggedInUserId';
@@ -49,6 +49,9 @@ export class AcademiaAIDB extends Dexie {
     this.version(8).stores({
         chatChannels: 'id, name',
         chatMessages: '++id, channelId, timestamp'
+    });
+    this.version(9).stores({
+        courses: 'id, isSynced, *mandatoryForRoles'
     });
   }
 }
@@ -160,6 +163,7 @@ export async function addCourse(course: Omit<Course, 'id' | 'modules' | 'isSynce
     ...course,
     id: `course_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
     modules: [], // Start with no modules, they can be added later
+    mandatoryForRoles: course.mandatoryForRoles || [],
     isSynced: false,
     updatedAt: new Date().toISOString(),
   };
@@ -463,4 +467,74 @@ export async function getChatMessages(channelId: string): Promise<ChatMessage[]>
 
 export async function getAllChatChannels(): Promise<ChatChannel[]> {
     return await db.chatChannels.orderBy('name').toArray();
+}
+
+
+// --- Compliance and Mandatory Courses ---
+
+export async function getIncompleteMandatoryCoursesForUser(user: User): Promise<Course[]> {
+    const mandatoryCourses = await db.courses.where('mandatoryForRoles').equals(user.role).toArray();
+    if (mandatoryCourses.length === 0) return [];
+
+    const progressData = await getUserProgressForUser(user.id);
+    const progressMap = new Map(progressData.map(p => [p.courseId, p]));
+
+    const incompleteCourses = mandatoryCourses.filter(course => {
+        const progress = progressMap.get(course.id);
+        const moduleCount = course.modules?.length || 0;
+        if (!progress || moduleCount === 0) {
+            return true; // No progress or no modules means incomplete
+        }
+        return progress.completedModules.length < moduleCount;
+    });
+
+    return incompleteCourses;
+}
+
+export async function getComplianceReportData(): Promise<ComplianceReportData[]> {
+    const allUsers = await db.users.toArray();
+    const allCourses = await db.courses.toArray();
+    const allProgress = await db.userProgress.toArray();
+
+    const progressMap = new Map<string, UserProgress>();
+    allProgress.forEach(p => {
+        const key = `${p.userId}-${p.courseId}`;
+        progressMap.set(key, p);
+    });
+
+    const report: ComplianceReportData[] = [];
+
+    for (const user of allUsers) {
+        const mandatoryCourses = allCourses.filter(c => c.mandatoryForRoles?.includes(user.role));
+        if (mandatoryCourses.length === 0) {
+            report.push({
+                userId: user.id,
+                userName: user.name,
+                userRole: user.role,
+                mandatoryCoursesCount: 0,
+                completedCoursesCount: 0,
+                complianceRate: 100, // No mandatory courses means 100% compliant
+            });
+            continue;
+        }
+
+        let completedCount = 0;
+        for (const course of mandatoryCourses) {
+            const progress = progressMap.get(`${user.id}-${course.id}`);
+            if (progress && course.modules.length > 0 && progress.completedModules.length === course.modules.length) {
+                completedCount++;
+            }
+        }
+        
+        report.push({
+            userId: user.id,
+            userName: user.name,
+            userRole: user.role,
+            mandatoryCoursesCount: mandatoryCourses.length,
+            completedCoursesCount: completedCount,
+            complianceRate: (completedCount / mandatoryCourses.length) * 100,
+        });
+    }
+
+    return report.sort((a,b) => a.complianceRate - b.complianceRate);
 }

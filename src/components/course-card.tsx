@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { Clock, BookOpen, MoreVertical, FilePenLine, Trash2 } from 'lucide-react';
+import { Clock, BookOpen, MoreVertical, FilePenLine, Trash2, AlertTriangle } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,18 +24,21 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import type { Course } from '@/lib/types';
+import type { Course, User } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import * as db from '@/lib/db';
 
 interface CourseCardProps {
   course: Course;
+  user: User;
   progress: number;
   canManage?: boolean;
 }
 
-export function CourseCard({ course, progress, canManage = false }: CourseCardProps) {
+export function CourseCard({ course, user, progress, canManage = false }: CourseCardProps) {
   const { toast } = useToast();
+
+  const isMandatory = course.mandatoryForRoles?.includes(user.role);
 
   const handleDelete = async () => {
     try {
@@ -68,7 +71,14 @@ export function CourseCard({ course, progress, canManage = false }: CourseCardPr
                 data-ai-hint={course.aiHint}
               />
             </Link>
-             <Badge className="absolute top-3 left-3">{course.modality}</Badge>
+             <div className="absolute top-3 left-3 flex flex-col gap-2">
+                 <Badge className="w-fit">{course.modality}</Badge>
+                 {isMandatory && progress < 100 && (
+                     <Badge variant="destructive" className="w-fit animate-pulse">
+                        <AlertTriangle className="mr-1 h-3 w-3" /> Obligatorio
+                    </Badge>
+                )}
+             </div>
             {canManage && (
               <div className="absolute top-2 right-2">
                 <DropdownMenu>

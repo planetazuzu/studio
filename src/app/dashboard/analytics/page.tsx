@@ -8,7 +8,7 @@ import { es } from 'date-fns/locale';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, XAxis, YAxis } from 'recharts';
-import { Download, ListFilter, CircleDollarSign, CreditCard, CalendarClock, Scale, CheckSquare, Users, Clock, Loader2, FilePenLine } from 'lucide-react';
+import { Download, ListFilter, CircleDollarSign, CreditCard, CalendarClock, Scale, CheckSquare, Users, Clock, Loader2, FilePenLine, UserCheck, ShieldCheck } from 'lucide-react';
 import {
   ChartConfig,
   ChartContainer,
@@ -31,6 +31,49 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/auth';
+import type { ComplianceReportData } from '@/lib/types';
+import { Progress } from '@/components/ui/progress';
+
+
+function ComplianceReportTable({ data }: { data: ComplianceReportData[] }) {
+    return (
+        <Card className="shadow-lg">
+            <CardHeader>
+                <CardTitle>Informe de Cumplimiento de Formación Obligatoria</CardTitle>
+                <CardDescription>Estado de la formación obligatoria para cada usuario según su rol.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Usuario</TableHead>
+                            <TableHead>Rol</TableHead>
+                            <TableHead>Cursos Obligatorios</TableHead>
+                            <TableHead>Cursos Completados</TableHead>
+                            <TableHead className="w-[200px]">Tasa de Cumplimiento</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {data.map(item => (
+                            <TableRow key={item.userId}>
+                                <TableCell className="font-medium">{item.userName}</TableCell>
+                                <TableCell>{item.userRole}</TableCell>
+                                <TableCell className="text-center">{item.mandatoryCoursesCount}</TableCell>
+                                <TableCell className="text-center">{item.completedCoursesCount}</TableCell>
+                                <TableCell>
+                                    <div className="flex items-center gap-2">
+                                        <Progress value={item.complianceRate} className="h-2" />
+                                        <span className="text-xs font-semibold">{item.complianceRate.toFixed(0)}%</span>
+                                    </div>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </CardContent>
+        </Card>
+    );
+}
 
 
 export default function AnalyticsPage() {
@@ -45,6 +88,8 @@ export default function AnalyticsPage() {
   const allUsers = useLiveQuery(() => db.getAllUsers(), []);
   const allProgress = useLiveQuery(() => db.db.userProgress.toArray(), []);
   const allEnrollments = useLiveQuery(() => db.db.enrollments.toArray(), []);
+  const complianceData = useLiveQuery(() => db.getComplianceReportData(), []);
+
 
   // --- Cost Data Calculations (unchanged) ---
   const allCostCategories = [...new Set(costs.map((cost) => cost.category))];
@@ -258,7 +303,7 @@ export default function AnalyticsPage() {
     return null;
   }
 
-  if (!trainingData) {
+  if (!trainingData || complianceData === undefined) {
       return (
         <div className="flex h-[80vh] items-center justify-center">
             <Loader2 className="h-16 w-16 animate-spin text-primary" />
@@ -294,8 +339,9 @@ export default function AnalyticsPage() {
       </div>
 
       <Tabs defaultValue="training" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 max-w-sm">
+        <TabsList className="grid w-full grid-cols-3 max-w-lg">
             <TabsTrigger value="training">Resumen de Formación</TabsTrigger>
+            <TabsTrigger value="compliance"><ShieldCheck className="mr-2 h-4 w-4" />Cumplimiento</TabsTrigger>
             <TabsTrigger value="costs">Análisis de Costes</TabsTrigger>
         </TabsList>
         
@@ -367,7 +413,10 @@ export default function AnalyticsPage() {
                     </ChartContainer>
                 </CardContent>
             </Card>
+        </TabsContent>
 
+        <TabsContent value="compliance" className="mt-6 space-y-8">
+            <ComplianceReportTable data={complianceData} />
         </TabsContent>
 
         <TabsContent value="costs" className="mt-6 space-y-8">

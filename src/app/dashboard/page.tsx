@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { Activity, BookCheck, BotMessageSquare, GraduationCap, Lightbulb, Loader2, Wallet, Check, X, Inbox, Megaphone, AlertTriangle, Info, Wrench } from 'lucide-react';
+import { Activity, BookCheck, BotMessageSquare, GraduationCap, Lightbulb, Loader2, Wallet, Check, X, Inbox, Megaphone, AlertTriangle, Info, Wrench, AlertCircle } from 'lucide-react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -73,6 +73,57 @@ function AnnouncementsPanel({ user }: { user: User }) {
             </CardContent>
         </Card>
     );
+}
+
+function MandatoryCoursesPanel({ user }: { user: User }) {
+    const incompleteCourses = useLiveQuery(() => db.getIncompleteMandatoryCoursesForUser(user), [user.id], []);
+
+    if (incompleteCourses === undefined) {
+        return (
+             <Card className="shadow-lg col-span-1 lg:col-span-3">
+                <CardHeader>
+                    <CardTitle className="text-destructive flex items-center gap-2">
+                        <AlertCircle /> Formación Obligatoria Pendiente
+                    </CardTitle>
+                </CardHeader>
+                 <CardContent className="flex justify-center items-center h-24">
+                    <Loader2 className="mx-auto h-8 w-8 animate-spin" />
+                </CardContent>
+            </Card>
+        )
+    }
+
+    if (incompleteCourses.length === 0) {
+        return null; // Don't show the panel if everything is complete
+    }
+    
+    return (
+         <Card className="shadow-lg col-span-1 lg:col-span-3 border-amber-500/50 bg-amber-500/5">
+            <CardHeader>
+                <CardTitle className="text-amber-800 flex items-center gap-2">
+                    <AlertTriangle /> Formación Obligatoria Pendiente
+                </CardTitle>
+                <CardDescription>
+                    Tienes los siguientes cursos obligatorios por completar para cumplir con los requisitos de tu rol.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                 <ul className="space-y-3">
+                    {incompleteCourses.map(course => (
+                        <li key={course.id} className="flex items-center justify-between gap-4 p-3 bg-background rounded-lg border">
+                             <div>
+                                <h3 className="font-semibold text-primary">{course.title}</h3>
+                                <p className="text-sm text-muted-foreground">Asignado a tu rol: {user.role}</p>
+                            </div>
+                            <Button asChild>
+                                <Link href={`/dashboard/courses/${course.id}`}>Ir al Curso</Link>
+                            </Button>
+                        </li>
+                    ))}
+                 </ul>
+            </CardContent>
+        </Card>
+    )
 }
 
 function MyCourses({ user }) {
@@ -297,6 +348,7 @@ export default function DashboardPage() {
         {canViewCosts && <StatCard title="Coste Total" value="8,950€" icon={Wallet} description="Presupuesto: 15,000€" />}
       </div>
        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+         <MandatoryCoursesPanel user={user} />
          <AnnouncementsPanel user={user} />
        </div>
       <div className="grid gap-4 lg:grid-cols-3">

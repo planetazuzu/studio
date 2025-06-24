@@ -140,6 +140,7 @@ function CoursesPageContent() {
             <CourseCard 
                 key={course.id} 
                 course={course}
+                user={user}
                 progress={progressMap.get(course.id) || 0}
                 canManage={canCreateCourse} 
             />

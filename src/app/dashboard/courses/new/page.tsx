@@ -3,7 +3,7 @@
 
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, ChevronDown, Loader2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -16,6 +16,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from "@/hooks/use-toast";
 import * as db from '@/lib/db';
+import { roles } from '@/lib/data';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const courseFormSchema = z.object({
   title: z.string().min(2, { message: "El título debe tener al menos 2 caracteres." }),
@@ -27,6 +31,7 @@ const courseFormSchema = z.object({
   image: z.string().url({ message: "Debe ser una URL válida." }).optional().default('https://placehold.co/600x400.png'),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
+  mandatoryForRoles: z.array(z.string()).optional(),
 });
 
 type CourseFormValues = z.infer<typeof courseFormSchema>;
@@ -47,6 +52,7 @@ export default function NewCoursePage() {
         image: 'https://placehold.co/600x400.png',
         startDate: '',
         endDate: '',
+        mandatoryForRoles: [],
     },
     mode: 'onChange'
   });
@@ -125,6 +131,46 @@ export default function NewCoursePage() {
                                 <FormField control={form.control} name="modality" render={({ field }) => (<FormItem><FormLabel>Modalidad</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selecciona una modalidad" /></SelectTrigger></FormControl><SelectContent><SelectItem value="Online">Online</SelectItem><SelectItem value="Presencial">Presencial</SelectItem><SelectItem value="Mixta">Mixta</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
                                 <FormField control={form.control} name="image" render={({ field }) => (<FormItem><FormLabel>URL de la Imagen</FormLabel><FormControl><Input type="url" {...field} /></FormControl><FormMessage /></FormItem>)} />
                             </div>
+                            <FormField
+                                control={form.control}
+                                name="mandatoryForRoles"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Obligatorio Para (Roles)</FormLabel>
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <FormControl>
+                                                    <Button variant="outline" role="combobox" className={cn("w-full justify-between", !field.value?.length && "text-muted-foreground")}>
+                                                        {field.value?.length ? `${field.value.length} seleccionado(s)` : "Seleccionar roles"}
+                                                        <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                    </Button>
+                                                </FormControl>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                                <div className="p-2 space-y-1">
+                                                {roles.map((role) => (
+                                                    <div key={role} className="flex items-center space-x-2 p-2 hover:bg-muted/50 rounded-md">
+                                                        <Checkbox
+                                                            id={`role-${role}`}
+                                                            checked={field.value?.includes(role)}
+                                                            onCheckedChange={(checked) => {
+                                                                return checked
+                                                                    ? field.onChange([...(field.value || []), role])
+                                                                    : field.onChange(field.value?.filter((value) => value !== role))
+                                                            }}
+                                                        />
+                                                        <label htmlFor={`role-${role}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                                            {role}
+                                                        </label>
+                                                    </div>
+                                                ))}
+                                                </div>
+                                            </PopoverContent>
+                                        </Popover>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
                             <div className="flex justify-end pt-4">
                                 <Button type="submit" size="lg" disabled={isSubmitting}>
                                     {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
