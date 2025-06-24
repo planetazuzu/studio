@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
-import { CheckCircle, Clock, FileText, Bot, Loader2, Sparkles, Send, PlusCircle } from 'lucide-react';
+import { CheckCircle, Clock, FileText, Bot, Loader2, Sparkles, Send, PlusCircle, CheckCircle2, XCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { GenerateTestQuestionsOutput } from '@/ai/flows/generate-test-questions';
 import { personalizedFeedback } from '@/ai/flows/feedback-personalization';
 import { generateTestQuestions } from '@/ai/flows/generate-test-questions';
@@ -21,18 +22,26 @@ import { useAuth } from '@/contexts/auth';
 import * as db from '@/lib/db';
 import { useToast } from '@/hooks/use-toast';
 
-function TestGenerator({ courseContent, studentName }: { courseContent: string; studentName: string }) {
+function TestGenerator({ courseTitle, courseContent, studentName }: { courseTitle: string; courseContent: string; studentName: string }) {
   const [loading, setLoading] = useState(false);
   const [testData, setTestData] = useState<GenerateTestQuestionsOutput | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [feedbackLoading, setFeedbackLoading] = useState(false);
   const [feedback, setFeedback] = useState('');
 
+  const [answers, setAnswers] = useState<Record<number, string>>({});
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [score, setScore] = useState<number | null>(null);
+
   const handleGenerateTest = async () => {
     setLoading(true);
     setError(null);
     setTestData(null);
     setFeedback('');
+    // Reset test state
+    setIsSubmitted(false);
+    setScore(null);
+    setAnswers({});
     try {
       const result = await generateTestQuestions({ courseContent, numberOfQuestions: 3 });
       setTestData(result);
@@ -44,16 +53,37 @@ function TestGenerator({ courseContent, studentName }: { courseContent: string; 
     }
   };
 
-  const handleGetFeedback = async () => {
+  const handleAnswerChange = (qIndex: number, value: string) => {
+    setAnswers(prev => ({ ...prev, [qIndex]: value }));
+  };
+
+  const handleSubmitTest = () => {
     if (!testData) return;
+
+    const correctCount = testData.questions.reduce((acc, question, index) => {
+      return answers[index] === question.correctAnswer ? acc + 1 : acc;
+    }, 0);
+
+    setScore((correctCount / testData.questions.length) * 100);
+    setIsSubmitted(true);
+  };
+
+  const handleGetFeedback = async () => {
+    if (!testData || score === null) return;
     setFeedbackLoading(true);
     setFeedback('');
     try {
+      const questionsForFeedback = testData.questions.map((q, i) => ({
+        question: q.question,
+        studentAnswer: answers[i] || 'No contestada',
+        correctAnswer: q.correctAnswer,
+      }));
+
       const result = await personalizedFeedback({
         studentName: studentName,
-        assignmentName: 'Test de SVB',
-        studentAnswer: 'Respuesta del estudiante (simulada sobre RCP)',
-        correctAnswer: testData.questions[0].correctAnswer,
+        assignmentName: `Test de ${courseTitle}`,
+        score: score,
+        questions: questionsForFeedback,
       });
       setFeedback(result.feedback);
     } catch (e) {
@@ -70,37 +100,71 @@ function TestGenerator({ courseContent, studentName }: { courseContent: string; 
         <CardDescription>Genera un test con IA para comprobar tus conocimientos.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {!testData && (
+        {!testData && !loading && (
           <div className="flex justify-center">
             <Button onClick={handleGenerateTest} disabled={loading} size="lg">
-              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+              <Sparkles className="mr-2 h-4 w-4" />
               Generar Test
             </Button>
           </div>
         )}
+        {loading && <div className="flex justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}
         {error && <p className="text-center text-destructive">{error}</p>}
         {testData && (
           <div className="space-y-6">
-            {testData.questions.map((q, i) => (
-              <div key={i}>
-                <p className="font-semibold mb-2">{i + 1}. {q.question}</p>
-                <RadioGroup>
-                  {q.options.map((opt, j) => (
-                    <div key={j} className="flex items-center space-x-2">
-                      <RadioGroupItem value={opt} id={`q${i}o${j}`} />
-                      <Label htmlFor={`q${i}o${j}`}>{opt}</Label>
+            {isSubmitted && score !== null && (
+              <Card className="bg-muted/50 text-center">
+                <CardHeader>
+                  <CardTitle>Resultado: {score.toFixed(0)}%</CardTitle>
+                </CardHeader>
+              </Card>
+            )}
+            {testData.questions.map((q, i) => {
+                const isCorrect = answers[i] === q.correctAnswer;
+                return (
+                    <div key={i}>
+                        <div className="flex items-start gap-2 font-semibold mb-2">
+                             {isSubmitted && (isCorrect ? <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" /> : <XCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />)}
+                            <p>{i + 1}. {q.question}</p>
+                        </div>
+                        <RadioGroup onValueChange={(value) => handleAnswerChange(i, value)} disabled={isSubmitted} value={answers[i]}>
+                            {q.options.map((opt, j) => {
+                                const isSelected = answers[i] === opt;
+                                const isTheCorrectAnswer = opt === q.correctAnswer;
+                                return (
+                                    <div key={j} className="flex items-center space-x-2">
+                                        <RadioGroupItem value={opt} id={`q${i}o${j}`} />
+                                        <Label htmlFor={`q${i}o${j}`} className={cn(
+                                            isSubmitted && isTheCorrectAnswer && "text-green-600 font-bold",
+                                            isSubmitted && isSelected && !isTheCorrectAnswer && "text-destructive line-through",
+                                        )}>{opt}</Label>
+                                    </div>
+                                );
+                            })}
+                        </RadioGroup>
+                        {isSubmitted && !isCorrect && (
+                            <p className="text-sm text-muted-foreground mt-2">Respuesta correcta: <span className="font-semibold">{q.correctAnswer}</span></p>
+                        )}
                     </div>
-                  ))}
-                </RadioGroup>
-              </div>
-            ))}
-            <div className="flex gap-2">
-                <Button>Enviar Respuestas</Button>
-                <Button variant="outline" onClick={handleGetFeedback} disabled={feedbackLoading}>
-                    {feedbackLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Bot className="mr-2 h-4 w-4" />}
-                    Obtener Feedback
+                );
+            })}
+            
+            {!isSubmitted ? (
+                <Button onClick={handleSubmitTest} disabled={Object.keys(answers).length !== testData.questions.length}>
+                    Enviar Respuestas
                 </Button>
-            </div>
+            ) : (
+                <div className="flex gap-2">
+                    <Button variant="outline" onClick={handleGenerateTest} disabled={loading}>
+                         <Sparkles className="mr-2 h-4 w-4" />
+                         Intentar de Nuevo
+                    </Button>
+                    <Button variant="outline" onClick={handleGetFeedback} disabled={feedbackLoading}>
+                        {feedbackLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Bot className="mr-2 h-4 w-4" />}
+                        Obtener Feedback
+                    </Button>
+                </div>
+            )}
             {feedback && (
                 <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg space-y-2">
                     <h4 className="font-semibold text-primary flex items-center gap-2"><Bot /> Feedback Personalizado</h4>
@@ -266,7 +330,7 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
               </Card>
             </TabsContent>
             <TabsContent value="test" className="mt-4">
-              <TestGenerator courseContent={course.longDescription} studentName={user?.name || 'Estudiante'} />
+              <TestGenerator courseTitle={course.title} courseContent={course.longDescription} studentName={user?.name || 'Estudiante'} />
             </TabsContent>
             <TabsContent value="chat" className="mt-4">
               <CourseChat courseTitle={course.title} courseContent={course.longDescription} />
