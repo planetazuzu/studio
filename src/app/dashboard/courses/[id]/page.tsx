@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
@@ -8,7 +9,7 @@ import { format } from 'date-fns';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { CheckCircle, Clock, Bot, Loader2, Sparkles, Send, PlusCircle, CheckCircle2, XCircle, MessageSquare, Book, File, Video, Link as LinkIcon, FilePenLine, AlertTriangle, Pencil, Rocket, EyeOff, Archive } from 'lucide-react';
+import { CheckCircle, Clock, Bot, Loader2, Sparkles, Send, PlusCircle, CheckCircle2, XCircle, MessageSquare, Book, File, Video, Link as LinkIcon, FilePenLine, AlertTriangle, Pencil, Rocket, EyeOff, Archive, FileText } from 'lucide-react';
 import QRCode from 'qrcode';
 import { cn } from '@/lib/utils';
 import { summarizeModuleContent } from '@/ai/flows/summarize-module-content';
