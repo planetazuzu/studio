@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie';
-import type { Course, User, Enrollment, UserProgress, PendingEnrollmentDetails, ForumMessage, ForumMessageWithReplies, Notification, Resource, CourseResource, Announcement, ChatChannel, ChatMessage, Role, ComplianceReportData, DirectMessageThread, CalendarEvent, ExternalTraining, EnrollmentStatus, EnrollmentWithDetails, Cost } from './types';
+import type { Course, User, Enrollment, UserProgress, PendingEnrollmentDetails, ForumMessage, ForumMessageWithReplies, Notification, Resource, CourseResource, Announcement, ChatChannel, ChatMessage, Role, ComplianceReportData, DirectMessageThread, CalendarEvent, ExternalTraining, EnrollmentStatus, EnrollmentWithDetails, Cost, StudentForManagement } from './types';
 import { courses as initialCourses, users as initialUsers, initialChatChannels, initialCosts } from './data';
 
 const LOGGED_IN_USER_KEY = 'loggedInUserId';
@@ -73,6 +73,9 @@ export class AcademiaAIDB extends Dexie {
     });
     this.version(15).stores({
         costs: '++id, category, courseId, date'
+    });
+    this.version(16).stores({
+      courses: 'id, instructor, status, isSynced, *mandatoryForRoles'
     });
   }
 }
@@ -336,7 +339,8 @@ export async function updateEnrollmentStatus(enrollmentId: number, status: Enrol
 
 export async function getEnrolledCoursesForUser(userId: string): Promise<Course[]> {
   const approvedEnrollments = await db.enrollments
-    .where({ studentId: userId, status: 'approved' })
+    .where('studentId').equals(userId)
+    .filter(e => e.status === 'approved' || e.status === 'active')
     .toArray();
   
   if (approvedEnrollments.length === 0) return [];
@@ -767,4 +771,41 @@ export async function updateCost(id: number, data: Partial<Omit<Cost, 'id'>>): P
 
 export async function deleteCost(id: number): Promise<void> {
     await db.costs.delete(id);
+}
+
+// --- Instructor Functions ---
+
+export async function getCoursesByInstructorName(instructorName: string): Promise<Course[]> {
+    return await db.courses.where('instructor').equals(instructorName).toArray();
+}
+
+export async function getStudentsForCourseManagement(courseId: string): Promise<StudentForManagement[]> {
+    const enrollments = await db.enrollments.where({ courseId }).filter(e => e.status === 'approved' || e.status === 'active').toArray();
+    const studentIds = enrollments.map(e => e.studentId);
+
+    if (studentIds.length === 0) return [];
+
+    const students = await db.users.where('id').anyOf(studentIds).toArray();
+    const progresses = await db.userProgress.where('courseId').equals(courseId).and(p => studentIds.includes(p.userId)).toArray();
+    const course = await db.courses.get(courseId);
+
+    const moduleCount = course?.modules?.length || 0;
+    const progressMap = new Map(progresses.map(p => [p.userId, p]));
+    const enrollmentMap = new Map(enrollments.map(e => [e.studentId, e]));
+
+    return students.map(student => {
+        const progress = progressMap.get(student.id);
+        const completedModules = progress?.completedModules?.length || 0;
+        const progressPercentage = moduleCount > 0 ? Math.round((completedModules / moduleCount) * 100) : 0;
+        const enrollmentStatus = enrollmentMap.get(student.id)?.status || 'active';
+
+        return {
+            id: student.id,
+            name: student.name,
+            avatar: student.avatar,
+            email: student.email,
+            progress: progressPercentage,
+            status: enrollmentStatus,
+        };
+    }).sort((a, b) => a.name.localeCompare(b.name));
 }

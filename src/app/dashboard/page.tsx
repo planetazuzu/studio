@@ -18,6 +18,7 @@ import type { PendingEnrollmentDetails, Course, User, Announcement, Announcement
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { InstructorDashboardView } from '@/components/dashboard/instructor-view';
 
 
 function AnnouncementsPanel({ user }: { user: User }) {
@@ -132,7 +133,7 @@ function MandatoryCoursesPanel({ user }: { user: User }) {
     )
 }
 
-function MyCourses({ user }) {
+function MyCourses({ user }: { user: User }) {
   const enrolledCourses = useLiveQuery(
     () => db.getEnrolledCoursesForUser(user.id),
     [user.id], 
@@ -320,7 +321,7 @@ function AdminApprovalPanel() {
     }, []);
     
     const handleApproval = async (id: number, studentId: string, courseId: string, approved: boolean) => {
-        await db.updateEnrollmentStatus(id, studentId, courseId, approved ? 'approved' : 'rejected');
+        await db.updateEnrollmentStatus(id, approved ? 'approved' : 'rejected');
         toast({
             title: `Solicitud ${approved ? 'aprobada' : 'rechazada'}`,
             description: "La lista de solicitudes ha sido actualizada.",
@@ -366,34 +367,44 @@ function AdminApprovalPanel() {
     )
 }
 
+function StudentDashboardView({ user }: { user: User }) {
+    const isManager = ['Gestor de RRHH', 'Jefe de Formación', 'Administrador General'].includes(user.role);
+    const canViewCosts = isManager;
+
+    return (
+        <div className="flex flex-col gap-8">
+            <div>
+                <h1 className="text-3xl font-bold">Bienvenido, {user.name.split(' ')[0]}</h1>
+                <p className="text-muted-foreground">Aquí tienes un resumen de tu actividad formativa.</p>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <StatCard title="Cursos Activos" value="4" icon={Activity} description="+2 desde el mes pasado" />
+                <StatCard title="Formaciones Completadas" value="12" icon={BookCheck} description="Año actual" />
+                <StatCard title="Certificados Obtenidos" value="8" icon={GraduationCap} description="Pendientes: 2" />
+                {canViewCosts && <StatCard title="Coste Total" value="8,950€" icon={Wallet} description="Presupuesto: 15,000€" />}
+            </div>
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+                <MandatoryCoursesPanel user={user} />
+                <AnnouncementsPanel user={user} />
+            </div>
+            <div className="grid gap-4 lg:grid-cols-3">
+                {isManager && <AdminApprovalPanel />}
+                {!isManager && <MyCourses user={user} />}
+                <AiSuggestions user={user} />
+            </div>
+        </div>
+    );
+}
+
 export default function DashboardPage() {
   const { user } = useAuth();
-  if (!user) return null; // Should be handled by layout, but as a safeguard.
+  if (!user) return null;
 
-  const canViewCosts = ['Gestor de RRHH', 'Jefe de Formación', 'Administrador General'].includes(user.role);
-  const isAdmin = user.role === 'Administrador General';
+  const isInstructor = user.role === 'Formador';
 
-  return (
-    <div className="flex flex-col gap-8">
-      <div>
-        <h1 className="text-3xl font-bold">Bienvenido, {user.name.split(' ')[0]}</h1>
-        <p className="text-muted-foreground">Aquí tienes un resumen de tu actividad formativa.</p>
-      </div>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StatCard title="Cursos Activos" value="4" icon={Activity} description="+2 desde el mes pasado" />
-        <StatCard title="Formaciones Completadas" value="12" icon={BookCheck} description="Año actual" />
-        <StatCard title="Certificados Obtenidos" value="8" icon={GraduationCap} description="Pendientes: 2" />
-        {canViewCosts && <StatCard title="Coste Total" value="8,950€" icon={Wallet} description="Presupuesto: 15,000€" />}
-      </div>
-       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-         <MandatoryCoursesPanel user={user} />
-         <AnnouncementsPanel user={user} />
-       </div>
-      <div className="grid gap-4 lg:grid-cols-3">
-        {isAdmin && <AdminApprovalPanel />}
-        {!isAdmin && <MyCourses user={user} />}
-        <AiSuggestions user={user} />
-      </div>
-    </div>
-  );
+  if (isInstructor) {
+      return <InstructorDashboardView user={user} />;
+  }
+
+  return <StudentDashboardView user={user} />;
 }

@@ -9,7 +9,7 @@ import { format } from 'date-fns';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { CheckCircle, Clock, Bot, Loader2, Sparkles, Send, PlusCircle, CheckCircle2, XCircle, MessageSquare, Book, File, Video, Link as LinkIcon, FilePenLine, AlertTriangle, Pencil, Rocket, EyeOff, Archive, FileText } from 'lucide-react';
+import { CheckCircle, Clock, Bot, Loader2, Sparkles, Send, PlusCircle, CheckCircle2, XCircle, MessageSquare, Book, File, Video, Link as LinkIcon, FilePenLine, AlertTriangle, Pencil, Rocket, EyeOff, Archive, Users } from 'lucide-react';
 import QRCode from 'qrcode';
 import { cn } from '@/lib/utils';
 import { summarizeModuleContent } from '@/ai/flows/summarize-module-content';
@@ -29,6 +29,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { TestGenerator } from '@/components/course-detail/test-generator';
 import { CourseChat } from '@/components/course-detail/course-chat';
 import { CourseResources } from '@/components/course-detail/course-resources';
+import { CourseManagementTab } from '@/components/course-detail/course-management-tab';
 
 export default function CourseDetailPage() {
   const params = useParams<{ id: string }>();
@@ -113,8 +114,10 @@ export default function CourseDetailPage() {
     notFound();
   }
   
-  const canManage = user && (user.role === 'Administrador General' || user.role === 'Jefe de Formación' || user.role === 'Formador');
-  const canAccessForum = canManage || isEnrolled;
+  const canFullyManage = user && (user.role === 'Administrador General' || user.role === 'Jefe de Formación');
+  const isInstructor = user?.name === course.instructor;
+  const canAccessForum = canFullyManage || isEnrolled;
+  const canManageCourse = canFullyManage || isInstructor;
   const isMandatory = user && course.mandatoryForRoles?.includes(user.role);
 
 
@@ -143,7 +146,7 @@ export default function CourseDetailPage() {
   };
   
   const handleTogglePublishStatus = async () => {
-    if (!canManage) return;
+    if (!canManageCourse) return;
 
     setIsPublishing(true);
     const newStatus = course.status === 'draft' ? 'published' : 'draft';
@@ -236,7 +239,7 @@ export default function CourseDetailPage() {
           )}
       </div>
 
-       {canManage && course.status === 'draft' && (
+       {canManageCourse && course.status === 'draft' && (
             <Alert variant="destructive" className="bg-yellow-50 border-yellow-300 text-yellow-800">
                 <Pencil className="h-4 w-4 !text-yellow-800" />
                 <AlertTitle>Modo Borrador</AlertTitle>
@@ -268,6 +271,7 @@ export default function CourseDetailPage() {
               <TabsTrigger value="test">Test IA</TabsTrigger>
               <TabsTrigger value="chat">Tutor IA</TabsTrigger>
               <TabsTrigger value="forum">Foro</TabsTrigger>
+              {canManageCourse && <TabsTrigger value="manage"><Users className="mr-2 h-4 w-4"/>Gestión</TabsTrigger>}
             </TabsList>
             <TabsContent value="overview" className="mt-4">
               <Card className="shadow-lg">
@@ -379,7 +383,7 @@ export default function CourseDetailPage() {
                       <Loader2 className="h-8 w-8 animate-spin" />
                   </div>
               ) : canAccessForum && user ? (
-                  <Forum courseId={course.id} user={user} canManage={!!canManage} />
+                  <Forum courseId={course.id} user={user} canManage={!!canManageCourse} />
               ) : (
                   <Card className="shadow-lg">
                       <CardContent className="p-8 text-center">
@@ -396,6 +400,11 @@ export default function CourseDetailPage() {
                   </Card>
               )}
           </TabsContent>
+           {canManageCourse && (
+            <TabsContent value="manage" className="mt-4">
+              <CourseManagementTab course={course} />
+            </TabsContent>
+           )}
           </Tabs>
         </div>
         <div className="space-y-8 lg:col-span-1">
@@ -429,13 +438,13 @@ export default function CourseDetailPage() {
                 {isDownloading ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
-                    <FileText className="mr-2 h-4 w-4" />
+                    <FilePenLine className="mr-2 h-4 w-4" />
                 )}
                 {isDownloading ? 'Generando...' : 'Descargar Certificado'}
               </Button>
             </CardFooter>
           </Card>
-          {canManage && (
+          {canManageCourse && (
               <Card>
                 <CardHeader>
                     <CardTitle>Acciones de Gestión</CardTitle>

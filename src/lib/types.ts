@@ -132,7 +132,7 @@ export type Notification = {
   id?: number;
   userId: string;
   message: string;
-  type: 'enrollment_approved' | 'new_course' | 'forum_reply';
+  type: 'enrollment_approved' | 'new_course' | 'forum_reply' | 'course_announcement';
   relatedUrl?: string;
   isRead: boolean;
   timestamp: string; // ISO date string
@@ -247,6 +247,15 @@ export type ExternalTraining = {
   isRelevant?: boolean;
   isSynced?: boolean;
   updatedAt?: string; // ISO date string
+};
+
+export type StudentForManagement = {
+  id: string;
+  name: string;
+  avatar: string;
+  email: string;
+  progress: number;
+  status: EnrollmentStatus;
 };
 
 // --- AI Flow Schemas ---
