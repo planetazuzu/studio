@@ -53,7 +53,7 @@ Registra qué usuario está inscrito en qué curso y el estado de la solicitud.
 | `id` | `Id` | **Clave Primaria Autoincremental** |
 | `student` | `LinkToAnotherRecord` | **Relación Muchos a Uno (ManyToOne)** a la tabla `users` |
 | `course` | `LinkToAnotherRecord` | **Relación Muchos a Uno (ManyToOne)** a la tabla `courses` |
-| `status` | `SingleSelect` | Opciones: `pending`, `approved`, `rejected` |
+| `status` | `SingleSelect` | Opciones: `pending`, `approved`, `rejected`, etc. |
 | `updatedAt` | `LastModifiedTime` | |
 
 *Nota sobre relaciones: NocoDB creará las columnas `studentId` y `courseId` automáticamente al configurar el enlace.*
@@ -74,4 +74,73 @@ Guarda el progreso de cada usuario en cada curso.
 
 ---
 
-Con estas cuatro tablas configuradas en NocoDB, tendrás la base de datos remota lista para la sincronización.
+## 5. Tabla de Anuncios (`announcements`)
+
+Almacena todas las comunicaciones y avisos enviados a los usuarios.
+
+| Nombre de Columna | Tipo de Columna | Notas |
+| :--- | :--- | :--- |
+| `id` | `Id` | **Clave Primaria Autoincremental** |
+| `title` | `SingleLineText` | |
+| `content` | `LongText` | |
+| `type` | `SingleSelect` | Opciones: `Urgente`, `Informativo`, `Mantenimiento` |
+| `channels` | `Json` | Almacena los roles/departamentos de destino |
+| `timestamp` | `DateTime` | |
+| `updatedAt` | `LastModifiedTime` | |
+
+---
+
+## 6. Tabla de Eventos del Calendario (`calendar_events`)
+
+Registra todos los eventos formativos como clases, exámenes o entregas.
+
+| Nombre de Columna | Tipo de Columna | Notas |
+| :--- | :--- | :--- |
+| `id` | `Id` | **Clave Primaria Autoincremental** |
+| `title` | `SingleLineText` | |
+| `description` | `LongText` | |
+| `start` | `DateTime` | Fecha y hora de inicio |
+| `end` | `DateTime` | Fecha y hora de fin |
+| `allDay` | `Checkbox` | |
+| `course` | `LinkToAnotherRecord` | **Relación Muchos a Uno (ManyToOne)** a la tabla `courses` |
+| `type` | `SingleSelect` | Opciones: `clase`, `examen`, `entrega`, `taller`, `otro` |
+| `createdBy` | `LinkToAnotherRecord` | **Relación Muchos a Uno (ManyToOne)** a la tabla `users` |
+| `updatedAt` | `LastModifiedTime` | |
+
+---
+
+## 7. Tabla de Formación Externa (`external_trainings`)
+
+Permite a los usuarios registrar sus logros formativos obtenidos fuera de la plataforma.
+
+| Nombre de Columna | Tipo de Columna | Notas |
+| :--- | :--- | :--- |
+| `id` | `Id` | **Clave Primaria Autoincremental** |
+| `user` | `LinkToAnotherRecord` | **Relación Muchos a Uno (ManyToOne)** a la tabla `users` |
+| `title` | `SingleLineText` | |
+| `type` | `SingleSelect` | Opciones: `Curso`, `Certificación`, `Máster`, etc. |
+| `institution` | `SingleLineText` | |
+| `endDate` | `Date` | Fecha de finalización |
+| `fileUrl` | `URL` | Enlace al certificado |
+| `comments` | `LongText` | |
+| `updatedAt` | `LastModifiedTime` | |
+
+---
+
+## 8. Tabla de Recursos (`resources`)
+
+Biblioteca central de materiales de estudio (PDF, vídeos, etc.).
+
+| Nombre de Columna | Tipo de Columna | Notas |
+| :--- | :--- | :--- |
+| `id` | `Id` | **Clave Primaria Autoincremental** |
+| `name` | `SingleLineText` | |
+| `type` | `SingleSelect` | Opciones: `pdf`, `video`, `link`, `document` |
+| `url` | `URL` | Enlace al recurso |
+| `uploadedAt` | `DateTime` | |
+| `courses` | `LinkToAnotherRecord` | **Relación Muchos a Muchos (ManyToMany)** a la tabla `courses` |
+| `updatedAt` | `LastModifiedTime` | |
+
+---
+
+Con estas tablas configuradas en NocoDB, tendrás una base de datos remota más completa y lista para la sincronización.
