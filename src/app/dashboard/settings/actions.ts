@@ -70,8 +70,8 @@ export async function syncAllDataAction(): Promise<{ success: boolean; log: stri
         
         log.push("Configuración de NocoDB encontrada y válida.");
 
-        const unsyncedUsers = await db.users.where('isSynced').equals(false).toArray();
-        const unsyncedCourses = await db.courses.where('isSynced').equals(false).toArray();
+        const unsyncedUsers = await db.db.users.where('isSynced').equals(false).toArray();
+        const unsyncedCourses = await db.db.courses.where('isSynced').equals(false).toArray();
 
         if (unsyncedUsers.length === 0 && unsyncedCourses.length === 0) {
             log.push("¡Todo está al día! No hay datos nuevos para sincronizar.");
@@ -86,7 +86,7 @@ export async function syncAllDataAction(): Promise<{ success: boolean; log: stri
                     log.push(`Enviando POST a NocoDB para el usuario: ${user.name} (${user.email})`);
                     await noco.users.create(user);
                     // Mark as synced in local DB
-                    await db.users.update(user.id, { isSynced: true });
+                    await db.db.users.update(user.id, { isSynced: true });
                     log.push(`-> Éxito para ${user.name}. Marcado como sincronizado localmente.`);
                 } catch (error: any) {
                     log.push(`-> ERROR al sincronizar a ${user.name}: ${error.message}`);
@@ -104,7 +104,7 @@ export async function syncAllDataAction(): Promise<{ success: boolean; log: stri
                     log.push(`Enviando POST a NocoDB para el curso: ${course.title}`);
                     await noco.courses.create(course);
                     // Mark as synced in local DB
-                    await db.courses.update(course.id, { isSynced: true });
+                    await db.db.courses.update(course.id, { isSynced: true });
                     log.push(`-> Éxito para ${course.title}. Marcado como sincronizado localmente.`);
                 } catch (error: any) {
                     log.push(`-> ERROR al sincronizar a ${course.title}: ${error.message}`);
