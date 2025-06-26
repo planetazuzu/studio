@@ -333,12 +333,12 @@ export default function UsersPage() {
                                                         Editar
                                                     </Link>
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem onSelect={() => handleStartChat(u)}>
+                                                <DropdownMenuItem onSelect={() => handleStartChat(u)} disabled={authUser.id === u.id}>
                                                     <MessageSquare className="mr-2 h-4 w-4" />
                                                     Enviar Mensaje
                                                 </DropdownMenuItem>
                                                 <AlertDialogTrigger asChild>
-                                                    <DropdownMenuItem onSelect={() => setUserToDelete(u)} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
+                                                    <DropdownMenuItem onSelect={() => setUserToDelete(u)} className="text-destructive focus:bg-destructive/10 focus:text-destructive" disabled={authUser.id === u.id}>
                                                         <Trash2 className="mr-2 h-4 w-4" />
                                                         Eliminar
                                                     </DropdownMenuItem>

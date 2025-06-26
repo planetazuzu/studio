@@ -1,4 +1,3 @@
-
 import Dexie, { type Table } from 'dexie';
 import type { Course, User, Enrollment, UserProgress, PendingEnrollmentDetails, ForumMessage, ForumMessageWithReplies, Notification, Resource, CourseResource, Announcement, ChatChannel, ChatMessage, Role, ComplianceReportData, DirectMessageThread, CalendarEvent } from './types';
 import { courses as initialCourses, users as initialUsers, initialChatChannels } from './data';

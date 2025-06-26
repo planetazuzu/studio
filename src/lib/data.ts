@@ -198,5 +198,3 @@ export const initialChatChannels: ChatChannel[] = [
         type: 'public',
     }
 ]
-
-export const getCourseById = (id: string) => initialCourses.find(c => c.id === id);

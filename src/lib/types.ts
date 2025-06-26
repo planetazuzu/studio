@@ -1,4 +1,3 @@
-
 export type Role =
   | 'Trabajador'
   | 'Personal Externo'
