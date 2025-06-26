@@ -2,11 +2,12 @@
 import { genkit } from 'genkit';
 import { googleAI } from '@genkit-ai/googleai';
 import type { Genkit } from 'genkit';
+import { getGenAIKey } from '@/lib/config';
 
-export function getAiInstance(apiKey?: string): Genkit {
-  const finalApiKey = apiKey || process.env.GOOGLE_API_KEY;
+export function getAiInstance(): Genkit {
+  const apiKey = getGenAIKey();
 
-  if (!finalApiKey) {
+  if (!apiKey) {
     // In a production app, you might want to handle this more gracefully.
     // For this educational context, throwing an error makes it clear what's missing.
     throw new Error(
@@ -15,7 +16,6 @@ export function getAiInstance(apiKey?: string): Genkit {
   }
 
   return genkit({
-    plugins: [googleAI({ apiKey: finalApiKey })],
-    model: 'googleai/gemini-2.0-flash',
+    plugins: [googleAI({ apiKey })],
   });
 }

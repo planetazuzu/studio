@@ -14,9 +14,10 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/auth';
 import { Skeleton } from '@/components/ui/skeleton';
 import * as db from '@/lib/db';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Server } from 'lucide-react';
 import { useFormState } from 'react-dom';
-import { saveApiKeyAction } from './actions';
+import { saveApiKeysAction } from './actions';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 // Helper function to convert HEX to HSL components (string "H S% L%")
 function hexToHsl(hex: string): string {
@@ -138,7 +139,7 @@ function GeneralSettings({ general, setGeneral }: { general: any, setGeneral: Fu
 function ApiSettings() {
     const { toast } = useToast();
     const formRef = useRef<HTMLFormElement>(null);
-    const [state, formAction] = useFormState(saveApiKeyAction, { success: false, message: '' });
+    const [state, formAction] = useFormState(saveApiKeysAction, { success: false, message: '' });
 
     useEffect(() => {
         if (state.message) {
@@ -156,28 +157,43 @@ function ApiSettings() {
     return (
          <Card>
             <CardHeader>
-                <CardTitle>Credenciales de API</CardTitle>
-                <CardDescription>Gestiona las claves de API para servicios externos. La clave se guarda de forma segura en una cookie de servidor.</CardDescription>
+                <CardTitle>Configuración de APIs</CardTitle>
+                <CardDescription>Gestiona las claves y URLs para servicios externos. Se guardan de forma segura como cookies de servidor.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-                <form ref={formRef} action={formAction} className="space-y-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="apiKey">Clave API de GenAI (Google)</Label>
-                        <div className="flex items-center gap-2">
-                             <Input id="apiKey" name="apiKey" type="password" placeholder="Introduce una clave para guardarla o actualizarla" className="flex-grow" />
-                             <Button type="submit">Guardar</Button>
+            <CardContent>
+                <form ref={formRef} action={formAction} className="space-y-6">
+                    <div>
+                        <h3 className="text-lg font-semibold mb-2">GenAI (Google)</h3>
+                         <div className="space-y-2">
+                            <Label htmlFor="genaiApiKey">Clave API de GenAI</Label>
+                            <Input id="genaiApiKey" name="genaiApiKey" type="password" placeholder="Introduce o actualiza la clave API" />
+                            <p className="text-xs text-muted-foreground">Deja el campo en blanco y guarda para eliminar la clave actual.</p>
                         </div>
-                         <p className="text-xs text-muted-foreground">Deja el campo en blanco y guarda para eliminar la clave actual.</p>
+                    </div>
+                    <div className="border-t pt-6">
+                        <h3 className="text-lg font-semibold mb-2">NocoDB (Base de Datos Remota)</h3>
+                         <div className="space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="nocodbApiUrl">URL de la API de NocoDB</Label>
+                                <Input id="nocodbApiUrl" name="nocodbApiUrl" type="text" placeholder="https://mi.nocodb.instance/api/v2" />
+                            </div>
+                             <div className="space-y-2">
+                                <Label htmlFor="nocodbAuthToken">Token de Autenticación (xc-token)</Label>
+                                <Input id="nocodbAuthToken" name="nocodbAuthToken" type="password" placeholder="Introduce tu token de API de NocoDB" />
+                            </div>
+                        </div>
+                    </div>
+                    <div className="flex justify-end">
+                        <Button type="submit">Guardar Configuración de APIs</Button>
                     </div>
                 </form>
-                 <div className="space-y-2">
-                    <Label htmlFor="nocodbApi">Token de API NocoDB</Label>
-                    <Input id="nocodbApi" type="password" defaultValue="**************" disabled />
-                </div>
-                 <div className="space-y-2">
-                    <Label htmlFor="whatsappApi">Clave API de WhatsApp</Label>
-                    <Input id="whatsappApi" type="password" defaultValue="**************" disabled />
-                </div>
+                 <Alert className="mt-6">
+                    <Server className="h-4 w-4" />
+                    <AlertTitle>¿Qué es NocoDB?</AlertTitle>
+                    <AlertDescription>
+                        NocoDB es una alternativa de código abierto a Airtable. Nos permite crear una base de datos con una API REST lista para usar, ideal para sincronizar los datos de esta aplicación.
+                    </AlertDescription>
+                </Alert>
             </CardContent>
         </Card>
     );
