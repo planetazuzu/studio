@@ -50,12 +50,16 @@ export type Course = {
   updatedAt?: string; // ISO date string
 };
 
+export const enrollmentStatuses = ['pending', 'approved', 'rejected', 'cancelled', 'waitlisted', 'active', 'completed', 'expelled', 'expired', 'needs_review'] as const;
+export type EnrollmentStatus = typeof enrollmentStatuses[number];
+
 export type Enrollment = {
     id?: number; // auto-incremented primary key
     studentId: string;
     courseId: string;
     requestDate: string; // ISO date string
-    status: 'pending' | 'approved' | 'rejected';
+    status: EnrollmentStatus;
+    justification?: string; // For admin feedback on approval/rejection
     isSynced?: boolean;
     updatedAt?: string; // ISO date string
 }
@@ -91,6 +95,14 @@ export type PendingEnrollmentDetails = Enrollment & {
   userName: string;
   courseTitle: string;
 };
+
+// For displaying ANY enrollment with details
+export type EnrollmentWithDetails = Enrollment & {
+  userName: string;
+  userEmail: string;
+  courseTitle: string;
+  courseImage: string;
+}
 
 export type ForumMessage = {
   id?: number;

@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie';
-import type { Course, User, Enrollment, UserProgress, PendingEnrollmentDetails, ForumMessage, ForumMessageWithReplies, Notification, Resource, CourseResource, Announcement, ChatChannel, ChatMessage, Role, ComplianceReportData, DirectMessageThread, CalendarEvent, ExternalTraining } from './types';
+import type { Course, User, Enrollment, UserProgress, PendingEnrollmentDetails, ForumMessage, ForumMessageWithReplies, Notification, Resource, CourseResource, Announcement, ChatChannel, ChatMessage, Role, ComplianceReportData, DirectMessageThread, CalendarEvent, ExternalTraining, EnrollmentStatus, EnrollmentWithDetails } from './types';
 import { courses as initialCourses, users as initialUsers, initialChatChannels } from './data';
 
 const LOGGED_IN_USER_KEY = 'loggedInUserId';
@@ -67,6 +67,9 @@ export class AcademiaAIDB extends Dexie {
     this.version(13).stores({
         externalTrainings: '++id, userId'
     });
+    this.version(14).stores({
+        enrollments: '++id, studentId, courseId, status'
+    })
   }
 }
 
@@ -253,24 +256,73 @@ export async function getPendingEnrollmentsWithDetails(): Promise<PendingEnrollm
   }));
 }
 
-export async function updateEnrollmentStatus(enrollmentId: number, studentId: string, courseId: string, status: 'approved' | 'rejected'): Promise<number> {
-    const result = await db.enrollments.update(enrollmentId, { status, updatedAt: new Date().toISOString(), isSynced: false });
+export async function getAllEnrollmentsWithDetails(): Promise<EnrollmentWithDetails[]> {
+    const allEnrollments = await db.enrollments.toArray();
+    if (allEnrollments.length === 0) return [];
+
+    const userIds = [...new Set(allEnrollments.map(e => e.studentId))];
+    const courseIds = [...new Set(allEnrollments.map(e => e.courseId))];
+
+    const users = await db.users.where('id').anyOf(userIds).toArray();
+    const courses = await db.courses.where('id').anyOf(courseIds).toArray();
+
+    const userMap = new Map(users.map(u => [u.id, u]));
+    const courseMap = new Map(courses.map(c => [c.id, c]));
+
+    return allEnrollments.map(e => ({
+        ...e,
+        userName: userMap.get(e.studentId)?.name || 'Usuario desconocido',
+        userEmail: userMap.get(e.studentId)?.email || 'Email desconocido',
+        courseTitle: courseMap.get(e.courseId)?.title || 'Curso desconocido',
+        courseImage: courseMap.get(e.courseId)?.image || 'https://placehold.co/600x400.png',
+    }));
+}
+
+export async function getEnrollmentsForStudent(userId: string): Promise<EnrollmentWithDetails[]> {
+    const studentEnrollments = await db.enrollments.where('studentId').equals(userId).toArray();
+    if (studentEnrollments.length === 0) return [];
+
+    const courseIds = [...new Set(studentEnrollments.map(e => e.courseId))];
+    const courses = await db.courses.where('id').anyOf(courseIds).toArray();
+    const courseMap = new Map(courses.map(c => [c.id, c]));
+    const user = await db.users.get(userId);
+
+    return studentEnrollments.map(e => ({
+        ...e,
+        userName: user?.name || 'Usuario desconocido',
+        userEmail: user?.email || 'Email desconocido',
+        courseTitle: courseMap.get(e.courseId)?.title || 'Curso desconocido',
+        courseImage: courseMap.get(e.courseId)?.image || 'https://placehold.co/600x400.png',
+    })).sort((a, b) => new Date(b.requestDate).getTime() - new Date(a.requestDate).getTime());
+}
+
+
+export async function updateEnrollmentStatus(enrollmentId: number, status: EnrollmentStatus, justification?: string): Promise<number> {
+    const enrollment = await db.enrollments.get(enrollmentId);
+    if (!enrollment) return 0;
+    
+    const result = await db.enrollments.update(enrollmentId, { status, justification, updatedAt: new Date().toISOString(), isSynced: false });
 
     if (status === 'approved') {
-        const course = await db.courses.get(courseId);
+        const course = await db.courses.get(enrollment.courseId);
         if (course) {
             await addNotification({
-                userId: studentId,
+                userId: enrollment.studentId,
                 message: `Tu inscripción a "${course.title}" ha sido aprobada.`,
                 type: 'enrollment_approved',
-                relatedUrl: `/dashboard/courses/${courseId}`,
+                relatedUrl: `/dashboard/courses/${enrollment.courseId}`,
                 isRead: false,
                 timestamp: new Date().toISOString(),
             });
+            // Automatically mark the status as 'active' if the course has started
+            if (course.startDate && new Date(course.startDate) <= new Date()) {
+                await db.enrollments.update(enrollmentId, { status: 'active' });
+            }
         }
     }
     return result;
 }
+
 
 export async function getEnrolledCoursesForUser(userId: string): Promise<Course[]> {
   const approvedEnrollments = await db.enrollments
