@@ -110,12 +110,12 @@ export default function AIGeneratorPage() {
             aiHint: generatedCourse.title.toLowerCase().split(' ').slice(0, 2).join(' '),
             modules: generatedCourse.modules.map((m, i) => ({...m, id: `mod_${Date.now()}_${i}`})),
         };
-        await db.addCourse(newCourseData);
+        const newCourseId = await db.addCourse(newCourseData);
         toast({
             title: "Borrador Guardado",
-            description: "El curso generado por IA ha sido guardado. Ahora puedes editarlo.",
+            description: "El curso generado por IA ha sido guardado. Ahora puedes editarlo y añadir contenido.",
         });
-        router.push('/dashboard/courses');
+        router.push(`/dashboard/courses/${newCourseId}/edit`);
     } catch (error) {
         console.error("Failed to save generated course", error);
         toast({

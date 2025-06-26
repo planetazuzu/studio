@@ -164,7 +164,7 @@ export async function deleteUser(id: string): Promise<void> {
 
 // --- Data Access Functions ---
 
-export async function addCourse(course: Partial<Omit<Course, 'id' | 'isSynced' | 'updatedAt'>>) {
+export async function addCourse(course: Partial<Omit<Course, 'id' | 'isSynced' | 'updatedAt'>>): Promise<string> {
   const newCourse: Course = {
     id: `course_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
     title: course.title || 'Sin Título',

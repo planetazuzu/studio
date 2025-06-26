@@ -69,12 +69,12 @@ export default function NewCoursePage() {
     };
 
     try {
-        await db.addCourse(newCourseData);
+        const newCourseId = await db.addCourse(newCourseData);
         toast({
-            title: `Curso ${data.status === 'published' ? 'publicado' : 'guardado como borrador'}`,
-            description: `El nuevo curso "${data.title}" ha sido creado correctamente.`,
+            title: "Curso creado con éxito",
+            description: "Ahora puedes añadir los módulos y recursos del curso.",
         });
-        router.push('/dashboard/courses');
+        router.push(`/dashboard/courses/${newCourseId}/edit`);
     } catch (error) {
         console.error("Failed to create course", error);
         toast({
@@ -88,16 +88,16 @@ export default function NewCoursePage() {
   return (
     <div className="space-y-8">
         <Button variant="outline" size="sm" asChild>
-            <Link href="/dashboard/courses">
+            <Link href="/dashboard/courses/create">
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Volver al Catálogo
+                Volver a Opciones
             </Link>
         </Button>
       
         <div className="flex justify-center">
             <Card className="w-full max-w-3xl">
                 <CardHeader>
-                    <CardTitle>Crear Nuevo Curso</CardTitle>
+                    <CardTitle>Crear Nuevo Curso (Manual)</CardTitle>
                     <CardDescription>Completa el formulario para añadir una nueva formación al catálogo.</CardDescription>
                 </CardHeader>
                 <CardContent>

@@ -85,14 +85,14 @@ export default function ScormImportPage() {
             })),
         };
         
-        await db.addCourse(newCourseData);
+        const newCourseId = await db.addCourse(newCourseData);
         
         toast({
             title: "Curso Importado",
-            description: "El curso SCORM se ha guardado como borrador. Puedes editarlo antes de publicarlo.",
+            description: "El curso SCORM se ha guardado como borrador. Ahora puedes editarlo y añadir el resto de detalles.",
         });
         
-        router.push('/dashboard/courses');
+        router.push(`/dashboard/courses/${newCourseId}/edit`);
 
     } catch (error) {
         console.error("Failed to save SCORM course", error);
@@ -105,9 +105,9 @@ export default function ScormImportPage() {
   return (
     <div className="space-y-8">
         <Button variant="outline" size="sm" asChild>
-            <Link href="/dashboard/courses">
+            <Link href="/dashboard/courses/create">
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Volver al Catálogo
+                Volver a Opciones
             </Link>
         </Button>
       
