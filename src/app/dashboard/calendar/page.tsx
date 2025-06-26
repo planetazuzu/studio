@@ -333,9 +333,6 @@ export default function CalendarPage() {
             }}
             eventPropGetter={(event) => ({
                 className: cn('text-white p-1 text-xs rounded-md border-2', eventColors[event.type]),
-                style: {
-                    backgroundColor: `var(--color-${event.type})`
-                }
             })}
             className="h-full"
           />
