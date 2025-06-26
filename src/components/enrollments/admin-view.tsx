@@ -8,7 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Loader2, ListFilter, Search } from 'lucide-react';
 import * as db from '@/lib/db';
-import type { EnrollmentWithDetails, EnrollmentStatus, enrollmentStatuses } from '@/lib/types';
+import { enrollmentStatuses, type EnrollmentWithDetails, type EnrollmentStatus } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
