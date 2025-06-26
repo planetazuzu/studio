@@ -417,7 +417,6 @@ export default function AnalyticsPage() {
                 allInstructors={allInstructors}
                 costModalityFilter={costModalityFilter}
                 setCostModalityFilter={setCostModalityFilter}
-                allModalities={allModalities}
                 filteredCosts={filteredCosts}
                 barChartConfig={barChartConfig}
                 barChartData={barChartData}
@@ -433,4 +432,3 @@ export default function AnalyticsPage() {
     </div>
   );
 }
-
