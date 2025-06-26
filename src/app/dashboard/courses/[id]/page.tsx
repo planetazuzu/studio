@@ -9,7 +9,7 @@ import { format } from 'date-fns';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { CheckCircle, Clock, FileText, Bot, Loader2, Sparkles, Send, PlusCircle, CheckCircle2, XCircle, MessageSquare, Book, File, Video, Link as LinkIcon, FilePenLine, AlertTriangle, Pencil, Rocket, EyeOff } from 'lucide-react';
+import { CheckCircle, Clock, FileText, Bot, Loader2, Sparkles, Send, PlusCircle, CheckCircle2, XCircle, MessageSquare, Book, File, Video, Link as LinkIcon, FilePenLine, AlertTriangle, Pencil, Rocket, EyeOff, Archive } from 'lucide-react';
 import QRCode from 'qrcode';
 import { cn } from '@/lib/utils';
 import { GenerateTestQuestionsOutput } from '@/ai/flows/generate-test-questions';
@@ -475,6 +475,13 @@ export default function CourseDetailPage() {
       }
   }
 
+  const handleScormExport = () => {
+    toast({
+        title: "Exportación a SCORM",
+        description: "Esta funcionalidad está en desarrollo y estará disponible próximamente.",
+    });
+  };
+
 
   return (
     <div className="space-y-8">
@@ -674,6 +681,10 @@ export default function CourseDetailPage() {
                             <EyeOff className="mr-2 h-4 w-4" />
                         )}
                         {course.status === 'draft' ? 'Publicar Curso' : 'Ocultar Curso'}
+                    </Button>
+                    <Button variant="outline" className="w-full" onClick={handleScormExport}>
+                        <Archive className="mr-2 h-4 w-4" />
+                        Exportar a SCORM
                     </Button>
                 </CardContent>
               </Card>

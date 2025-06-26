@@ -1,9 +1,10 @@
+
 'use client';
 
 import { useState, useMemo, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { PlusCircle, ListFilter, Loader2, Sparkles } from 'lucide-react';
+import { PlusCircle, ListFilter, Loader2, Sparkles, Upload } from 'lucide-react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { getAllCourses, getUserProgressForUser } from '@/lib/db';
 import { useAuth } from '@/contexts/auth';
@@ -123,6 +124,12 @@ function CoursesPageContent() {
             </DropdownMenu>
             {canCreateCourse && (
               <>
+                <Button size="sm" className="h-9 gap-1" asChild variant="outline">
+                    <Link href="/dashboard/courses/scorm-import">
+                      <Upload className="h-4 w-4" />
+                      <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Importar SCORM</span>
+                    </Link>
+                </Button>
                 <Button size="sm" className="h-9 gap-1" asChild variant="outline">
                     <Link href="/dashboard/courses/ai-generator">
                       <Sparkles className="h-4 w-4" />

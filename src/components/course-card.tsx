@@ -1,8 +1,9 @@
+
 'use client';
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { Clock, BookOpen, MoreVertical, FilePenLine, Trash2, AlertTriangle, Pencil } from 'lucide-react';
+import { Clock, BookOpen, MoreVertical, FilePenLine, Trash2, AlertTriangle, Pencil, Archive } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,6 +24,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import type { Course, User } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -55,6 +57,13 @@ export function CourseCard({ course, user, progress, canManage = false }: Course
       });
       console.error(error);
     }
+  };
+
+  const handleScormExport = () => {
+    toast({
+        title: "Exportación a SCORM",
+        description: "Esta funcionalidad está en desarrollo y estará disponible próximamente.",
+    });
   };
 
   return (
@@ -99,6 +108,11 @@ export function CourseCard({ course, user, progress, canManage = false }: Course
                         <span>Editar</span>
                       </Link>
                     </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={handleScormExport}>
+                        <Archive className="mr-2 h-4 w-4" />
+                        <span>Exportar a SCORM</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
                     <AlertDialogTrigger asChild>
                       <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10">
                         <Trash2 className="mr-2 h-4 w-4" />
