@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo, Suspense } from 'react';
+import { useState, useMemo, Suspense, useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { PlusCircle, ListFilter, Loader2, Sparkles, Upload } from 'lucide-react';
@@ -23,18 +23,30 @@ import type { Course } from '@/lib/types';
 
 // The main component now reads search params and filters
 function CoursesPageContent() {
-  // --- 1. HOOKS ---
   const { user } = useAuth();
   const searchParams = useSearchParams();
-  const courses = useLiveQuery(getAllCourses);
-  const userProgressData = useLiveQuery(() => user ? getUserProgressForUser(user.id) : [], [user?.id]);
+
+  // State to ensure browser-only APIs are called on the client
+  const [isClient, setIsClient] = useState(false);
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  const courses = useLiveQuery(
+    () => (isClient ? getAllCourses() : []),
+    [isClient]
+  );
+  const userProgressData = useLiveQuery(
+    () => (isClient && user ? getUserProgressForUser(user.id) : []),
+    [isClient, user?.id]
+  );
+  
   const [filters, setFilters] = useState({
     Online: true,
     Presencial: true,
     Mixta: true,
   });
 
-  // --- 2. MEMOIZED VALUES (DERIVED STATE) ---
   const progressMap = useMemo(() => {
     if (!userProgressData || !courses) return new Map<string, number>();
 
@@ -75,14 +87,8 @@ function CoursesPageContent() {
     );
   }, [courses, filters, searchQuery, canCreateCourse]);
 
-
-  // --- 3. EARLY RETURNS (GUARDS) ---
-  if (!user) {
-    return null; // Layout handles auth check, so this is a safeguard.
-  }
-  
-  // Handle loading state while Dexie initializes
-  if (!courses) {
+  // Handle loading state while client mounts and dexie initializes
+  if (!isClient || !courses || !user) {
     return (
       <div className="flex justify-center items-center h-full">
         <div className="text-center">
@@ -93,14 +99,12 @@ function CoursesPageContent() {
     );
   }
 
-  // --- 4. HANDLERS & OTHER VARIABLES ---
   const handleFilterChange = (modality: keyof typeof filters, checked: boolean) => {
     setFilters(prev => ({ ...prev, [modality]: checked }));
   };
 
   const allModalities: (keyof typeof filters)[] = ['Online', 'Presencial', 'Mixta'];
 
-  // --- 5. RENDER ---
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
