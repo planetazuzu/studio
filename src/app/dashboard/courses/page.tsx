@@ -135,26 +135,12 @@ function CoursesPageContent() {
               </DropdownMenuContent>
             </DropdownMenu>
             {canCreateCourse && (
-              <>
-                <Button size="sm" className="h-9 gap-1" asChild variant="outline">
-                    <Link href="/dashboard/courses/scorm-import">
-                      <Upload className="h-4 w-4" />
-                      <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Importar SCORM</span>
-                    </Link>
-                </Button>
-                <Button size="sm" className="h-9 gap-1" asChild variant="outline">
-                    <Link href="/dashboard/courses/ai-generator">
-                      <Sparkles className="h-4 w-4" />
-                      <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Generar con IA</span>
-                    </Link>
-                </Button>
-                <Button size="sm" className="h-9 gap-1" asChild>
-                    <Link href="/dashboard/courses/new">
-                      <PlusCircle className="h-4 w-4" />
-                      <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Crear Curso</span>
-                    </Link>
-                </Button>
-              </>
+              <Button size="sm" className="h-9 gap-1" asChild>
+                <Link href="/dashboard/courses/create">
+                  <PlusCircle className="h-4 w-4" />
+                  <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Crear Curso</span>
+                </Link>
+              </Button>
             )}
         </div>
       </div>
