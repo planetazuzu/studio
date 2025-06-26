@@ -13,13 +13,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from "@/hooks/use-toast";
 import * as db from '@/lib/db';
 import { roles } from '@/lib/data';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 
 const courseFormSchema = z.object({
   title: z.string().min(2, { message: "El título debe tener al menos 2 caracteres." }),
@@ -32,6 +33,7 @@ const courseFormSchema = z.object({
   startDate: z.string().optional(),
   endDate: z.string().optional(),
   mandatoryForRoles: z.array(z.string()).optional(),
+  status: z.enum(['draft', 'published']).default('draft'),
 });
 
 type CourseFormValues = z.infer<typeof courseFormSchema>;
@@ -53,6 +55,7 @@ export default function NewCoursePage() {
         startDate: '',
         endDate: '',
         mandatoryForRoles: [],
+        status: 'draft',
     },
     mode: 'onChange'
   });
@@ -68,8 +71,8 @@ export default function NewCoursePage() {
     try {
         await db.addCourse(newCourseData);
         toast({
-        title: "Borrador Guardado",
-        description: "El nuevo curso ha sido guardado como borrador.",
+            title: `Curso ${data.status === 'published' ? 'publicado' : 'guardado como borrador'}`,
+            description: `El nuevo curso "${data.title}" ha sido creado correctamente.`,
         });
         router.push('/dashboard/courses');
     } catch (error) {
@@ -95,7 +98,7 @@ export default function NewCoursePage() {
             <Card className="w-full max-w-3xl">
                 <CardHeader>
                     <CardTitle>Crear Nuevo Curso</CardTitle>
-                    <CardDescription>Completa el formulario para añadir una nueva formación al catálogo. Se guardará como borrador.</CardDescription>
+                    <CardDescription>Completa el formulario para añadir una nueva formación al catálogo.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Form {...form}>
@@ -171,10 +174,32 @@ export default function NewCoursePage() {
                                     </FormItem>
                                 )}
                             />
+                            <FormField
+                                control={form.control}
+                                name="status"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                                        <div className="space-y-0.5">
+                                            <FormLabel className="text-base">
+                                                Publicar Curso
+                                            </FormLabel>
+                                            <FormDescription>
+                                                Si se activa, el curso será visible para todos los usuarios inmediatamente.
+                                            </FormDescription>
+                                        </div>
+                                        <FormControl>
+                                            <Switch
+                                                checked={field.value === 'published'}
+                                                onCheckedChange={(checked) => field.onChange(checked ? 'published' : 'draft')}
+                                            />
+                                        </FormControl>
+                                    </FormItem>
+                                )}
+                            />
                             <div className="flex justify-end pt-4">
                                 <Button type="submit" size="lg" disabled={isSubmitting}>
                                     {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Guardar Borrador
+                                    Crear Curso
                                 </Button>
                             </div>
                         </form>
