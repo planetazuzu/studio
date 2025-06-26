@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -18,7 +17,6 @@ import { Loader2, Server, ServerCog } from 'lucide-react';
 import { useFormState } from 'react-dom';
 import { saveApiKeysAction, syncAllDataAction } from './actions';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 
@@ -285,30 +283,12 @@ function SyncManager() {
         setIsLoading(true);
         setLog(['Iniciando sincronización...']);
         try {
-            const unsyncedUsers = await db.users.where('isSynced').equals(false).toArray();
-            const unsyncedCourses = await db.courses.where('isSynced').equals(false).toArray();
-
-            setLog(prev => [...prev, `...Encontrados ${unsyncedUsers.length} usuarios y ${unsyncedCourses.length} cursos para sincronizar.`]);
-
-            if (unsyncedUsers.length === 0 && unsyncedCourses.length === 0) {
-                setLog(prev => [...prev, '¡Todo está al día! No hay datos nuevos para sincronizar.']);
-                setIsLoading(false);
-                return;
-            }
-            
-            const result = await syncAllDataAction({
-                users: unsyncedUsers,
-                courses: unsyncedCourses
-            });
+            const result = await syncAllDataAction();
             
             setLog(prev => [...prev, ...result.log]);
 
             if (result.success) {
-                toast({ title: 'Sincronización Simulada Completa' });
-                // In a real app, update local data after successful sync
-                // await db.users.where('id').anyOf(unsyncedUsers.map(u => u.id)).modify({ isSynced: true });
-                // await db.courses.where('id').anyOf(unsyncedCourses.map(c => c.id)).modify({ isSynced: true });
-                setLog(prev => [...prev, 'NOTA: En una aplicación real, los elementos locales se marcarían como "sincronizados" ahora.']);
+                toast({ title: 'Sincronización Completa', description: result.message });
             } else {
                  toast({ title: 'Error de Sincronización', description: result.message, variant: 'destructive' });
             }

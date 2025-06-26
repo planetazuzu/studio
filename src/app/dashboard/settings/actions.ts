@@ -1,10 +1,11 @@
-
 'use server';
 
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import { getNocoDBConfig } from '@/lib/config';
 import type { User, Course } from '@/lib/types';
+import * as db from '@/lib/db';
+import { noco } from '@/lib/noco';
 
 const cookieOptions = {
   httpOnly: true,
@@ -56,63 +57,68 @@ export async function saveApiKeysAction(prevState: any, formData: FormData) {
 }
 
 
-export async function syncAllDataAction(data: { users: User[], courses: Course[] }): Promise<{ success: boolean; log: string[], message: string }> {
-    const { users, courses } = data;
+export async function syncAllDataAction(): Promise<{ success: boolean; log: string[], message: string }> {
     const log: string[] = [];
     
     log.push("Recibida solicitud de sincronización en el servidor.");
 
-    const nocoConfig = getNocoDBConfig();
-    if (!nocoConfig) {
-        log.push("ERROR: La configuración de NocoDB no se encontró en las cookies del servidor.");
-        return { success: false, log, message: 'NocoDB no está configurado.' };
-    }
-    
-    log.push("Configuración de NocoDB encontrada.");
-
-    // --- Sync Users ---
-    if (users.length > 0) {
-        log.push(`--- Sincronizando ${users.length} usuarios ---`);
-        for (const user of users) {
-            try {
-                // In a real implementation, you would check if the user exists in NocoDB first (e.g., using email as a key)
-                // to decide whether to POST (create) or PATCH (update).
-                // For this prototype, we'll just simulate a POST.
-                
-                log.push(`[SIMULACIÓN] Enviando POST a NocoDB para el usuario: ${user.name} (${user.email})`);
-                
-                // const response = await fetch(`${nocoConfig.apiUrl}/api/v2/tables/users/records`, {
-                //     method: 'POST',
-                //     headers: { 'xc-token': nocoConfig.authToken, 'Content-Type': 'application/json' },
-                //     body: JSON.stringify(user)
-                // });
-                // if (!response.ok) throw new Error(`Failed to sync user ${user.id}`);
-                
-                log.push(`-> Éxito para ${user.name}.`);
-
-            } catch (error: any) {
-                 log.push(`-> ERROR al sincronizar a ${user.name}: ${error.message}`);
-            }
+    try {
+        const nocoConfig = getNocoDBConfig();
+        if (!nocoConfig?.apiUrl || !nocoConfig?.authToken) {
+            throw new Error("La configuración de NocoDB no es válida. Ve a Ajustes > APIs para configurarla.");
         }
-    } else {
-        log.push("No hay usuarios para sincronizar.");
-    }
-    
-    // --- Sync Courses ---
-    if (courses.length > 0) {
-        log.push(`--- Sincronizando ${courses.length} cursos ---`);
-        for (const course of courses) {
-             try {
-                log.push(`[SIMULACIÓN] Enviando POST a NocoDB para el curso: ${course.title}`);
-                log.push(`-> Éxito para ${course.title}.`);
-            } catch (error: any) {
-                 log.push(`-> ERROR al sincronizar a ${course.title}: ${error.message}`);
-            }
-        }
-    } else {
-        log.push("No hay cursos para sincronizar.");
-    }
+        
+        log.push("Configuración de NocoDB encontrada y válida.");
 
-    log.push("Proceso de sincronización finalizado en el servidor.");
-    return { success: true, log, message: 'Sincronización simulada con éxito.' };
+        const unsyncedUsers = await db.users.where('isSynced').equals(false).toArray();
+        const unsyncedCourses = await db.courses.where('isSynced').equals(false).toArray();
+
+        if (unsyncedUsers.length === 0 && unsyncedCourses.length === 0) {
+            log.push("¡Todo está al día! No hay datos nuevos para sincronizar.");
+            return { success: true, log, message: 'No hay datos nuevos para sincronizar.' };
+        }
+
+        // --- Sync Users ---
+        if (unsyncedUsers.length > 0) {
+            log.push(`--- Sincronizando ${unsyncedUsers.length} usuarios ---`);
+            for (const user of unsyncedUsers) {
+                try {
+                    log.push(`Enviando POST a NocoDB para el usuario: ${user.name} (${user.email})`);
+                    await noco.users.create(user);
+                    // Mark as synced in local DB
+                    await db.users.update(user.id, { isSynced: true });
+                    log.push(`-> Éxito para ${user.name}. Marcado como sincronizado localmente.`);
+                } catch (error: any) {
+                    log.push(`-> ERROR al sincronizar a ${user.name}: ${error.message}`);
+                }
+            }
+        } else {
+            log.push("No hay usuarios nuevos o modificados para sincronizar.");
+        }
+        
+        // --- Sync Courses ---
+        if (unsyncedCourses.length > 0) {
+            log.push(`--- Sincronizando ${unsyncedCourses.length} cursos ---`);
+            for (const course of unsyncedCourses) {
+                try {
+                    log.push(`Enviando POST a NocoDB para el curso: ${course.title}`);
+                    await noco.courses.create(course);
+                    // Mark as synced in local DB
+                    await db.courses.update(course.id, { isSynced: true });
+                    log.push(`-> Éxito para ${course.title}. Marcado como sincronizado localmente.`);
+                } catch (error: any) {
+                    log.push(`-> ERROR al sincronizar a ${course.title}: ${error.message}`);
+                }
+            }
+        } else {
+            log.push("No hay cursos nuevos o modificados para sincronizar.");
+        }
+
+        log.push("Proceso de sincronización finalizado.");
+        return { success: true, log, message: 'Sincronización completada.' };
+
+    } catch (e: any) {
+        log.push(`ERROR FATAL: ${e.message}`);
+        return { success: false, log, message: e.message };
+    }
 }
