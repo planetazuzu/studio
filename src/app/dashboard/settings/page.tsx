@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useActionState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -14,7 +15,6 @@ import { useAuth } from '@/contexts/auth';
 import { Skeleton } from '@/components/ui/skeleton';
 import * as db from '@/lib/db';
 import { Loader2, Server, ServerCog } from 'lucide-react';
-import { useFormState } from 'react-dom';
 import { saveApiKeysAction, syncAllDataAction } from './actions';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -140,7 +140,7 @@ function GeneralSettings({ general, setGeneral }: { general: any, setGeneral: Fu
 function ApiSettings() {
     const { toast } = useToast();
     const formRef = useRef<HTMLFormElement>(null);
-    const [state, formAction] = useFormState(saveApiKeysAction, { success: false, message: '' });
+    const [state, formAction] = useActionState(saveApiKeysAction, { success: false, message: '' });
 
     useEffect(() => {
         if (state.message) {
