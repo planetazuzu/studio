@@ -1,3 +1,4 @@
+
 'use client';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState, useRef } from 'react';
@@ -432,3 +433,4 @@ export default function AnalyticsPage() {
     </div>
   );
 }
+

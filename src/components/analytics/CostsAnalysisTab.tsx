@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, XAxis, YAxis } from 'recharts';
@@ -42,7 +43,7 @@ interface CostsAnalysisTabProps {
     setCostCategoryFilters: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
 }
 
-export function CostsAnalysisTab({
+export const CostsAnalysisTab = ({
     costInstructorFilter,
     setCostInstructorFilter,
     allInstructors,
@@ -58,7 +59,7 @@ export function CostsAnalysisTab({
     allCostCategories,
     costCategoryFilters,
     setCostCategoryFilters,
-}: CostsAnalysisTabProps) {
+}: CostsAnalysisTabProps) => {
   return (
     <div className="mt-6 space-y-8">
         <Card>
