@@ -1,6 +1,6 @@
 import Dexie, { type Table } from 'dexie';
-import type { Course, User, Enrollment, UserProgress, PendingEnrollmentDetails, ForumMessage, ForumMessageWithReplies, Notification, Resource, CourseResource, Announcement, ChatChannel, ChatMessage, Role, ComplianceReportData, DirectMessageThread, CalendarEvent, ExternalTraining, EnrollmentStatus, EnrollmentWithDetails } from './types';
-import { courses as initialCourses, users as initialUsers, initialChatChannels } from './data';
+import type { Course, User, Enrollment, UserProgress, PendingEnrollmentDetails, ForumMessage, ForumMessageWithReplies, Notification, Resource, CourseResource, Announcement, ChatChannel, ChatMessage, Role, ComplianceReportData, DirectMessageThread, CalendarEvent, ExternalTraining, EnrollmentStatus, EnrollmentWithDetails, Cost } from './types';
+import { courses as initialCourses, users as initialUsers, initialChatChannels, initialCosts } from './data';
 
 const LOGGED_IN_USER_KEY = 'loggedInUserId';
 
@@ -18,6 +18,7 @@ export class AcademiaAIDB extends Dexie {
   chatMessages!: Table<ChatMessage>;
   calendarEvents!: Table<CalendarEvent>;
   externalTrainings!: Table<ExternalTraining>;
+  costs!: Table<Cost>;
 
 
   constructor() {
@@ -69,7 +70,10 @@ export class AcademiaAIDB extends Dexie {
     });
     this.version(14).stores({
         enrollments: '++id, studentId, courseId, status'
-    })
+    });
+    this.version(15).stores({
+        costs: '++id, category, courseId, date'
+    });
   }
 }
 
@@ -93,6 +97,12 @@ export async function populateDatabase() {
   if (channelCount === 0) {
     console.log("Populating chat channels...");
     await db.chatChannels.bulkAdd(initialChatChannels);
+  }
+
+  const costCount = await db.costs.count();
+  if (costCount === 0) {
+    console.log("Populating costs...");
+    await db.costs.bulkAdd(initialCosts.map(c => ({...c, isSynced: true})));
   }
 }
 
@@ -733,4 +743,28 @@ export async function updateExternalTraining(id: number, data: Partial<Omit<Exte
 
 export async function deleteExternalTraining(id: number): Promise<void> {
     await db.externalTrainings.delete(id);
+}
+
+
+// --- Cost Functions ---
+
+export async function getAllCosts(): Promise<Cost[]> {
+    return await db.costs.reverse().sortBy('date');
+}
+
+export async function addCost(cost: Omit<Cost, 'id' | 'isSynced' | 'updatedAt'>): Promise<number> {
+    const newCost: Cost = {
+        ...cost,
+        isSynced: false,
+        updatedAt: new Date().toISOString(),
+    };
+    return await db.costs.add(newCost);
+}
+
+export async function updateCost(id: number, data: Partial<Omit<Cost, 'id'>>): Promise<number> {
+    return await db.costs.update(id, { ...data, updatedAt: new Date().toISOString(), isSynced: false });
+}
+
+export async function deleteCost(id: number): Promise<void> {
+    await db.costs.delete(id);
 }

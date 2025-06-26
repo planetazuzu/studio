@@ -12,7 +12,7 @@ import {
   ChartConfig,
 } from '@/components/ui/chart';
 import * as db from '@/lib/db';
-import { costs, departments as allDepartmentsList, roles as allRolesList } from '@/lib/data';
+import { departments as allDepartmentsList, roles as allRolesList, costCategories } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -43,7 +43,7 @@ export default function AnalyticsPage() {
   const [costInstructorFilter, setCostInstructorFilter] = useState('all');
   const [costModalityFilter, setCostModalityFilter] = useState('all');
   const [costCategoryFilters, setCostCategoryFilters] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries([...new Set(costs.map((cost) => cost.category))].map((cat) => [cat, true]))
+    Object.fromEntries(costCategories.map((cat) => [cat, true]))
   );
 
   // --- Data Fetching ---
@@ -51,12 +51,13 @@ export default function AnalyticsPage() {
   const allUsers = useLiveQuery(() => db.getAllUsers(), []);
   const allProgress = useLiveQuery(() => db.db.userProgress.toArray(), []);
   const allEnrollments = useLiveQuery(() => db.db.enrollments.toArray(), []);
+  const costs = useLiveQuery(() => db.getAllCosts(), []);
   const complianceData = useLiveQuery(() => db.getComplianceReportData(departmentFilter, roleFilter), [departmentFilter, roleFilter]);
 
   // --- Memoized Filter Options ---
   const allInstructors = useMemo(() => ['all', ...new Set(allCourses?.map(c => c.instructor) || [])], [allCourses]);
   const allModalities = useMemo(() => ['all', ...new Set(allCourses?.map(c => c.modality) || [])], [allCourses]);
-  const allCostCategories = useMemo(() => [...new Set(costs.map((cost) => cost.category))], []);
+  const allCostCategories = costCategories;
 
 
   // --- Cost Data Calculations ---
@@ -72,31 +73,38 @@ export default function AnalyticsPage() {
   const filteredCourseIdsForCosts = useMemo(() => new Set(filteredCoursesForCosts.map(c => c.id)), [filteredCoursesForCosts]);
 
   const filteredCosts = useMemo(() => {
+    if (!costs) return [];
     return costs.filter(cost => {
         const categoryMatch = costCategoryFilters[cost.category];
         const courseMatch = !cost.courseId || filteredCourseIdsForCosts.has(cost.courseId);
         return categoryMatch && courseMatch;
     });
-  }, [costCategoryFilters, filteredCourseIdsForCosts]);
+  }, [costs, costCategoryFilters, filteredCourseIdsForCosts]);
   
-  const spendingByCategory = useMemo(() => filteredCosts.reduce((acc, cost) => {
-    if (!acc[cost.category]) acc[cost.category] = 0;
-    acc[cost.category] += cost.amount;
-    return acc;
-  }, {} as Record<string, number>), [filteredCosts]);
+  const spendingByCategory = useMemo(() => {
+      if (!filteredCosts) return {};
+      return filteredCosts.reduce((acc, cost) => {
+        if (!acc[cost.category]) acc[cost.category] = 0;
+        acc[cost.category] += cost.amount;
+        return acc;
+    }, {} as Record<string, number>);
+  }, [filteredCosts]);
 
   const barChartData = useMemo(() => Object.keys(spendingByCategory).map(category => ({
     category,
     amount: spendingByCategory[category],
   })), [spendingByCategory]);
 
-  const monthlySpending = useMemo(() => filteredCosts.reduce((acc, cost) => {
-      const date = new Date(cost.date);
-      const monthKey = format(date, 'yyyy-MM');
-      if (!acc[monthKey]) acc[monthKey] = { amount: 0, month: format(date, 'MMM', { locale: es }) };
-      acc[monthKey].amount += cost.amount;
-      return acc;
-  }, {} as Record<string, { amount: number, month: string }>), [filteredCosts]);
+  const monthlySpending = useMemo(() => {
+      if (!filteredCosts) return {};
+      return filteredCosts.reduce((acc, cost) => {
+        const date = new Date(cost.date);
+        const monthKey = format(date, 'yyyy-MM');
+        if (!acc[monthKey]) acc[monthKey] = { amount: 0, month: format(date, 'MMM', { locale: es }) };
+        acc[monthKey].amount += cost.amount;
+        return acc;
+    }, {} as Record<string, { amount: number, month: string }>);
+  }, [filteredCosts]);
 
   const lineChartData = useMemo(() => Object.keys(monthlySpending)
       .sort()
@@ -106,7 +114,7 @@ export default function AnalyticsPage() {
       })), [monthlySpending]);
   
   const costByCourse = useMemo(() => {
-    if (!allCourses) return [];
+    if (!allCourses || !filteredCosts) return [];
 
     const courseMap = new Map(allCourses.map(c => [c.id, c.title]));
     
@@ -334,7 +342,7 @@ export default function AnalyticsPage() {
     return null;
   }
 
-  if (!trainingData || complianceData === undefined) {
+  if (!trainingData || complianceData === undefined || costs === undefined) {
       return (
         <div className="flex h-[80vh] items-center justify-center">
             <Loader2 className="h-16 w-16 animate-spin text-primary" />

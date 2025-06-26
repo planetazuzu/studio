@@ -1,4 +1,4 @@
-import { AreaChart, BookOpen, Home, Settings, Users, Calendar, Library, Megaphone, MessagesSquare, ClipboardCheck, UserRoundCog, type LucideIcon } from 'lucide-react';
+import { AreaChart, BookOpen, Home, Settings, Users, Calendar, Library, Megaphone, MessagesSquare, ClipboardCheck, UserRoundCog, Wallet, type LucideIcon } from 'lucide-react';
 import type { Role } from './types';
 
 export type NavItem = {
@@ -51,6 +51,12 @@ export const navItems: NavItem[] = [
     href: '/dashboard/communications',
     icon: Megaphone,
     label: 'Avisos',
+    roles: managerRoles,
+  },
+  {
+    href: '/dashboard/costs',
+    icon: Wallet,
+    label: 'Gestión de Costes',
     roles: managerRoles,
   },
   {

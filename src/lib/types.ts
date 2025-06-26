@@ -82,14 +82,19 @@ export type Module = {
   content: string;
 }
 
+export const costCategories = ['Honorarios Formador', 'Licencias de Plataforma', 'Equipamiento', 'Logística y Dietas', 'Otro'] as const;
+export type CostCategory = typeof costCategories[number];
+
 export type Cost = {
-  id: string;
+  id?: number;
   item: string;
-  category: 'Honorarios Formador' | 'Licencias de Plataforma' | 'Equipamiento' | 'Logística y Dietas' | 'Otro';
+  category: CostCategory;
   amount: number;
-  date: string;
+  date: string; // ISO date string
   courseId?: string;
-  userId?: string;
+  userId?: string; // Who registered the cost
+  isSynced?: boolean;
+  updatedAt?: string; // ISO date string
 };
 
 // For displaying pending enrollments with user and course names

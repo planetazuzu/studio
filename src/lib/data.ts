@@ -1,4 +1,4 @@
-import { User, Course, Role, Cost, Department, ChatChannel } from './types';
+import { User, Course, Role, Department, ChatChannel, CostCategory } from './types';
 
 export const roles: Role[] = [
   'Trabajador',
@@ -16,6 +16,8 @@ export const departments: Department[] = [
     'Formación',
     'Logística',
 ];
+
+export const costCategories: CostCategory[] = ['Honorarios Formador', 'Licencias de Plataforma', 'Equipamiento', 'Logística y Dietas', 'Otro'];
 
 export const announcementChannels: string[] = ['Todos', ...roles, ...departments];
 
@@ -266,14 +268,14 @@ export const courses: Omit<Course, 'progress'>[] = [
   },
 ];
 
-export const costs: Cost[] = [
-    { id: 'cost_1', item: 'Honorarios Dr. Torres (SVB)', category: 'Honorarios Formador', amount: 1800, date: '2024-05-15', courseId: 'course_1' },
-    { id: 'cost_2', item: 'Licencias Simulador Conducción', category: 'Licencias de Plataforma', amount: 1200, date: '2024-05-10', courseId: 'course_2' },
-    { id: 'cost_3', item: 'Maniquíes RCP (x5)', category: 'Equipamiento', amount: 3500, date: '2024-05-20', courseId: 'course_1' },
-    { id: 'cost_4', item: 'Alquiler circuito prácticas', category: 'Logística y Dietas', amount: 900, date: '2024-04-25', courseId: 'course_2' },
-    { id: 'cost_5', item: 'Honorarios L. Fernández (Comms)', category: 'Honorarios Formador', amount: 1550, date: '2024-06-01', courseId: 'course_3' },
-    { id: 'cost_6', item: 'Suscripción General Plataforma E-learning', category: 'Licencias de Plataforma', amount: 400, date: '2024-06-05' },
-    { id: 'cost_7', item: 'Catering curso SVB', category: 'Logística y Dietas', amount: 800, date: '2024-05-21', courseId: 'course_1' },
+export const initialCosts = [
+    { item: 'Honorarios Dr. Torres (SVB)', category: 'Honorarios Formador', amount: 1800, date: '2024-05-15', courseId: 'course_1' },
+    { item: 'Licencias Simulador Conducción', category: 'Licencias de Plataforma', amount: 1200, date: '2024-05-10', courseId: 'course_2' },
+    { item: 'Maniquíes RCP (x5)', category: 'Equipamiento', amount: 3500, date: '2024-05-20', courseId: 'course_1' },
+    { item: 'Alquiler circuito prácticas', category: 'Logística y Dietas', amount: 900, date: '2024-04-25', courseId: 'course_2' },
+    { item: 'Honorarios L. Fernández (Comms)', category: 'Honorarios Formador', amount: 1550, date: '2024-06-01', courseId: 'course_3' },
+    { item: 'Suscripción General Plataforma E-learning', category: 'Licencias de Plataforma', amount: 400, date: '2024-06-05' },
+    { item: 'Catering curso SVB', category: 'Logística y Dietas', amount: 800, date: '2024-05-21', courseId: 'course_1' },
 ];
 
 export const initialChatChannels: ChatChannel[] = [
