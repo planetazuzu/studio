@@ -284,15 +284,27 @@ export const initialChatChannels: ChatChannel[] = [
         type: 'public',
     },
     {
-        id: 'channel_emergencias',
-        name: 'casos-clinicos',
-        description: 'Discusión de casos clínicos y procedimientos.',
-        type: 'public',
-    },
-    {
         id: 'channel_formacion',
         name: 'dudas-formacion',
         description: 'Preguntas y respuestas sobre los cursos de la plataforma.',
+        type: 'public',
+    },
+    {
+        id: 'channel_rrhh',
+        name: 'rrhh',
+        description: 'Consultas sobre recursos humanos, nóminas y contratos.',
+        type: 'public',
+    },
+    {
+        id: 'channel_soporte',
+        name: 'soporte-tecnico',
+        description: '¿Problemas con la plataforma? Informa de incidencias aquí.',
+        type: 'public',
+    },
+    {
+        id: 'channel_emergencias',
+        name: 'casos-clinicos',
+        description: 'Discusión de casos clínicos y procedimientos.',
         type: 'public',
     },
     {

@@ -4,17 +4,84 @@ import { useState, useEffect, useRef, Suspense } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Hash, Send, Loader2, Users } from 'lucide-react';
+import { Hash, Send, Loader2, Users, MessageSquarePlus } from 'lucide-react';
 import { useAuth } from '@/contexts/auth';
 import * as db from '@/lib/db';
-import type { ChatMessage, ChatChannel, DirectMessageThread } from '@/lib/types';
+import type { ChatMessage, ChatChannel, DirectMessageThread, User } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+
+
+function NewMessageDialog({ open, onOpenChange }: { open: boolean, onOpenChange: (open: boolean) => void }) {
+    const { user: authUser } = useAuth();
+    const router = useRouter();
+    const allUsers = useLiveQuery(() => db.getAllUsers(), []);
+    const [searchTerm, setSearchTerm] = useState('');
+
+    const handleSelectUser = async (targetUser: User) => {
+        if (!authUser || authUser.id === targetUser.id) return;
+        
+        try {
+            const channel = await db.getOrCreateDirectMessageThread(authUser.id, targetUser.id);
+            router.push(`/dashboard/chat?channelId=${channel.id}`);
+            onOpenChange(false); // Close dialog on success
+        } catch(error) {
+            console.error("Failed to start chat", error);
+            // Optionally, add a toast here for user feedback
+        }
+    }
+
+    const filteredUsers = allUsers?.filter(
+        user => user.id !== authUser?.id && user.name.toLowerCase().includes(searchTerm.toLowerCase())
+    ) || [];
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                    <DialogTitle>Nuevo Mensaje Directo</DialogTitle>
+                </DialogHeader>
+                <div className="py-4">
+                    <Input 
+                        placeholder="Buscar usuario..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="mb-4"
+                    />
+                    <ScrollArea className="h-72">
+                        <div className="space-y-1 pr-2">
+                           {filteredUsers.length > 0 ? filteredUsers.map(user => (
+                               <button key={user.id} onClick={() => handleSelectUser(user)} className="flex items-center gap-3 w-full p-2 rounded-lg hover:bg-muted text-left">
+                                   <Avatar>
+                                       <AvatarImage src={user.avatar} />
+                                       <AvatarFallback>{user.name.slice(0, 2)}</AvatarFallback>
+                                   </Avatar>
+                                   <div>
+                                       <p className="font-semibold">{user.name}</p>
+                                       <p className="text-sm text-muted-foreground">{user.role}</p>
+                                   </div>
+                               </button>
+                           )) : (
+                               <p className="text-sm text-muted-foreground text-center p-4">No se encontraron usuarios.</p>
+                           )}
+                        </div>
+                    </ScrollArea>
+                </div>
+            </DialogContent>
+        </Dialog>
+    )
+}
 
 function ChatMessageItem({ message, isCurrentUser }: { message: ChatMessage, isCurrentUser: boolean }) {
     return (
@@ -47,6 +114,7 @@ function ChatPageContent() {
     const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null);
     const [newMessage, setNewMessage] = useState('');
     const [isSending, setIsSending] = useState(false);
+    const [isNewMessageDialogOpen, setIsNewMessageDialogOpen] = useState(false);
 
     const scrollAreaRef = useRef<HTMLDivElement>(null);
 
@@ -117,8 +185,12 @@ function ChatPageContent() {
             <Card className="h-full grid grid-cols-[280px_1fr] shadow-lg">
                 {/* Channels Sidebar */}
                 <div className="border-r flex flex-col">
-                    <CardHeader>
-                        <CardTitle>Canales de Chat</CardTitle>
+                    <CardHeader className="flex flex-row items-center justify-between">
+                        <CardTitle>Canales</CardTitle>
+                        <Button variant="ghost" size="icon" onClick={() => setIsNewMessageDialogOpen(true)} className="h-8 w-8">
+                            <MessageSquarePlus className="h-5 w-5" />
+                            <span className="sr-only">Nuevo Mensaje</span>
+                        </Button>
                     </CardHeader>
                     <ScrollArea className="flex-1">
                         <CardContent className="pt-0">
@@ -154,7 +226,7 @@ function ChatPageContent() {
                                         <span className="truncate">{thread.otherParticipant.name}</span>
                                     </Button>
                                 ))}
-                                {dmThreads?.length === 0 && <p className="text-xs text-muted-foreground text-center p-4">Inicia una conversación desde la página de Usuarios.</p>}
+                                {dmThreads?.length === 0 && <p className="text-xs text-muted-foreground text-center p-4">Inicia una conversación usando el botón '+' de arriba.</p>}
                             </nav>
                         </CardContent>
                     </ScrollArea>
@@ -228,6 +300,7 @@ function ChatPageContent() {
                     )}
                 </div>
             </Card>
+            <NewMessageDialog open={isNewMessageDialogOpen} onOpenChange={setIsNewMessageDialogOpen} />
         </div>
     );
 }
