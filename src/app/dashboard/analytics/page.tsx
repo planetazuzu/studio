@@ -1,4 +1,3 @@
-
 'use client';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState, useRef } from 'react';
@@ -7,23 +6,15 @@ import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, XAxis, YAxis } from 'recharts';
-import { Download, ListFilter, CircleDollarSign, CreditCard, CalendarClock, Scale, CheckSquare, Users, Clock, Loader2, FilePenLine, UserCheck, ShieldCheck, FileText, Filter } from 'lucide-react';
+import { Download, Loader2, FilePenLine, ShieldCheck, FileText } from 'lucide-react';
 import {
   ChartConfig,
-  ChartContainer,
-  ChartTooltip as ChartTooltipProvider,
-  ChartTooltipContent,
 } from '@/components/ui/chart';
 import * as db from '@/lib/db';
 import { costs, departments as allDepartmentsList, roles as allRolesList } from '@/lib/data';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { StatCard } from '@/components/stat-card';
 import {
   DropdownMenu,
-  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
@@ -33,49 +24,9 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/auth';
 import type { ComplianceReportData } from '@/lib/types';
-import { Progress } from '@/components/ui/progress';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-
-
-function ComplianceReportTable({ data }: { data: ComplianceReportData[] }) {
-    return (
-        <Card className="shadow-lg">
-            <CardHeader>
-                <CardTitle>Informe de Cumplimiento de Formación Obligatoria</CardTitle>
-                <CardDescription>Estado de la formación obligatoria para cada usuario según su rol.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Usuario</TableHead>
-                            <TableHead>Rol</TableHead>
-                            <TableHead>Cursos Obligatorios</TableHead>
-                            <TableHead>Cursos Completados</TableHead>
-                            <TableHead className="w-[200px]">Tasa de Cumplimiento</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {data.map(item => (
-                            <TableRow key={item.userId}>
-                                <TableCell className="font-medium">{item.userName}</TableCell>
-                                <TableCell>{item.userRole}</TableCell>
-                                <TableCell className="text-center">{item.mandatoryCoursesCount}</TableCell>
-                                <TableCell className="text-center">{item.completedCoursesCount}</TableCell>
-                                <TableCell>
-                                    <div className="flex items-center gap-2">
-                                        <Progress value={item.complianceRate} className="h-2" />
-                                        <span className="text-xs font-semibold">{item.complianceRate.toFixed(0)}%</span>
-                                    </div>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </CardContent>
-        </Card>
-    );
-}
+import { TrainingOverviewTab } from '@/components/analytics/TrainingOverviewTab';
+import { ComplianceTab } from '@/components/analytics/ComplianceTab';
+import { CostsAnalysisTab } from '@/components/analytics/CostsAnalysisTab';
 
 
 export default function AnalyticsPage() {
@@ -431,235 +382,51 @@ export default function AnalyticsPage() {
             <TabsTrigger value="costs">Análisis de Costes</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="training" className="mt-6 space-y-8">
-            <Card>
-                <CardHeader><CardTitle>Filtros</CardTitle></CardHeader>
-                <CardContent className="flex flex-col md:flex-row gap-4">
-                    <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
-                        <SelectTrigger><SelectValue placeholder="Filtrar por Departamento" /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">Todos los Departamentos</SelectItem>
-                            {allDepartmentsList.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
-                     <Select value={roleFilter} onValueChange={setRoleFilter}>
-                        <SelectTrigger><SelectValue placeholder="Filtrar por Rol" /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">Todos los Roles</SelectItem>
-                            {allRolesList.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
-                </CardContent>
-            </Card>
-
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                <StatCard title="Tasa de Finalización Media" value={`${trainingData.averageCompletionRate.toFixed(0)}%`} icon={CheckSquare} description="Para la selección actual" />
-                <StatCard title="Horas de Formación Totales" value={`${trainingData.totalTrainingHours}`} icon={Clock} description="Programadas en el catálogo" />
-                <StatCard title="Usuarios Activos" value={trainingData.activeUsers.toString()} icon={Users} description="Que coinciden con el filtro" />
-            </div>
-
-            <div className="grid gap-8 lg:grid-cols-2">
-                <Card className="shadow-lg">
-                    <CardHeader><CardTitle>Progreso por Departamento</CardTitle></CardHeader>
-                    <CardContent>
-                        <ChartContainer config={departmentChartConfig} className="h-96 w-full">
-                            <ResponsiveContainer>
-                                <BarChart data={trainingData.departmentProgress} layout="vertical" margin={{ left: 20 }}>
-                                    <CartesianGrid horizontal={false} />
-                                    <YAxis dataKey="department" type="category" tickLine={false} axisLine={false} tickMargin={10} width={150} />
-                                    <XAxis type="number" dataKey="progress" domain={[0, 100]} unit="%"/>
-                                    <ChartTooltipProvider cursor={false} content={<ChartTooltipContent indicator="dot" />} />
-                                    <Bar dataKey="progress" fill="var(--color-progress)" radius={4} />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </ChartContainer>
-                    </CardContent>
-                </Card>
-                <Card className="shadow-lg">
-                    <CardHeader><CardTitle>Progreso por Rol</CardTitle></CardHeader>
-                    <CardContent>
-                        <ChartContainer config={roleChartConfig} className="h-96 w-full">
-                            <ResponsiveContainer>
-                                <BarChart data={trainingData.roleProgress} margin={{ left: 0, right: 20, bottom: 60 }}>
-                                    <CartesianGrid vertical={false} />
-                                    <XAxis dataKey="role" type="category" tickLine={false} axisLine={false} tickMargin={10} angle={-45} textAnchor="end" interval={0} />
-                                    <YAxis type="number" domain={[0, 100]} unit="%"/>
-                                    <ChartTooltipProvider cursor={false} content={<ChartTooltipContent indicator="dot" />} />
-                                    <Bar dataKey="progress" fill="var(--color-progress)" radius={4} />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </ChartContainer>
-                    </CardContent>
-                </Card>
-            </div>
-
-            <Card className="shadow-lg">
-                <CardHeader><CardTitle>Actividad Formativa Mensual</CardTitle></CardHeader>
-                <CardContent>
-                    <ChartContainer config={activityChartConfig} className="h-80 w-full">
-                        <ResponsiveContainer>
-                            <LineChart data={trainingData.activityChartData} margin={{ top: 20, right: 20, bottom: 5, left: 0 }}>
-                                <CartesianGrid vertical={false} />
-                                <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
-                                <YAxis />
-                                <ChartTooltipProvider content={<ChartTooltipContent />} />
-                                <Line name="Iniciados" dataKey="iniciados" type="monotone" stroke="var(--color-iniciados)" strokeWidth={2} dot={{ fill: "var(--color-iniciados)" }} activeDot={{ r: 8 }} />
-                                <Line name="Completados" dataKey="completados" type="monotone" stroke="var(--color-completados)" strokeWidth={2} dot={{ fill: "var(--color-completados)" }} activeDot={{ r: 8 }} />
-                            </LineChart>
-                        </ResponsiveContainer>
-                    </ChartContainer>
-                </CardContent>
-            </Card>
+        <TabsContent value="training">
+            <TrainingOverviewTab
+                departmentFilter={departmentFilter}
+                setDepartmentFilter={setDepartmentFilter}
+                allDepartmentsList={allDepartmentsList}
+                roleFilter={roleFilter}
+                setRoleFilter={setRoleFilter}
+                allRolesList={allRolesList}
+                trainingData={trainingData}
+                departmentChartConfig={departmentChartConfig}
+                roleChartConfig={roleChartConfig}
+                activityChartConfig={activityChartConfig}
+            />
         </TabsContent>
 
-        <TabsContent value="compliance" className="mt-6 space-y-8">
-            <Card>
-                <CardHeader><CardTitle>Filtros de Cumplimiento</CardTitle></CardHeader>
-                <CardContent className="flex flex-col md:flex-row gap-4">
-                     <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
-                        <SelectTrigger><SelectValue placeholder="Filtrar por Departamento" /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">Todos los Departamentos</SelectItem>
-                            {allDepartmentsList.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
-                     <Select value={roleFilter} onValueChange={setRoleFilter}>
-                        <SelectTrigger><SelectValue placeholder="Filtrar por Rol" /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">Todos los Roles</SelectItem>
-                            {allRolesList.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
-                </CardContent>
-            </Card>
-            <ComplianceReportTable data={complianceData} />
+        <TabsContent value="compliance">
+            <ComplianceTab
+                departmentFilter={departmentFilter}
+                setDepartmentFilter={setDepartmentFilter}
+                allDepartmentsList={allDepartmentsList}
+                roleFilter={roleFilter}
+                setRoleFilter={setRoleFilter}
+                allRolesList={allRolesList}
+                complianceData={complianceData}
+            />
         </TabsContent>
 
-        <TabsContent value="costs" className="mt-6 space-y-8">
-             <Card>
-                <CardHeader><CardTitle>Filtros de Costes</CardTitle></CardHeader>
-                <CardContent className="flex flex-col md:flex-row gap-4">
-                    <Select value={costInstructorFilter} onValueChange={setCostInstructorFilter}>
-                        <SelectTrigger><SelectValue placeholder="Filtrar por Instructor" /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">Todos los Instructores</SelectItem>
-                            {allInstructors.filter(i => i !== 'all').map(i => <SelectItem key={i} value={i}>{i}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
-                     <Select value={costModalityFilter} onValueChange={setCostModalityFilter}>
-                        <SelectTrigger><SelectValue placeholder="Filtrar por Modalidad" /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">Todas las Modalidades</SelectItem>
-                            {allModalities.filter(m => m !== 'all').map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
-                </CardContent>
-            </Card>
-
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <StatCard title="Presupuesto Anual" value="25,000€" icon={CircleDollarSign} />
-                <StatCard title="Gasto Total Filtrado" value={`${filteredCosts.reduce((a,b) => a+b.amount, 0).toFixed(2)}€`} icon={CreditCard} />
-                <StatCard title="Gasto (Últ. 30 días)" value="1,550€" icon={CalendarClock} description="No afectado por filtros" />
-                <StatCard title="Presupuesto Restante" value="16,050€" icon={Scale} description="No afectado por filtros" />
-            </div>
-
-            <div className="grid gap-8 lg:grid-cols-2">
-                <Card className="shadow-lg">
-                    <CardHeader><CardTitle>Gasto por Categoría</CardTitle></CardHeader>
-                    <CardContent>
-                        <ChartContainer config={barChartConfig} className="h-64 w-full">
-                        <ResponsiveContainer>
-                            <BarChart data={barChartData} margin={{ top: 20, right: 20, bottom: 5, left: 0 }}>
-                            <CartesianGrid vertical={false} />
-                            <XAxis dataKey="category" tickLine={false} tickMargin={10} axisLine={false} />
-                            <YAxis unit="€" />
-                            <ChartTooltipProvider content={<ChartTooltipContent />} />
-                            <Bar dataKey="amount" fill="var(--color-amount)" radius={4} />
-                            </BarChart>
-                        </ResponsiveContainer>
-                        </ChartContainer>
-                    </CardContent>
-                </Card>
-                <Card className="shadow-lg">
-                    <CardHeader><CardTitle>Gasto Mensual</CardTitle></CardHeader>
-                    <CardContent>
-                        <ChartContainer config={lineChartConfig} className="h-64 w-full">
-                        <ResponsiveContainer>
-                            <LineChart data={lineChartData} margin={{ top: 20, right: 20, bottom: 5, left: 0 }}>
-                                <CartesianGrid vertical={false} />
-                                <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
-                                <YAxis unit="€" />
-                                <ChartTooltipProvider cursor={false} content={<ChartTooltipContent indicator="dot" />} />
-                                <Line dataKey="amount" type="monotone" stroke="var(--color-amount)" strokeWidth={2} dot={{ fill: "var(--color-amount)"}} activeDot={{ r: 8 }} />
-                            </LineChart>
-                        </ResponsiveContainer>
-                        </ChartContainer>
-                    </CardContent>
-                </Card>
-            </div>
-            
-            <Card className="shadow-lg">
-                <CardHeader><CardTitle>Desglose de Costes por Curso</CardTitle></CardHeader>
-                <CardContent>
-                    <Table>
-                        <TableHeader><TableRow><TableHead>Curso</TableHead><TableHead className="text-right">Coste Total</TableHead></TableRow></TableHeader>
-                        <TableBody>
-                            {costByCourse.map(item => (
-                                <TableRow key={item.courseId}>
-                                    <TableCell className="font-medium">{item.courseTitle}</TableCell>
-                                    <TableCell className="text-right">{item.totalCost.toFixed(2)}€</TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
-
-            <Card className="shadow-lg">
-                <CardHeader className="flex flex-row items-center">
-                    <div className="grid gap-2">
-                        <CardTitle>Transacciones Recientes</CardTitle>
-                        <CardDescription>Listado de los gastos registrados que coinciden con los filtros.</CardDescription>
-                    </div>
-                    <div className="ml-auto flex items-center gap-2">
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="outline" size="sm" className="h-7 gap-1 text-sm"><ListFilter className="h-3.5 w-3.5" /><span>Categoría</span></Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Filtrar por categoría</DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                {allCostCategories.map((category) => (
-                                    <DropdownMenuCheckboxItem
-                                        key={category}
-                                        checked={costCategoryFilters[category] ?? true}
-                                        onCheckedChange={(checked) => setCostCategoryFilters(prev => ({...prev, [category]: !!checked}))}
-                                    >
-                                        {category}
-                                    </DropdownMenuCheckboxItem>
-                                ))}
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                <Table>
-                    <TableHeader>
-                        <TableRow><TableHead>Concepto</TableHead><TableHead>Categoría</TableHead><TableHead className="text-right">Importe</TableHead><TableHead>Fecha</TableHead></TableRow>
-                    </TableHeader>
-                    <TableBody>
-                    {filteredCosts.map((cost) => (
-                        <TableRow key={cost.id}>
-                            <TableCell className="font-medium">{cost.item}</TableCell>
-                            <TableCell>{cost.category}</TableCell>
-                            <TableCell className="text-right">{cost.amount.toFixed(2)}€</TableCell>
-                            <TableCell>{new Date(cost.date).toLocaleDateString()}</TableCell>
-                        </TableRow>
-                    ))}
-                    </TableBody>
-                </Table>
-                </CardContent>
-            </Card>
+        <TabsContent value="costs">
+            <CostsAnalysisTab
+                costInstructorFilter={costInstructorFilter}
+                setCostInstructorFilter={setCostInstructorFilter}
+                allInstructors={allInstructors}
+                costModalityFilter={costModalityFilter}
+                setCostModalityFilter={setCostModalityFilter}
+                allModalities={allModalities}
+                filteredCosts={filteredCosts}
+                barChartConfig={barChartConfig}
+                barChartData={barChartData}
+                lineChartConfig={lineChartConfig}
+                lineChartData={lineChartData}
+                costByCourse={costByCourse}
+                allCostCategories={allCostCategories}
+                costCategoryFilters={costCategoryFilters}
+                setCostCategoryFilters={setCostCategoryFilters}
+            />
         </TabsContent>
       </Tabs>
     </div>
