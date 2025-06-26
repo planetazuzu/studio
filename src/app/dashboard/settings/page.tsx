@@ -11,7 +11,7 @@ import { Loader2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { ProfileSettings } from '@/components/settings/profile-settings';
-import { ExternalTrainingSettings } from '@/components/settings/external-training-settings';
+import { TrainingHistory } from '@/components/settings/training-history';
 import { ContactPreferences } from '@/components/settings/contact-preferences';
 import { GeneralSettings } from '@/components/settings/general-settings';
 import { ApiSettings } from '@/components/settings/api-settings';
@@ -171,7 +171,7 @@ export default function SettingsPage() {
     
     const userTabs = [
         { value: 'profile', label: 'Información Personal' },
-        { value: 'external-training', label: 'Formación Externa' },
+        { value: 'training-history', label: 'Historial Formativo' },
         { value: 'preferences', label: 'Preferencias' },
     ];
     
@@ -201,8 +201,8 @@ export default function SettingsPage() {
                     <TabsContent value="profile" className="mt-4">
                         <ProfileSettings profile={profile} setProfile={setProfile} />
                     </TabsContent>
-                    <TabsContent value="external-training" className="mt-4">
-                        <ExternalTrainingSettings user={user} />
+                    <TabsContent value="training-history" className="mt-4">
+                        <TrainingHistory user={user} />
                     </TabsContent>
                     <TabsContent value="preferences" className="mt-4">
                         <ContactPreferences preferences={preferences} setPreferences={setPreferences} />

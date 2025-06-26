@@ -12,7 +12,6 @@ import * as db from '@/lib/db';
 import type { User, ExternalTraining, ExternalTrainingType } from '@/lib/types';
 import { externalTrainingTypes } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -159,54 +158,53 @@ export function ExternalTrainingSettings({ user }: { user: User }) {
     };
 
     return (
-        <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                    <CardTitle>Formación Externa</CardTitle>
-                    <CardDescription>Registra y gestiona tus cursos y certificaciones externas.</CardDescription>
+        <div className="space-y-4">
+            <div className="flex flex-row items-center justify-between">
+                 <div>
+                    <h3 className="text-xl font-semibold">Formación Externa</h3>
+                    <p className="text-sm text-muted-foreground">Registra y gestiona tus cursos y certificaciones externas.</p>
                 </div>
                 <Button onClick={() => { setSelectedTraining(null); setIsDialogOpen(true); }}>
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Añadir Formación
                 </Button>
-            </CardHeader>
-            <CardContent>
-                {trainings === undefined ? (
-                    <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
-                ) : trainings.length === 0 ? (
-                    <p className="text-center text-muted-foreground py-8">No has registrado ninguna formación externa.</p>
-                ) : (
-                    <div className="border rounded-lg">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Título</TableHead>
-                                    <TableHead>Tipo</TableHead>
-                                    <TableHead>Entidad</TableHead>
-                                    <TableHead>Fecha</TableHead>
-                                    <TableHead className="w-[100px] text-right">Acciones</TableHead>
+            </div>
+            
+            {trainings === undefined ? (
+                <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
+            ) : trainings.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">No has registrado ninguna formación externa.</p>
+            ) : (
+                <div className="border rounded-lg">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Título</TableHead>
+                                <TableHead>Tipo</TableHead>
+                                <TableHead>Entidad</TableHead>
+                                <TableHead>Fecha</TableHead>
+                                <TableHead className="w-[100px] text-right">Acciones</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {trainings.map(t => (
+                                <TableRow key={t.id}>
+                                    <TableCell className="font-medium">{t.title}</TableCell>
+                                    <TableCell>{t.type}</TableCell>
+                                    <TableCell>{t.institution}</TableCell>
+                                    <TableCell>
+                                        {t.endDate ? format(new Date(t.endDate), 'MMM yyyy') : 'En curso'}
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <Button variant="ghost" size="icon" onClick={() => handleEdit(t)}><FilePenLine className="h-4 w-4" /></Button>
+                                        <Button variant="ghost" size="icon" onClick={() => setTrainingToDelete(t)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                    </TableCell>
                                 </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {trainings.map(t => (
-                                    <TableRow key={t.id}>
-                                        <TableCell className="font-medium">{t.title}</TableCell>
-                                        <TableCell>{t.type}</TableCell>
-                                        <TableCell>{t.institution}</TableCell>
-                                        <TableCell>
-                                            {t.endDate ? format(new Date(t.endDate), 'MMM yyyy') : 'En curso'}
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <Button variant="ghost" size="icon" onClick={() => handleEdit(t)}><FilePenLine className="h-4 w-4" /></Button>
-                                            <Button variant="ghost" size="icon" onClick={() => setTrainingToDelete(t)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </div>
-                )}
-            </CardContent>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </div>
+            )}
             
             <ExternalTrainingDialog
                 open={isDialogOpen}
@@ -229,6 +227,6 @@ export function ExternalTrainingSettings({ user }: { user: User }) {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-        </Card>
+        </div>
     );
 }
