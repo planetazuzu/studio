@@ -1,5 +1,6 @@
+
 import Dexie, { type Table } from 'dexie';
-import type { Course, User, Enrollment, UserProgress, PendingEnrollmentDetails, ForumMessage, ForumMessageWithReplies, Notification, Resource, CourseResource, Announcement, ChatChannel, ChatMessage, Role, ComplianceReportData, DirectMessageThread } from './types';
+import type { Course, User, Enrollment, UserProgress, PendingEnrollmentDetails, ForumMessage, ForumMessageWithReplies, Notification, Resource, CourseResource, Announcement, ChatChannel, ChatMessage, Role, ComplianceReportData, DirectMessageThread, CalendarEvent } from './types';
 import { courses as initialCourses, users as initialUsers, initialChatChannels } from './data';
 
 const LOGGED_IN_USER_KEY = 'loggedInUserId';
@@ -16,6 +17,7 @@ export class AcademiaAIDB extends Dexie {
   announcements!: Table<Announcement>;
   chatChannels!: Table<ChatChannel>;
   chatMessages!: Table<ChatMessage>;
+  calendarEvents!: Table<CalendarEvent>;
 
 
   constructor() {
@@ -58,6 +60,9 @@ export class AcademiaAIDB extends Dexie {
     });
     this.version(11).stores({
         chatChannels: 'id, name, type, *participantIds'
+    });
+    this.version(12).stores({
+        calendarEvents: '++id, courseId, start, end, isSynced',
     });
   }
 }
@@ -624,4 +629,32 @@ export async function getComplianceReportData(departmentFilter: string = 'all', 
     }
 
     return report.sort((a,b) => a.complianceRate - b.complianceRate);
+}
+
+// --- Calendar Event Functions ---
+
+export async function getAllCalendarEvents(): Promise<CalendarEvent[]> {
+  return await db.calendarEvents.toArray();
+}
+
+export async function getCalendarEvents(courseIds: string[]): Promise<CalendarEvent[]> {
+    if (courseIds.length === 0) return [];
+    return await db.calendarEvents.where('courseId').anyOf(courseIds).toArray();
+}
+
+export async function addCalendarEvent(event: Omit<CalendarEvent, 'id' | 'isSynced' | 'updatedAt'>): Promise<number> {
+    const newEvent: CalendarEvent = {
+        ...event,
+        isSynced: false,
+        updatedAt: new Date().toISOString(),
+    };
+    return await db.calendarEvents.add(newEvent);
+}
+
+export async function updateCalendarEvent(id: number, data: Partial<Omit<CalendarEvent, 'id' | 'isSynced'>>): Promise<number> {
+    return await db.calendarEvents.update(id, { ...data, updatedAt: new Date().toISOString(), isSynced: false });
+}
+
+export async function deleteCalendarEvent(id: number): Promise<void> {
+    await db.calendarEvents.delete(id);
 }

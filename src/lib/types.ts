@@ -1,3 +1,4 @@
+
 export type Role =
   | 'Trabajador'
   | 'Personal Externo'
@@ -190,6 +191,26 @@ export type DirectMessageThread = ChatChannel & {
         avatar: string;
     }
 };
+
+export type CalendarEventType = 'clase' | 'examen' | 'entrega' | 'taller' | 'otro';
+export const calendarEventTypes: CalendarEventType[] = ['clase', 'examen', 'entrega', 'taller', 'otro'];
+
+export type CalendarEvent = {
+  id?: number; // auto-incremented primary key
+  title: string;
+  description?: string;
+  start: string; // ISO date string
+  end: string; // ISO date string
+  allDay: boolean;
+  courseId: string; // Link to the course
+  type: CalendarEventType;
+  createdBy: string; // User ID
+  modifiedBy: string; // User ID
+  isCompleted: boolean;
+  isSynced?: boolean;
+  updatedAt?: string; // ISO date string
+};
+
 
 import type { PredictAbandonmentInputSchema, PredictAbandonmentOutputSchema } from '@/ai/flows/predict-abandonment';
 import { z } from 'zod';
