@@ -17,6 +17,16 @@ export function SyncManager() {
     const [log, setLog] = useState<string[]>(['Registro de sincronización listo.']);
 
     const handleSync = async () => {
+        if (typeof navigator !== 'undefined' && !navigator.onLine) {
+            toast({
+                title: 'Sin Conexión',
+                description: 'No se puede sincronizar. Por favor, revisa tu conexión a internet.',
+                variant: 'destructive',
+            });
+            setLog(prev => [...prev, "ERROR: Intento de sincronización sin conexión a internet."]);
+            return;
+        }
+
         setIsLoading(true);
         setLog(['Iniciando sincronización desde el cliente...']);
         

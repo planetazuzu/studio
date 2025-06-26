@@ -1,6 +1,7 @@
 
 'use client';
 
+import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Clock, BookOpen, MoreVertical, FilePenLine, Trash2, AlertTriangle, Pencil, Archive } from 'lucide-react';
@@ -37,7 +38,7 @@ interface CourseCardProps {
   canManage?: boolean;
 }
 
-export function CourseCard({ course, user, progress, canManage = false }: CourseCardProps) {
+export const CourseCard = React.memo(function CourseCard({ course, user, progress, canManage = false }: CourseCardProps) {
   const { toast } = useToast();
 
   const isMandatory = course.mandatoryForRoles?.includes(user.role);
@@ -168,4 +169,5 @@ export function CourseCard({ course, user, progress, canManage = false }: Course
       </AlertDialogContent>
     </AlertDialog>
   );
-}
+});
+CourseCard.displayName = 'CourseCard';

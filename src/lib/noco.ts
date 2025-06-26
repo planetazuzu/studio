@@ -43,7 +43,13 @@ const getUrl = (tableId: string) => {
 // NocoDB uses the primary key from the body to create a record with a specific ID.
 async function createRecord<T extends { id?: string | number }>(tableId: string, record: T): Promise<T> {
   // We remove fields that are local to the app and shouldn't be synced up.
-  const { isSynced, updatedAt, ...payload } = record as any;
+  const { isSynced, updatedAt, ...restOfRecord } = record as any;
+  
+  // Explicitly remove password if it exists to avoid sending sensitive data
+  const payload = { ...restOfRecord };
+  if ('password' in payload) {
+    delete (payload as any).password;
+  }
 
   // NocoDB doesn't like empty fields for relations, etc.
   const cleanedPayload = Object.entries(payload).reduce((acc, [key, value]) => {

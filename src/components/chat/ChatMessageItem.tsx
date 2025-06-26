@@ -1,11 +1,13 @@
+
 'use client';
 
+import React from 'react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import type { ChatMessage } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
-export function ChatMessageItem({ message, isCurrentUser }: { message: ChatMessage, isCurrentUser: boolean }) {
+export const ChatMessageItem = React.memo(function ChatMessageItem({ message, isCurrentUser }: { message: ChatMessage, isCurrentUser: boolean }) {
     return (
         <div className={cn("flex items-start gap-3", isCurrentUser && "flex-row-reverse")}>
             <Avatar className="h-9 w-9">
@@ -26,4 +28,5 @@ export function ChatMessageItem({ message, isCurrentUser }: { message: ChatMessa
             </div>
         </div>
     );
-}
+});
+ChatMessageItem.displayName = 'ChatMessageItem';
