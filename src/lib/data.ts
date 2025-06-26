@@ -176,22 +176,26 @@ export const initialChatChannels: ChatChannel[] = [
     {
         id: 'channel_general',
         name: 'general',
-        description: 'Canal para temas generales y avisos para toda la empresa.'
+        description: 'Canal para temas generales y avisos para toda la empresa.',
+        type: 'public',
     },
     {
         id: 'channel_emergencias',
         name: 'casos-clinicos',
-        description: 'Discusión de casos clínicos y procedimientos.'
+        description: 'Discusión de casos clínicos y procedimientos.',
+        type: 'public',
     },
     {
         id: 'channel_formacion',
         name: 'dudas-formacion',
-        description: 'Preguntas y respuestas sobre los cursos de la plataforma.'
+        description: 'Preguntas y respuestas sobre los cursos de la plataforma.',
+        type: 'public',
     },
     {
         id: 'channel_random',
         name: 'random',
-        description: 'Para conversaciones distendidas y temas no relacionados con el trabajo.'
+        description: 'Para conversaciones distendidas y temas no relacionados con el trabajo.',
+        type: 'public',
     }
 ]
 

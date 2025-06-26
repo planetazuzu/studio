@@ -156,8 +156,10 @@ export type ChatChannel = {
   id: string;
   name: string;
   description?: string;
+  type: 'public' | 'private';
+  participantIds?: string[];
   isSynced?: boolean;
-  updatedAt?: string;
+  updatedAt?: string; // ISO date string
 };
 
 export type ChatMessage = {
@@ -179,4 +181,12 @@ export type ComplianceReportData = {
     mandatoryCoursesCount: number;
     completedCoursesCount: number;
     complianceRate: number;
+};
+
+export type DirectMessageThread = ChatChannel & {
+    otherParticipant: {
+        id: string;
+        name: string;
+        avatar: string;
+    }
 };

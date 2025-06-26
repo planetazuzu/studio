@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie';
-import type { Course, User, Enrollment, UserProgress, PendingEnrollmentDetails, ForumMessage, ForumMessageWithReplies, Notification, Resource, CourseResource, Announcement, ChatChannel, ChatMessage, Role, ComplianceReportData } from './types';
+import type { Course, User, Enrollment, UserProgress, PendingEnrollmentDetails, ForumMessage, ForumMessageWithReplies, Notification, Resource, CourseResource, Announcement, ChatChannel, ChatMessage, Role, ComplianceReportData, DirectMessageThread } from './types';
 import { courses as initialCourses, users as initialUsers, initialChatChannels } from './data';
 
 const LOGGED_IN_USER_KEY = 'loggedInUserId';
@@ -55,6 +55,9 @@ export class AcademiaAIDB extends Dexie {
     });
     this.version(10).stores({
         courses: 'id, status, isSynced, *mandatoryForRoles'
+    });
+    this.version(11).stores({
+        chatChannels: 'id, name, type, *participantIds'
     });
   }
 }
@@ -477,6 +480,8 @@ export async function addChatMessage(message: Omit<ChatMessage, 'id' | 'isSynced
         isSynced: false,
         updatedAt: new Date().toISOString(),
     }
+    // Update channel's updatedAt timestamp to sort DMs by recent activity
+    await db.chatChannels.update(message.channelId, { updatedAt: new Date().toISOString() });
     return await db.chatMessages.add(newChatMessage);
 }
 
@@ -484,8 +489,63 @@ export async function getChatMessages(channelId: string): Promise<ChatMessage[]>
     return await db.chatMessages.where('channelId').equals(channelId).sortBy('timestamp');
 }
 
-export async function getAllChatChannels(): Promise<ChatChannel[]> {
-    return await db.chatChannels.orderBy('name').toArray();
+export async function getPublicChatChannels(): Promise<ChatChannel[]> {
+    return await db.chatChannels.where('type').equals('public').sortBy('name');
+}
+
+export async function getDirectMessageThreadsForUserWithDetails(userId: string): Promise<DirectMessageThread[]> {
+    const threads = await db.chatChannels.where('participantIds').equals(userId).toArray();
+    const otherParticipantIds = threads.flatMap(t => t.participantIds!.filter(pid => pid !== userId));
+    
+    if (otherParticipantIds.length === 0) return [];
+    
+    const otherParticipants = await db.users.where('id').anyOf(otherParticipantIds).toArray();
+    const participantsMap = new Map(otherParticipants.map(u => [u.id, u]));
+
+    return threads.map(thread => {
+        const otherId = thread.participantIds!.find(pid => pid !== userId)!;
+        const otherUser = participantsMap.get(otherId);
+        return {
+            ...thread,
+            otherParticipant: otherUser ? {
+                id: otherUser.id,
+                name: otherUser.name,
+                avatar: otherUser.avatar,
+            } : {
+                id: 'unknown',
+                name: 'Usuario Desconocido',
+                avatar: ''
+            }
+        };
+    }).sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || '')); // Sort by most recent activity
+}
+
+export async function getOrCreateDirectMessageThread(currentUserId: string, otherUserId: string): Promise<ChatChannel> {
+    const threadId = `dm_${[currentUserId, otherUserId].sort().join('_')}`;
+    const existingThread = await db.chatChannels.get(threadId);
+        
+    if (existingThread) {
+        return existingThread;
+    }
+    
+    const currentUser = await db.users.get(currentUserId);
+    const otherUser = await db.users.get(otherUserId);
+
+    if (!currentUser || !otherUser) {
+        throw new Error("Uno o ambos usuarios no existen.");
+    }
+    
+    const newChannel: ChatChannel = {
+        id: threadId,
+        name: `${currentUser.name} & ${otherUser.name}`,
+        type: 'private',
+        participantIds: [currentUserId, otherUserId],
+        isSynced: false,
+        updatedAt: new Date().toISOString(),
+    };
+    
+    await db.chatChannels.add(newChannel);
+    return newChannel;
 }
 
 

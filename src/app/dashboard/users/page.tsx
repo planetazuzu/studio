@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { MoreHorizontal, PlusCircle, ListFilter, Loader2, Trash2, FilePenLine, Upload } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, ListFilter, Loader2, Trash2, FilePenLine, Upload, MessageSquare } from 'lucide-react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -82,6 +82,22 @@ export default function UsersPage() {
 
     const handleDepartmentFilterChange = (department: Department, checked: boolean) => {
         setDepartmentFilters(prev => ({ ...prev, [department]: checked }));
+    }
+
+    const handleStartChat = async (targetUser: User) => {
+        if (!authUser || authUser.id === targetUser.id) return;
+        
+        try {
+            const channel = await db.getOrCreateDirectMessageThread(authUser.id, targetUser.id);
+            router.push(`/dashboard/chat?channelId=${channel.id}`);
+        } catch(error) {
+            console.error("Failed to start chat", error);
+            toast({
+                title: "Error",
+                description: "No se pudo iniciar el chat.",
+                variant: "destructive"
+            });
+        }
     }
 
     const handleDeleteUser = async () => {
@@ -236,6 +252,10 @@ export default function UsersPage() {
                                                         <FilePenLine className="mr-2 h-4 w-4" />
                                                         Editar
                                                     </Link>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onSelect={() => handleStartChat(u)}>
+                                                    <MessageSquare className="mr-2 h-4 w-4" />
+                                                    Enviar Mensaje
                                                 </DropdownMenuItem>
                                                 <AlertDialogTrigger asChild>
                                                     <DropdownMenuItem onSelect={() => setUserToDelete(u)} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
