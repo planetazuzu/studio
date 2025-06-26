@@ -19,8 +19,8 @@ import { saveApiKeysAction, syncAllDataAction } from './actions';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useLiveQuery } from 'dexie-react-hooks';
-import type { User, ExternalTraining } from '@/lib/types';
-import { externalTrainingTypes, type ExternalTrainingType } from '@/lib/types';
+import type { User, ExternalTraining, NotificationChannel } from '@/lib/types';
+import { externalTrainingTypes, type ExternalTrainingType, notificationChannels } from '@/lib/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useForm, Controller } from 'react-hook-form';
@@ -29,6 +29,7 @@ import { z } from 'zod';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { format } from 'date-fns';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 
 
 // Helper function to convert HEX to HSL components (string "H S% L%")
@@ -211,35 +212,56 @@ function ApiSettings() {
     );
 }
 
-function NotificationSettings({ notifications, setNotifications }: { notifications: any, setNotifications: Function }) {
+function ContactPreferences({ preferences, setPreferences }: { preferences: any, setPreferences: Function }) {
+    if (!preferences) return <Skeleton className="h-64 w-full" />
+
+    const handleChannelChange = (channel: NotificationChannel, checked: boolean) => {
+        const currentChannels = preferences.channels || [];
+        const newChannels = checked
+            ? [...currentChannels, channel]
+            : currentChannels.filter((c: NotificationChannel) => c !== channel);
+        setPreferences({ ...preferences, channels: newChannels });
+    }
+
     return (
          <Card>
             <CardHeader>
-                <CardTitle>Notificaciones</CardTitle>
-                <CardDescription>Elige cómo quieres recibir las notificaciones.</CardDescription>
+                <CardTitle>Preferencias de Contacto</CardTitle>
+                <CardDescription>Elige cómo quieres recibir las notificaciones y comunicaciones.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-                <div className="flex items-center justify-between rounded-lg border p-4">
-                    <div>
-                        <Label htmlFor="course-reminders" className="font-semibold">Recordatorios de curso</Label>
-                        <p className="text-sm text-muted-foreground">Recibe recordatorios para continuar con los cursos en progreso.</p>
+                <div className="flex items-start justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                        <Label htmlFor="consent-check" className="font-semibold text-base">Autorización de Comunicaciones</Label>
+                        <p className="text-sm text-muted-foreground pr-4">Autorizo recibir comunicaciones sobre cursos, certificados y notificaciones institucionales.</p>
                     </div>
-                    <Switch id="course-reminders" checked={notifications.courseReminders} onCheckedChange={(checked) => setNotifications({...notifications, courseReminders: checked })} />
+                    <Switch
+                        id="consent-check"
+                        checked={preferences.consent}
+                        onCheckedChange={(checked) => setPreferences({ ...preferences, consent: checked })}
+                    />
                 </div>
-                 <div className="flex items-center justify-between rounded-lg border p-4">
-                    <div>
-                        <Label htmlFor="new-courses" className="font-semibold">Nuevos cursos disponibles</Label>
-                        <p className="text-sm text-muted-foreground">Recibe notificaciones cuando se publiquen nuevos cursos.</p>
-                    </div>
-                    <Switch id="new-courses" checked={notifications.newCourses} onCheckedChange={(checked) => setNotifications({...notifications, newCourses: checked })} />
-                </div>
-                 <div className="flex items-center justify-between rounded-lg border p-4">
-                    <div>
-                        <Label htmlFor="feedback-ready" className="font-semibold">Feedback listo</Label>
-                        <p className="text-sm text-muted-foreground">Recibe un aviso cuando tu feedback de IA esté disponible.</p>
-                    </div>
-                    <Switch id="feedback-ready" checked={notifications.feedbackReady} onCheckedChange={(checked) => setNotifications({...notifications, feedbackReady: checked })} />
-                </div>
+                 <div className="space-y-4">
+                    <Label className={!preferences.consent ? 'text-muted-foreground' : ''}>Canales de Notificación Preferidos</Label>
+                     <div className="space-y-2 rounded-lg border p-4">
+                         {notificationChannels.map(channel => (
+                            <div key={channel} className="flex items-center space-x-3">
+                                <Checkbox
+                                    id={`channel-${channel}`}
+                                    checked={preferences.channels?.includes(channel)}
+                                    onCheckedChange={(checked) => handleChannelChange(channel, !!checked)}
+                                    disabled={!preferences.consent}
+                                />
+                                <Label
+                                    htmlFor={`channel-${channel}`}
+                                    className={`font-normal capitalize ${!preferences.consent ? 'text-muted-foreground cursor-not-allowed' : ''}`}
+                                >
+                                    {channel === 'app' ? 'App (Notificaciones Internas)' : channel === 'email' ? 'Email' : 'WhatsApp'}
+                                </Label>
+                            </div>
+                         ))}
+                     </div>
+                 </div>
             </CardContent>
         </Card>
     )
@@ -457,7 +479,7 @@ function ExternalTrainingDialog({
                         <Controller name="startDate" control={form.control} render={({ field }) => ( <div><Label>Fecha Inicio</Label><Input type="date" {...field} /></div> )} />
                         <Controller name="endDate" control={form.control} render={({ field }) => ( <div><Label>Fecha Fin</Label><Input type="date" {...field} /></div> )} />
                     </div>
-                     <Controller name="fileUrl" control={form.control} render={({ field }) => ( <div><Label>Enlace al Certificado (URL)</Label><Input type="url" placeholder="https://" {...field} />{form.formState.errors.fileUrl && <p className="text-sm text-destructive">{form.formState.errors.fileUrl.message}</p>}</div> )} />
+                     <Controller name="fileUrl" control={form.control} render={({ field }) => ( <div><Label>Enlace al Certificado (URL)</Label><Input type="url" placeholder="https://..." {...field} />{form.formState.errors.fileUrl && <p className="text-sm text-destructive">{form.formState.errors.fileUrl.message}</p>}</div> )} />
                      <Controller name="comments" control={form.control} render={({ field }) => ( <div><Label>Comentarios</Label><Textarea {...field} /></div> )} />
                 </form>
                 <DialogFooter>
@@ -583,10 +605,9 @@ export default function SettingsPage() {
         accentColor: '#82E0AA',
     });
     
-    const [notifications, setNotifications] = useState({
-        courseReminders: true,
-        newCourses: true,
-        feedbackReady: false,
+    const [preferences, setPreferences] = useState({
+        consent: false,
+        channels: [] as NotificationChannel[],
     });
     
     const [isSaving, setIsSaving] = useState(false);
@@ -599,10 +620,9 @@ export default function SettingsPage() {
                 avatar: user.avatar,
                 role: user.role,
             });
-            setNotifications(user.notificationSettings || {
-                courseReminders: true,
-                newCourses: true,
-                feedbackReady: false,
+            setPreferences(user.notificationSettings || {
+                consent: false,
+                channels: [],
             });
         }
     }, [user]);
@@ -647,7 +667,7 @@ export default function SettingsPage() {
                 email: profile.email,
                 avatar: profile.avatar,
                 role: profile.role,
-                notificationSettings: notifications,
+                notificationSettings: preferences,
             };
 
             await db.updateUser(user.id, updatedData);
@@ -682,9 +702,9 @@ export default function SettingsPage() {
     };
     
     const userTabs = [
-        { value: 'profile', label: 'Perfil' },
+        { value: 'profile', label: 'Información Personal' },
         { value: 'external-training', label: 'Formación Externa' },
-        { value: 'notifications', label: 'Notificaciones' },
+        { value: 'preferences', label: 'Preferencias' },
     ];
     
     const adminTabs = [
@@ -716,8 +736,8 @@ export default function SettingsPage() {
                     <TabsContent value="external-training" className="mt-4">
                         <ExternalTrainingSettings user={user} />
                     </TabsContent>
-                    <TabsContent value="notifications" className="mt-4">
-                        <NotificationSettings notifications={notifications} setNotifications={setNotifications} />
+                    <TabsContent value="preferences" className="mt-4">
+                        <ContactPreferences preferences={preferences} setPreferences={setPreferences} />
                     </TabsContent>
                     {isAdmin && (
                         <>

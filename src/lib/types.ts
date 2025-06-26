@@ -8,6 +8,9 @@ export type Role =
 
 export type Department = 'Técnicos de Emergencias' | 'Teleoperadores' | 'Administración' | 'Formación' | 'Logística';
 
+export type NotificationChannel = 'email' | 'whatsapp' | 'app';
+export const notificationChannels: NotificationChannel[] = ['email', 'whatsapp', 'app'];
+
 export type User = {
   id: string;
   name: string;
@@ -21,9 +24,8 @@ export type User = {
   isSynced?: boolean;
   updatedAt?: string; // ISO date string
   notificationSettings?: {
-    courseReminders: boolean;
-    newCourses: boolean;
-    feedbackReady: boolean;
+    consent: boolean;
+    channels: NotificationChannel[];
   };
 };
 
