@@ -8,7 +8,7 @@ import { es } from 'date-fns/locale';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, XAxis, YAxis } from 'recharts';
-import { Download, ListFilter, CircleDollarSign, CreditCard, CalendarClock, Scale, CheckSquare, Users, Clock, Loader2, FilePenLine, UserCheck, ShieldCheck, FileText } from 'lucide-react';
+import { Download, ListFilter, CircleDollarSign, CreditCard, CalendarClock, Scale, CheckSquare, Users, Clock, Loader2, FilePenLine, UserCheck, ShieldCheck, FileText, Filter } from 'lucide-react';
 import {
   ChartConfig,
   ChartContainer,
@@ -16,7 +16,7 @@ import {
   ChartTooltipContent,
 } from '@/components/ui/chart';
 import * as db from '@/lib/db';
-import { costs } from '@/lib/data';
+import { costs, departments as allDepartmentsList, roles as allRolesList } from '@/lib/data';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -34,6 +34,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/auth';
 import type { ComplianceReportData } from '@/lib/types';
 import { Progress } from '@/components/ui/progress';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 
 function ComplianceReportTable({ data }: { data: ComplianceReportData[] }) {
@@ -84,52 +85,66 @@ export default function AnalyticsPage() {
   const reportRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
 
+  // --- Filter States ---
+  const [departmentFilter, setDepartmentFilter] = useState('all');
+  const [roleFilter, setRoleFilter] = useState('all');
+  const [costInstructorFilter, setCostInstructorFilter] = useState('all');
+  const [costModalityFilter, setCostModalityFilter] = useState('all');
+  const [costCategoryFilters, setCostCategoryFilters] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries([...new Set(costs.map((cost) => cost.category))].map((cat) => [cat, true]))
+  );
+
   // --- Data Fetching ---
   const allCourses = useLiveQuery(() => db.getAllCourses(), []);
   const allUsers = useLiveQuery(() => db.getAllUsers(), []);
   const allProgress = useLiveQuery(() => db.db.userProgress.toArray(), []);
   const allEnrollments = useLiveQuery(() => db.db.enrollments.toArray(), []);
-  const complianceData = useLiveQuery(() => db.getComplianceReportData(), []);
+  const complianceData = useLiveQuery(() => db.getComplianceReportData(departmentFilter, roleFilter), [departmentFilter, roleFilter]);
+
+  // --- Memoized Filter Options ---
+  const allInstructors = useMemo(() => ['all', ...new Set(allCourses?.map(c => c.instructor) || [])], [allCourses]);
+  const allModalities = useMemo(() => ['all', ...new Set(allCourses?.map(c => c.modality) || [])], [allCourses]);
+  const allCostCategories = useMemo(() => [...new Set(costs.map((cost) => cost.category))], []);
 
 
   // --- Cost Data Calculations ---
-  const allCostCategories = [...new Set(costs.map((cost) => cost.category))];
-  const [categoryFilters, setCategoryFilters] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(allCostCategories.map((cat) => [cat, true]))
-  );
+  const filteredCoursesForCosts = useMemo(() => {
+    if (!allCourses) return [];
+    return allCourses.filter(course => {
+        const instructorMatch = costInstructorFilter === 'all' || course.instructor === costInstructorFilter;
+        const modalityMatch = costModalityFilter === 'all' || course.modality === costModalityFilter;
+        return instructorMatch && modalityMatch;
+    });
+  }, [allCourses, costInstructorFilter, costModalityFilter]);
 
-  const handleCategoryFilterChange = (category: string, checked: boolean) => {
-    setCategoryFilters((prev) => ({ ...prev, [category]: checked }));
-  };
+  const filteredCourseIdsForCosts = useMemo(() => new Set(filteredCoursesForCosts.map(c => c.id)), [filteredCoursesForCosts]);
+
+  const filteredCosts = useMemo(() => {
+    return costs.filter(cost => {
+        const categoryMatch = costCategoryFilters[cost.category];
+        const courseMatch = !cost.courseId || filteredCourseIdsForCosts.has(cost.courseId);
+        return categoryMatch && courseMatch;
+    });
+  }, [costCategoryFilters, filteredCourseIdsForCosts]);
   
-  const filteredCosts = costs.filter((cost) => categoryFilters[cost.category]);
-
-  const spendingByCategory = useMemo(() => costs.reduce((acc, cost) => {
-    if (!acc[cost.category]) {
-      acc[cost.category] = 0;
-    }
+  const spendingByCategory = useMemo(() => filteredCosts.reduce((acc, cost) => {
+    if (!acc[cost.category]) acc[cost.category] = 0;
     acc[cost.category] += cost.amount;
     return acc;
-  }, {} as Record<string, number>), [costs]);
+  }, {} as Record<string, number>), [filteredCosts]);
 
   const barChartData = useMemo(() => Object.keys(spendingByCategory).map(category => ({
     category,
     amount: spendingByCategory[category],
   })), [spendingByCategory]);
 
-  const barChartConfig = {
-    amount: { label: 'Importe (€)', color: 'hsl(var(--chart-1))' },
-  } satisfies ChartConfig;
-
-  const monthlySpending = useMemo(() => costs.reduce((acc, cost) => {
+  const monthlySpending = useMemo(() => filteredCosts.reduce((acc, cost) => {
       const date = new Date(cost.date);
       const monthKey = format(date, 'yyyy-MM');
-      if (!acc[monthKey]) {
-          acc[monthKey] = { amount: 0, month: format(date, 'MMM', { locale: es }) };
-      }
+      if (!acc[monthKey]) acc[monthKey] = { amount: 0, month: format(date, 'MMM', { locale: es }) };
       acc[monthKey].amount += cost.amount;
       return acc;
-  }, {} as Record<string, { amount: number, month: string }>), [costs]);
+  }, {} as Record<string, { amount: number, month: string }>), [filteredCosts]);
 
   const lineChartData = useMemo(() => Object.keys(monthlySpending)
       .sort()
@@ -137,21 +152,15 @@ export default function AnalyticsPage() {
           month: monthlySpending[key].month,
           amount: monthlySpending[key].amount
       })), [monthlySpending]);
-
-  const lineChartConfig = {
-      amount: { label: "Importe (€)", color: "hsl(var(--chart-2))" },
-  } satisfies ChartConfig;
   
   const costByCourse = useMemo(() => {
     if (!allCourses) return [];
 
     const courseMap = new Map(allCourses.map(c => [c.id, c.title]));
     
-    const costsGroupedByCourse = costs.reduce((acc, cost) => {
-        if (cost.courseId) {
-            if (!acc[cost.courseId]) {
-                acc[cost.courseId] = 0;
-            }
+    const costsGroupedByCourse = filteredCosts.reduce((acc, cost) => {
+        if (cost.courseId && filteredCourseIdsForCosts.has(cost.courseId)) {
+            if (!acc[cost.courseId]) acc[cost.courseId] = 0;
             acc[cost.courseId] += cost.amount;
         }
         return acc;
@@ -163,7 +172,7 @@ export default function AnalyticsPage() {
         totalCost,
     })).sort((a,b) => b.totalCost - a.totalCost);
 
-  }, [allCourses]);
+  }, [allCourses, filteredCosts, filteredCourseIdsForCosts]);
 
 
   // --- Training Data Calculations ---
@@ -171,11 +180,20 @@ export default function AnalyticsPage() {
     if (!allCourses || !allUsers || !allProgress || !allEnrollments) {
         return null;
     }
+    
+    // Apply filters for training data
+    const filteredUsers = allUsers.filter(u => 
+        (departmentFilter === 'all' || u.department === departmentFilter) &&
+        (roleFilter === 'all' || u.role === roleFilter)
+    );
+    const filteredUserIds = new Set(filteredUsers.map(u => u.id));
+    const filteredProgress = allProgress.filter(p => filteredUserIds.has(p.userId));
+    const filteredEnrollments = allEnrollments.filter(e => filteredUserIds.has(e.studentId));
 
     const courseModuleCounts = new Map(allCourses.map(c => [c.id, c.modules?.length || 0]));
 
     // --- Stat Cards Data ---
-    const individualProgressPercentages = allProgress.map(p => {
+    const individualProgressPercentages = filteredProgress.map(p => {
         const totalModules = courseModuleCounts.get(p.courseId) || 0;
         return totalModules > 0 ? (p.completedModules.length / totalModules) * 100 : 0;
     });
@@ -188,17 +206,17 @@ export default function AnalyticsPage() {
         return acc + hours;
     }, 0);
     
-    const activeUsers = allUsers.length;
+    const activeUsers = filteredUsers.length;
 
     // --- Department Progress ---
     const progressByDepartment: Record<string, { totalProgress: number; count: number; }> = {};
-    const allDepartments = [...new Set(allUsers.map(u => u.department))];
-    allDepartments.forEach(dept => {
+    const visibleDepartments = [...new Set(filteredUsers.map(u => u.department))];
+    visibleDepartments.forEach(dept => {
         progressByDepartment[dept] = { totalProgress: 0, count: 0 };
     });
 
-    for (const progress of allProgress) {
-        const user = allUsers.find(u => u.id === progress.userId);
+    for (const progress of filteredProgress) {
+        const user = filteredUsers.find(u => u.id === progress.userId);
         if (user) {
             const totalModules = courseModuleCounts.get(progress.courseId) || 0;
             if (totalModules > 0) {
@@ -215,16 +233,15 @@ export default function AnalyticsPage() {
         progress: data.count > 0 ? Math.round(data.totalProgress / data.count) : 0,
     })).sort((a, b) => b.progress - a.progress);
 
-
     // --- Role Progress ---
     const progressByRole: Record<string, { totalProgress: number; count: number; }> = {};
-    const allRoles = [...new Set(allUsers.map(u => u.role))];
-    allRoles.forEach(role => {
+    const visibleRoles = [...new Set(filteredUsers.map(u => u.role))];
+    visibleRoles.forEach(role => {
         progressByRole[role] = { totalProgress: 0, count: 0 };
     });
 
-    for (const progress of allProgress) {
-        const user = allUsers.find(u => u.id === progress.userId);
+    for (const progress of filteredProgress) {
+        const user = filteredUsers.find(u => u.id === progress.userId);
         if (user) {
             const totalModules = courseModuleCounts.get(progress.courseId) || 0;
             if (totalModules > 0) {
@@ -247,8 +264,7 @@ export default function AnalyticsPage() {
     // --- Monthly Activity ---
     const monthlyActivity: Record<string, { month: string; iniciados: number; completados: number }> = {};
     
-    // Process enrollments for "iniciados"
-    allEnrollments.filter(e => e.status === 'approved').forEach(enrollment => {
+    filteredEnrollments.filter(e => e.status === 'approved').forEach(enrollment => {
         const date = enrollment.updatedAt ? parseISO(enrollment.updatedAt) : new Date();
         const monthKey = format(date, 'yyyy-MM');
         if (!monthlyActivity[monthKey]) {
@@ -257,8 +273,7 @@ export default function AnalyticsPage() {
         monthlyActivity[monthKey].iniciados += 1;
     });
 
-    // Process progress for "completados"
-    allProgress.forEach(progress => {
+    filteredProgress.forEach(progress => {
         const totalModules = courseModuleCounts.get(progress.courseId) || 0;
         if (totalModules > 0 && progress.completedModules.length === totalModules) {
             const date = progress.updatedAt ? parseISO(progress.updatedAt) : new Date();
@@ -282,7 +297,7 @@ export default function AnalyticsPage() {
         roleProgress,
         activityChartData,
     };
-  }, [allCourses, allUsers, allProgress, allEnrollments]);
+  }, [allCourses, allUsers, allProgress, allEnrollments, departmentFilter, roleFilter]);
   
   const handleExport = async () => {
     if (!reportRef.current) return;
@@ -292,20 +307,11 @@ export default function AnalyticsPage() {
       const originalBg = reportRef.current.style.backgroundColor;
       reportRef.current.style.backgroundColor = 'white';
       
-      const canvas = await html2canvas(reportRef.current, {
-        scale: 2,
-        useCORS: true,
-      });
-
+      const canvas = await html2canvas(reportRef.current, { scale: 2, useCORS: true });
       reportRef.current.style.backgroundColor = originalBg;
       
       const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF({
-        orientation: 'p',
-        unit: 'px',
-        format: [canvas.width, canvas.height],
-        hotfixes: ['px_scaling'],
-      });
+      const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: [canvas.width, canvas.height], hotfixes: ['px_scaling'] });
       
       pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
       pdf.save('Informe_Analiticas.pdf');
@@ -319,7 +325,6 @@ export default function AnalyticsPage() {
 
   const downloadCsv = (data: any[], filename: string) => {
     if (!data || data.length === 0) return;
-
     const headers = Object.keys(data[0]);
     const csvContent = [
       headers.join(','),
@@ -327,9 +332,7 @@ export default function AnalyticsPage() {
         headers.map(header => {
           let cell = row[header] === null || row[header] === undefined ? '' : String(row[header]);
           cell = cell.replace(/"/g, '""');
-          if (cell.search(/("|,|\n)/g) >= 0) {
-            cell = `"${cell}"`;
-          }
+          if (cell.search(/("|,|\n)/g) >= 0) cell = `"${cell}"`;
           return cell;
         }).join(',')
       )
@@ -374,9 +377,7 @@ export default function AnalyticsPage() {
   };
 
 
-  if (!user) return null;
-
-  if (!['Gestor de RRHH', 'Jefe de Formación', 'Administrador General'].includes(user.role)) {
+  if (!user || !['Gestor de RRHH', 'Jefe de Formación', 'Administrador General'].includes(user.role)) {
     router.push('/dashboard');
     return null;
   }
@@ -389,14 +390,10 @@ export default function AnalyticsPage() {
       );
   }
 
-  const departmentChartConfig = {
-    progress: { label: 'Progreso (%)', color: 'hsl(var(--chart-1))' },
-  } satisfies ChartConfig;
-
-  const roleChartConfig = {
-    progress: { label: 'Progreso (%)', color: 'hsl(var(--chart-2))' },
-  } satisfies ChartConfig;
-  
+  const barChartConfig = { amount: { label: 'Importe (€)', color: 'hsl(var(--chart-1))' } } satisfies ChartConfig;
+  const lineChartConfig = { amount: { label: "Importe (€)", color: "hsl(var(--chart-2))" } } satisfies ChartConfig;
+  const departmentChartConfig = { progress: { label: 'Progreso (%)', color: 'hsl(var(--chart-1))' } } satisfies ChartConfig;
+  const roleChartConfig = { progress: { label: 'Progreso (%)', color: 'hsl(var(--chart-2))' } } satisfies ChartConfig;
   const activityChartConfig = {
     iniciados: { label: 'Iniciados', color: 'hsl(var(--chart-1))' },
     completados: { label: 'Completados', color: 'hsl(var(--chart-3))' },
@@ -411,12 +408,7 @@ export default function AnalyticsPage() {
           <p className="text-muted-foreground">Visualiza métricas clave de formación, costes y rendimiento.</p>
         </div>
          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button>
-                    <Download className="mr-2 h-4 w-4" />
-                    Exportar
-                </Button>
-            </DropdownMenuTrigger>
+            <DropdownMenuTrigger asChild><Button><Download className="mr-2 h-4 w-4" />Exportar</Button></DropdownMenuTrigger>
             <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Opciones de Exportación</DropdownMenuLabel>
                 <DropdownMenuSeparator />
@@ -424,22 +416,10 @@ export default function AnalyticsPage() {
                    {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FilePenLine className="mr-2 h-4 w-4" />}
                    Informe General (PDF)
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleExportComplianceCsv}>
-                    <FileText className="mr-2 h-4 w-4" />
-                    Cumplimiento (CSV)
-                </DropdownMenuItem>
-                 <DropdownMenuItem onClick={handleExportCostsCsv}>
-                    <FileText className="mr-2 h-4 w-4" />
-                    Costes Filtrados (CSV)
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleExportDepartmentProgressCsv}>
-                    <FileText className="mr-2 h-4 w-4" />
-                    Progreso por Dpto. (CSV)
-                </DropdownMenuItem>
-                 <DropdownMenuItem onClick={handleExportRoleProgressCsv}>
-                    <FileText className="mr-2 h-4 w-4" />
-                    Progreso por Rol (CSV)
-                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportComplianceCsv}><FileText className="mr-2 h-4 w-4" />Cumplimiento (CSV)</DropdownMenuItem>
+                 <DropdownMenuItem onClick={handleExportCostsCsv}><FileText className="mr-2 h-4 w-4" />Costes Filtrados (CSV)</DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportDepartmentProgressCsv}><FileText className="mr-2 h-4 w-4" />Progreso por Dpto. (CSV)</DropdownMenuItem>
+                 <DropdownMenuItem onClick={handleExportRoleProgressCsv}><FileText className="mr-2 h-4 w-4" />Progreso por Rol (CSV)</DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -452,18 +432,35 @@ export default function AnalyticsPage() {
         </TabsList>
         
         <TabsContent value="training" className="mt-6 space-y-8">
+            <Card>
+                <CardHeader><CardTitle>Filtros</CardTitle></CardHeader>
+                <CardContent className="flex flex-col md:flex-row gap-4">
+                    <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
+                        <SelectTrigger><SelectValue placeholder="Filtrar por Departamento" /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Todos los Departamentos</SelectItem>
+                            {allDepartmentsList.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                     <Select value={roleFilter} onValueChange={setRoleFilter}>
+                        <SelectTrigger><SelectValue placeholder="Filtrar por Rol" /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Todos los Roles</SelectItem>
+                            {allRolesList.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                </CardContent>
+            </Card>
+
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                <StatCard title="Tasa de Finalización Media" value={`${trainingData.averageCompletionRate.toFixed(0)}%`} icon={CheckSquare} description="En todos los cursos" />
+                <StatCard title="Tasa de Finalización Media" value={`${trainingData.averageCompletionRate.toFixed(0)}%`} icon={CheckSquare} description="Para la selección actual" />
                 <StatCard title="Horas de Formación Totales" value={`${trainingData.totalTrainingHours}`} icon={Clock} description="Programadas en el catálogo" />
-                <StatCard title="Usuarios Activos" value={trainingData.activeUsers.toString()} icon={Users} description="En la plataforma" />
+                <StatCard title="Usuarios Activos" value={trainingData.activeUsers.toString()} icon={Users} description="Que coinciden con el filtro" />
             </div>
 
             <div className="grid gap-8 lg:grid-cols-2">
                 <Card className="shadow-lg">
-                    <CardHeader>
-                        <CardTitle>Ranking de Progreso por Departamento</CardTitle>
-                        <CardDescription>Tasa de finalización media por departamento.</CardDescription>
-                    </CardHeader>
+                    <CardHeader><CardTitle>Progreso por Departamento</CardTitle></CardHeader>
                     <CardContent>
                         <ChartContainer config={departmentChartConfig} className="h-96 w-full">
                             <ResponsiveContainer>
@@ -479,10 +476,7 @@ export default function AnalyticsPage() {
                     </CardContent>
                 </Card>
                 <Card className="shadow-lg">
-                    <CardHeader>
-                        <CardTitle>Ranking de Progreso por Rol</CardTitle>
-                        <CardDescription>Tasa de finalización media de los usuarios por rol.</CardDescription>
-                    </CardHeader>
+                    <CardHeader><CardTitle>Progreso por Rol</CardTitle></CardHeader>
                     <CardContent>
                         <ChartContainer config={roleChartConfig} className="h-96 w-full">
                             <ResponsiveContainer>
@@ -500,10 +494,7 @@ export default function AnalyticsPage() {
             </div>
 
             <Card className="shadow-lg">
-                <CardHeader>
-                    <CardTitle>Histograma de Actividad Formativa</CardTitle>
-                    <CardDescription>Cursos iniciados y completados mensualmente.</CardDescription>
-                </CardHeader>
+                <CardHeader><CardTitle>Actividad Formativa Mensual</CardTitle></CardHeader>
                 <CardContent>
                     <ChartContainer config={activityChartConfig} className="h-80 w-full">
                         <ResponsiveContainer>
@@ -522,71 +513,96 @@ export default function AnalyticsPage() {
         </TabsContent>
 
         <TabsContent value="compliance" className="mt-6 space-y-8">
+            <Card>
+                <CardHeader><CardTitle>Filtros de Cumplimiento</CardTitle></CardHeader>
+                <CardContent className="flex flex-col md:flex-row gap-4">
+                     <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
+                        <SelectTrigger><SelectValue placeholder="Filtrar por Departamento" /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Todos los Departamentos</SelectItem>
+                            {allDepartmentsList.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                     <Select value={roleFilter} onValueChange={setRoleFilter}>
+                        <SelectTrigger><SelectValue placeholder="Filtrar por Rol" /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Todos los Roles</SelectItem>
+                            {allRolesList.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                </CardContent>
+            </Card>
             <ComplianceReportTable data={complianceData} />
         </TabsContent>
 
         <TabsContent value="costs" className="mt-6 space-y-8">
+             <Card>
+                <CardHeader><CardTitle>Filtros de Costes</CardTitle></CardHeader>
+                <CardContent className="flex flex-col md:flex-row gap-4">
+                    <Select value={costInstructorFilter} onValueChange={setCostInstructorFilter}>
+                        <SelectTrigger><SelectValue placeholder="Filtrar por Instructor" /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Todos los Instructores</SelectItem>
+                            {allInstructors.filter(i => i !== 'all').map(i => <SelectItem key={i} value={i}>{i}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                     <Select value={costModalityFilter} onValueChange={setCostModalityFilter}>
+                        <SelectTrigger><SelectValue placeholder="Filtrar por Modalidad" /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Todas las Modalidades</SelectItem>
+                            {allModalities.filter(m => m !== 'all').map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                </CardContent>
+            </Card>
+
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <StatCard title="Presupuesto Anual" value="25,000€" icon={CircleDollarSign} className="bg-green-500/10 border-green-500" />
-                <StatCard title="Gasto Total" value="8,950€" icon={CreditCard} className="bg-red-500/10 border-red-500" />
-                <StatCard title="Gasto (Últ. 30 días)" value="1,550€" icon={CalendarClock} className="bg-yellow-500/10 border-yellow-500" />
-                <StatCard title="Presupuesto Restante" value="16,050€" icon={Scale} className="bg-blue-500/10 border-blue-500" />
+                <StatCard title="Presupuesto Anual" value="25,000€" icon={CircleDollarSign} />
+                <StatCard title="Gasto Total Filtrado" value={`${filteredCosts.reduce((a,b) => a+b.amount, 0).toFixed(2)}€`} icon={CreditCard} />
+                <StatCard title="Gasto (Últ. 30 días)" value="1,550€" icon={CalendarClock} description="No afectado por filtros" />
+                <StatCard title="Presupuesto Restante" value="16,050€" icon={Scale} description="No afectado por filtros" />
             </div>
 
             <div className="grid gap-8 lg:grid-cols-2">
                 <Card className="shadow-lg">
-                <CardHeader>
-                    <CardTitle>Gasto por Categoría</CardTitle>
-                    <CardDescription>Distribución de los costes de formación.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <ChartContainer config={barChartConfig} className="h-64 w-full">
-                    <ResponsiveContainer>
-                        <BarChart data={barChartData} margin={{ top: 20, right: 20, bottom: 5, left: 0 }}>
-                        <CartesianGrid vertical={false} />
-                        <XAxis dataKey="category" tickLine={false} tickMargin={10} axisLine={false} />
-                        <YAxis unit="€" />
-                        <ChartTooltipProvider content={<ChartTooltipContent />} />
-                        <Bar dataKey="amount" fill="var(--color-amount)" radius={4} />
-                        </BarChart>
-                    </ResponsiveContainer>
-                    </ChartContainer>
-                </CardContent>
+                    <CardHeader><CardTitle>Gasto por Categoría</CardTitle></CardHeader>
+                    <CardContent>
+                        <ChartContainer config={barChartConfig} className="h-64 w-full">
+                        <ResponsiveContainer>
+                            <BarChart data={barChartData} margin={{ top: 20, right: 20, bottom: 5, left: 0 }}>
+                            <CartesianGrid vertical={false} />
+                            <XAxis dataKey="category" tickLine={false} tickMargin={10} axisLine={false} />
+                            <YAxis unit="€" />
+                            <ChartTooltipProvider content={<ChartTooltipContent />} />
+                            <Bar dataKey="amount" fill="var(--color-amount)" radius={4} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                        </ChartContainer>
+                    </CardContent>
                 </Card>
                 <Card className="shadow-lg">
-                <CardHeader>
-                    <CardTitle>Gasto Mensual</CardTitle>
-                    <CardDescription>Evolución de los costes a lo largo del tiempo.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <ChartContainer config={lineChartConfig} className="h-64 w-full">
-                    <ResponsiveContainer>
-                        <LineChart data={lineChartData} margin={{ top: 20, right: 20, bottom: 5, left: 0 }}>
-                            <CartesianGrid vertical={false} />
-                            <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
-                            <YAxis unit="€" />
-                            <ChartTooltipProvider cursor={false} content={<ChartTooltipContent indicator="dot" />} />
-                            <Line dataKey="amount" type="monotone" stroke="var(--color-amount)" strokeWidth={2} dot={{ fill: "var(--color-amount)"}} activeDot={{ r: 8 }} />
-                        </LineChart>
-                    </ResponsiveContainer>
-                    </ChartContainer>
-                </CardContent>
+                    <CardHeader><CardTitle>Gasto Mensual</CardTitle></CardHeader>
+                    <CardContent>
+                        <ChartContainer config={lineChartConfig} className="h-64 w-full">
+                        <ResponsiveContainer>
+                            <LineChart data={lineChartData} margin={{ top: 20, right: 20, bottom: 5, left: 0 }}>
+                                <CartesianGrid vertical={false} />
+                                <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
+                                <YAxis unit="€" />
+                                <ChartTooltipProvider cursor={false} content={<ChartTooltipContent indicator="dot" />} />
+                                <Line dataKey="amount" type="monotone" stroke="var(--color-amount)" strokeWidth={2} dot={{ fill: "var(--color-amount)"}} activeDot={{ r: 8 }} />
+                            </LineChart>
+                        </ResponsiveContainer>
+                        </ChartContainer>
+                    </CardContent>
                 </Card>
             </div>
             
             <Card className="shadow-lg">
-                <CardHeader>
-                    <CardTitle>Desglose de Costes por Curso</CardTitle>
-                    <CardDescription>Costes directos asociados a cada formación.</CardDescription>
-                </CardHeader>
+                <CardHeader><CardTitle>Desglose de Costes por Curso</CardTitle></CardHeader>
                 <CardContent>
                     <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Curso</TableHead>
-                                <TableHead className="text-right">Coste Total</TableHead>
-                            </TableRow>
-                        </TableHeader>
+                        <TableHeader><TableRow><TableHead>Curso</TableHead><TableHead className="text-right">Coste Total</TableHead></TableRow></TableHeader>
                         <TableBody>
                             {costByCourse.map(item => (
                                 <TableRow key={item.courseId}>
@@ -599,20 +615,16 @@ export default function AnalyticsPage() {
                 </CardContent>
             </Card>
 
-
             <Card className="shadow-lg">
                 <CardHeader className="flex flex-row items-center">
                     <div className="grid gap-2">
                         <CardTitle>Transacciones Recientes</CardTitle>
-                        <CardDescription>Listado de los últimos gastos registrados.</CardDescription>
+                        <CardDescription>Listado de los gastos registrados que coinciden con los filtros.</CardDescription>
                     </div>
                     <div className="ml-auto flex items-center gap-2">
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="outline" size="sm" className="h-7 gap-1 text-sm">
-                                    <ListFilter className="h-3.5 w-3.5" />
-                                    <span className="sr-only sm:not-sr-only">Filtrar</span>
-                                </Button>
+                                <Button variant="outline" size="sm" className="h-7 gap-1 text-sm"><ListFilter className="h-3.5 w-3.5" /><span>Categoría</span></Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                                 <DropdownMenuLabel>Filtrar por categoría</DropdownMenuLabel>
@@ -620,8 +632,8 @@ export default function AnalyticsPage() {
                                 {allCostCategories.map((category) => (
                                     <DropdownMenuCheckboxItem
                                         key={category}
-                                        checked={categoryFilters[category] ?? true}
-                                        onCheckedChange={(checked) => handleCategoryFilterChange(category, !!checked)}
+                                        checked={costCategoryFilters[category] ?? true}
+                                        onCheckedChange={(checked) => setCostCategoryFilters(prev => ({...prev, [category]: !!checked}))}
                                     >
                                         {category}
                                     </DropdownMenuCheckboxItem>
@@ -633,20 +645,15 @@ export default function AnalyticsPage() {
                 <CardContent>
                 <Table>
                     <TableHeader>
-                    <TableRow>
-                        <TableHead>Concepto</TableHead>
-                        <TableHead>Categoría</TableHead>
-                        <TableHead className="text-right">Importe</TableHead>
-                        <TableHead>Fecha</TableHead>
-                    </TableRow>
+                        <TableRow><TableHead>Concepto</TableHead><TableHead>Categoría</TableHead><TableHead className="text-right">Importe</TableHead><TableHead>Fecha</TableHead></TableRow>
                     </TableHeader>
                     <TableBody>
                     {filteredCosts.map((cost) => (
                         <TableRow key={cost.id}>
-                        <TableCell className="font-medium">{cost.item}</TableCell>
-                        <TableCell>{cost.category}</TableCell>
-                        <TableCell className="text-right">{cost.amount.toFixed(2)}€</TableCell>
-                        <TableCell>{new Date(cost.date).toLocaleDateString()}</TableCell>
+                            <TableCell className="font-medium">{cost.item}</TableCell>
+                            <TableCell>{cost.category}</TableCell>
+                            <TableCell className="text-right">{cost.amount.toFixed(2)}€</TableCell>
+                            <TableCell>{new Date(cost.date).toLocaleDateString()}</TableCell>
                         </TableRow>
                     ))}
                     </TableBody>

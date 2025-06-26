@@ -570,10 +570,18 @@ export async function getIncompleteMandatoryCoursesForUser(user: User): Promise<
     return incompleteCourses;
 }
 
-export async function getComplianceReportData(): Promise<ComplianceReportData[]> {
-    const allUsers = await db.users.toArray();
+export async function getComplianceReportData(departmentFilter: string = 'all', roleFilter: string = 'all'): Promise<ComplianceReportData[]> {
+    let usersToReport = await db.users.toArray();
+
+    if (departmentFilter !== 'all') {
+      usersToReport = usersToReport.filter(u => u.department === departmentFilter);
+    }
+    if (roleFilter !== 'all') {
+      usersToReport = usersToReport.filter(u => u.role === roleFilter);
+    }
+
     const allCourses = await db.courses.toArray();
-    const allProgress = await db.userProgress.toArray();
+    const allProgress = await db.userProgress.where('userId').anyOf(usersToReport.map(u => u.id)).toArray();
 
     const progressMap = new Map<string, UserProgress>();
     allProgress.forEach(p => {
@@ -583,7 +591,7 @@ export async function getComplianceReportData(): Promise<ComplianceReportData[]>
 
     const report: ComplianceReportData[] = [];
 
-    for (const user of allUsers) {
+    for (const user of usersToReport) {
         const mandatoryCourses = allCourses.filter(c => c.mandatoryForRoles?.includes(user.role));
         if (mandatoryCourses.length === 0) {
             report.push({
