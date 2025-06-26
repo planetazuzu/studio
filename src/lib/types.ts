@@ -77,9 +77,11 @@ export type Module = {
 export type Cost = {
   id: string;
   item: string;
-  category: 'Formadores' | 'Plataforma' | 'Equipamiento' | 'Logística' | 'Otro';
+  category: 'Honorarios Formador' | 'Licencias de Plataforma' | 'Equipamiento' | 'Logística y Dietas' | 'Otro';
   amount: number;
   date: string;
+  courseId?: string;
+  userId?: string;
 };
 
 // For displaying pending enrollments with user and course names

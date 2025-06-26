@@ -91,7 +91,7 @@ export default function AnalyticsPage() {
   const complianceData = useLiveQuery(() => db.getComplianceReportData(), []);
 
 
-  // --- Cost Data Calculations (unchanged) ---
+  // --- Cost Data Calculations ---
   const allCostCategories = [...new Set(costs.map((cost) => cost.category))];
   const [categoryFilters, setCategoryFilters] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(allCostCategories.map((cat) => [cat, true]))
@@ -140,6 +140,29 @@ export default function AnalyticsPage() {
   const lineChartConfig = {
       amount: { label: "Importe (€)", color: "hsl(var(--chart-2))" },
   } satisfies ChartConfig;
+  
+  const costByCourse = useMemo(() => {
+    if (!allCourses) return [];
+
+    const courseMap = new Map(allCourses.map(c => [c.id, c.title]));
+    
+    const costsGroupedByCourse = costs.reduce((acc, cost) => {
+        if (cost.courseId) {
+            if (!acc[cost.courseId]) {
+                acc[cost.courseId] = 0;
+            }
+            acc[cost.courseId] += cost.amount;
+        }
+        return acc;
+    }, {} as Record<string, number>);
+
+    return Object.entries(costsGroupedByCourse).map(([courseId, totalCost]) => ({
+        courseId,
+        courseTitle: courseMap.get(courseId) || 'Curso Desconocido',
+        totalCost,
+    })).sort((a,b) => b.totalCost - a.totalCost);
+
+  }, [allCourses]);
 
 
   // --- Training Data Calculations ---
@@ -467,6 +490,32 @@ export default function AnalyticsPage() {
                 </CardContent>
                 </Card>
             </div>
+            
+            <Card className="shadow-lg">
+                <CardHeader>
+                    <CardTitle>Desglose de Costes por Curso</CardTitle>
+                    <CardDescription>Costes directos asociados a cada formación.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Curso</TableHead>
+                                <TableHead className="text-right">Coste Total</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {costByCourse.map(item => (
+                                <TableRow key={item.courseId}>
+                                    <TableCell className="font-medium">{item.courseTitle}</TableCell>
+                                    <TableCell className="text-right">{item.totalCost.toFixed(2)}€</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
+
 
             <Card className="shadow-lg">
                 <CardHeader className="flex flex-row items-center">
@@ -526,7 +575,3 @@ export default function AnalyticsPage() {
     </div>
   );
 }
-
-    
-
-    
