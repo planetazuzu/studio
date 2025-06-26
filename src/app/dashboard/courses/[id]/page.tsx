@@ -10,6 +10,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { CheckCircle, Clock, FileText, Bot, Loader2, Sparkles, Send, PlusCircle, CheckCircle2, XCircle, MessageSquare, Book, File, Video, Link as LinkIcon, FilePenLine, AlertTriangle, Pencil, Rocket, EyeOff } from 'lucide-react';
+import QRCode from 'qrcode';
 import { cn } from '@/lib/utils';
 import { GenerateTestQuestionsOutput } from '@/ai/flows/generate-test-questions';
 import { personalizedFeedback } from '@/ai/flows/feedback-personalization';
@@ -325,6 +326,7 @@ export default function CourseDetailPage() {
   const [isDownloading, setIsDownloading] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const certificateRef = useRef<HTMLDivElement>(null);
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
   
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [isCheckingEnrollment, setIsCheckingEnrollment] = useState(true);
@@ -364,6 +366,19 @@ export default function CourseDetailPage() {
     }
     checkEnrollment();
   }, [user, courseId]);
+
+  useEffect(() => {
+    if (user && course) {
+        const verificationUrl = `${window.location.origin}/dashboard/courses/${course.id}?userId=${user.id}`;
+        QRCode.toDataURL(verificationUrl, { errorCorrectionLevel: 'H' })
+            .then(url => {
+                setQrCodeDataUrl(url);
+            })
+            .catch(err => {
+                console.error('Failed to generate QR code', err);
+            });
+    }
+  }, [user, course]);
 
 
   if (loadingCourse) {
@@ -472,6 +487,7 @@ export default function CourseDetailPage() {
                 courseName={course.title}
                 completionDate={format(new Date(), 'dd/MM/yyyy')}
                 instructorName={course.instructor}
+                qrCodeDataUrl={qrCodeDataUrl}
             />
           )}
       </div>

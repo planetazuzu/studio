@@ -6,10 +6,11 @@ interface CertificateTemplateProps {
   courseName: string;
   completionDate: string;
   instructorName: string;
+  qrCodeDataUrl: string;
 }
 
 export const CertificateTemplate = React.forwardRef<HTMLDivElement, CertificateTemplateProps>(
-  ({ userName, courseName, completionDate, instructorName }, ref) => {
+  ({ userName, courseName, completionDate, instructorName, qrCodeDataUrl }, ref) => {
     return (
       <div ref={ref} className="w-[1123px] h-[794px] p-12 bg-white text-gray-800 font-serif flex flex-col justify-between">
         {/* Using a fixed size for A4 landscape ratio */}
@@ -37,9 +38,12 @@ export const CertificateTemplate = React.forwardRef<HTMLDivElement, CertificateT
                 <p className="text-lg">{completionDate}</p>
                 <p className="text-sm border-t-2 border-gray-400 pt-2">Fecha de finalización</p>
             </div>
-            <div>
-                <p className="border-t-2 border-gray-400 pt-2 text-lg font-semibold">Lucía Fernández</p>
-                <p className="text-sm">Jefa de Formación</p>
+            <div className="flex items-end gap-6">
+                <div>
+                    <p className="border-t-2 border-gray-400 pt-2 text-lg font-semibold">Lucía Fernández</p>
+                    <p className="text-sm">Jefa de Formación</p>
+                </div>
+                 {qrCodeDataUrl && <img src={qrCodeDataUrl} alt="QR Code" className="h-24 w-24" />}
             </div>
         </div>
       </div>
