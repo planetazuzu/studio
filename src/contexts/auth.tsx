@@ -22,18 +22,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    const checkUser = async () => {
+    const initializeApp = async () => {
       try {
+        // First, ensure the database is populated. This is fast if already populated.
+        await db.populateDatabase();
+        // Then, check for a logged-in user.
         const loggedInUser = await db.getLoggedInUser();
         setUser(loggedInUser);
       } catch (error) {
-        console.error("Failed to fetch logged in user", error);
+        console.error("Failed to initialize app", error);
         setUser(null);
       } finally {
         setIsLoading(false);
       }
     };
-    checkUser();
+    initializeApp();
   }, []);
 
   const login = async (email: string, password?: string) => {

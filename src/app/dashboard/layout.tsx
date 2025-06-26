@@ -12,7 +12,6 @@ import {
 import { DashboardHeader } from '@/components/dashboard-header';
 import { SidebarContents } from '@/components/sidebar-contents';
 import { navItems } from '@/lib/nav';
-import { populateDatabase } from '@/lib/db';
 
 export default function DashboardLayout({
   children,
@@ -22,10 +21,6 @@ export default function DashboardLayout({
   const { user, isLoading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
-
-  useEffect(() => {
-    populateDatabase();
-  }, []);
 
   useEffect(() => {
     if (!isLoading && !user) {
