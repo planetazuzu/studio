@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -8,12 +9,10 @@
  * - PredictAbandonmentOutput - The return type for the function.
  */
 
-import { getAiInstance } from '@/ai/get-ai-instance';
-import { cookies } from 'next/headers';
+import { ai } from '@/ai/genkit';
+import { googleAI } from '@genkit-ai/googleai';
+import { getGenAIKey } from '@/lib/config';
 import { z } from 'genkit';
-
-const apiKey = cookies().get('genai_api_key')?.value;
-const ai = getAiInstance(apiKey);
 
 export const PredictAbandonmentInputSchema = z.object({
   userName: z.string().describe('The name of the student.'),
@@ -34,29 +33,6 @@ export async function predictAbandonment(input: PredictAbandonmentInput): Promis
   return predictAbandonmentFlow(input);
 }
 
-const prompt = ai.definePrompt({
-  name: 'predictAbandonmentPrompt',
-  input: { schema: PredictAbandonmentInputSchema },
-  output: { schema: PredictAbandonmentOutputSchema },
-  prompt: `You are an expert student success advisor for a corporate training platform. Your task is to analyze student data and predict their risk of abandonment (Bajo, Medio, Alto).
-
-  Analyze the following student data:
-  - Student Name: {{{userName}}}
-  - Last Login: {{{lastLogin}}}
-  - Active Courses: {{activeCoursesCount}}
-  - Completed Courses: {{completedCoursesCount}}
-  - Average Progress in Active Courses: {{averageProgress}}%
-
-  Based on this data, determine the risk level.
-  - A long time since last login (e.g., > 2 weeks) increases risk.
-  - Low average progress (< 40%) increases risk.
-  - A high number of active courses with low progress increases risk.
-  - A good number of completed courses can mitigate risk.
-
-  Provide a brief justification for your prediction, highlighting the key indicators. Keep it concise and actionable for a training manager.
-  `,
-});
-
 const predictAbandonmentFlow = ai.defineFlow(
   {
     name: 'predictAbandonmentFlow',
@@ -64,7 +40,37 @@ const predictAbandonmentFlow = ai.defineFlow(
     outputSchema: PredictAbandonmentOutputSchema,
   },
   async (input) => {
-    const { output } = await prompt(input);
+    const apiKey = getGenAIKey();
+    if (!apiKey) {
+      throw new Error('GenAI API key not found.');
+    }
+
+    const llm = googleAI.model('gemini-1.5-flash-latest');
+    const { output } = await ai.generate({
+      model: llm,
+      plugins: [googleAI({ apiKey })],
+      input,
+      output: {
+        schema: PredictAbandonmentOutputSchema,
+      },
+      prompt: `You are an expert student success advisor for a corporate training platform. Your task is to analyze student data and predict their risk of abandonment (Bajo, Medio, Alto).
+
+      Analyze the following student data:
+      - Student Name: {{{userName}}}
+      - Last Login: {{{lastLogin}}}
+      - Active Courses: {{activeCoursesCount}}
+      - Completed Courses: {{completedCoursesCount}}
+      - Average Progress in Active Courses: {{averageProgress}}%
+
+      Based on this data, determine the risk level.
+      - A long time since last login (e.g., > 2 weeks) increases risk.
+      - Low average progress (< 40%) increases risk.
+      - A high number of active courses with low progress increases risk.
+      - A good number of completed courses can mitigate risk.
+
+      Provide a brief justification for your prediction, highlighting the key indicators. Keep it concise and actionable for a training manager.
+      `,
+    });
     return output!;
   }
 );

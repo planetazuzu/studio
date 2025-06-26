@@ -9,12 +9,10 @@
  * - GenerateNotificationEmailOutput - The return type for the generateNotificationEmail function.
  */
 
-import { getAiInstance } from '@/ai/get-ai-instance';
-import { cookies } from 'next/headers';
+import { ai } from '@/ai/genkit';
+import { googleAI } from '@genkit-ai/googleai';
+import { getGenAIKey } from '@/lib/config';
 import { z } from 'genkit';
-
-const apiKey = cookies().get('genai_api_key')?.value;
-const ai = getAiInstance(apiKey);
 
 const GenerateNotificationEmailInputSchema = z.object({
   recipientName: z.string().describe('The name of the person receiving the email.'),
@@ -35,32 +33,39 @@ export async function generateNotificationEmail(
   return generateNotificationEmailFlow(input);
 }
 
-const prompt = ai.definePrompt({
-  name: 'generateNotificationEmailPrompt',
-  input: {schema: GenerateNotificationEmailInputSchema},
-  output: {schema: GenerateNotificationEmailOutputSchema},
-  prompt: `You are an AI assistant for a corporate training platform called AcademiaAI. Your task is to generate a personalized and professional email notification.
-
-  Recipient Name: {{{recipientName}}}
-  Course Name: {{{courseName}}}
-  Notification Type: {{{notificationType}}}
-
-  Based on the notification type, generate an appropriate subject and body for the email. Address the recipient by their name. Keep the tone friendly but professional.
-
-  - If the type is 'course_reminder', remind them to continue their progress.
-  - If the type is 'new_course_available', announce the new course and encourage them to enroll.
-  - If the type is 'feedback_ready', let them know their feedback on a recent test is available.
-  `,
-});
-
 const generateNotificationEmailFlow = ai.defineFlow(
   {
     name: 'generateNotificationEmailFlow',
     inputSchema: GenerateNotificationEmailInputSchema,
     outputSchema: GenerateNotificationEmailOutputSchema,
   },
-  async input => {
-    const {output} = await prompt(input);
+  async (input) => {
+    const apiKey = getGenAIKey();
+    if (!apiKey) {
+      throw new Error('GenAI API key not found.');
+    }
+
+    const llm = googleAI.model('gemini-1.5-flash-latest');
+    const { output } = await ai.generate({
+      model: llm,
+      plugins: [googleAI({ apiKey })],
+      input,
+      output: {
+        schema: GenerateNotificationEmailOutputSchema,
+      },
+      prompt: `You are an AI assistant for a corporate training platform called AcademiaAI. Your task is to generate a personalized and professional email notification.
+
+      Recipient Name: {{{recipientName}}}
+      Course Name: {{{courseName}}}
+      Notification Type: {{{notificationType}}}
+
+      Based on the notification type, generate an appropriate subject and body for the email. Address the recipient by their name. Keep the tone friendly but professional.
+
+      - If the type is 'course_reminder', remind them to continue their progress.
+      - If the type is 'new_course_available', announce the new course and encourage them to enroll.
+      - If the type is 'feedback_ready', let them know their feedback on a recent test is available.
+      `,
+    });
     return output!;
   }
 );

@@ -1,5 +1,4 @@
 
-// src/ai/flows/generate-test-questions.ts
 'use server';
 
 /**
@@ -10,12 +9,10 @@
  * - GenerateTestQuestionsOutput - The return type for the generateTestQuestions function.
  */
 
-import { getAiInstance } from '@/ai/get-ai-instance';
-import { cookies } from 'next/headers';
+import { ai } from '@/ai/genkit';
+import { googleAI } from '@genkit-ai/googleai';
+import { getGenAIKey } from '@/lib/config';
 import { z } from 'genkit';
-
-const apiKey = cookies().get('genai_api_key')?.value;
-const ai = getAiInstance(apiKey);
 
 const GenerateTestQuestionsInputSchema = z.object({
   courseContent: z
@@ -48,30 +45,37 @@ export async function generateTestQuestions(input: GenerateTestQuestionsInput): 
   return generateTestQuestionsFlow(input);
 }
 
-const prompt = ai.definePrompt({
-  name: 'generateTestQuestionsPrompt',
-  input: {schema: GenerateTestQuestionsInputSchema},
-  output: {schema: GenerateTestQuestionsOutputSchema},
-  prompt: `You are an expert medical educator specializing in creating tests and quizzes for emergency personnel (EMTs, dispatchers).
-
-You will use the provided course content to generate {{numberOfQuestions}} test questions of {{difficulty}} difficulty.
-
-Each question should have multiple choice options, and you should indicate the correct answer.
-
-Course Content: {{{courseContent}}}
-
-Output the questions in JSON format adhering to the schema.
-`,
-});
-
 const generateTestQuestionsFlow = ai.defineFlow(
   {
     name: 'generateTestQuestionsFlow',
     inputSchema: GenerateTestQuestionsInputSchema,
     outputSchema: GenerateTestQuestionsOutputSchema,
   },
-  async input => {
-    const {output} = await prompt(input);
+  async (input) => {
+    const apiKey = getGenAIKey();
+    if (!apiKey) {
+      throw new Error('GenAI API key not found.');
+    }
+
+    const llm = googleAI.model('gemini-1.5-flash-latest');
+    const { output } = await ai.generate({
+      model: llm,
+      plugins: [googleAI({ apiKey })],
+      input,
+      output: {
+        schema: GenerateTestQuestionsOutputSchema,
+      },
+      prompt: `You are an expert medical educator specializing in creating tests and quizzes for emergency personnel (EMTs, dispatchers).
+
+      You will use the provided course content to generate {{numberOfQuestions}} test questions of {{difficulty}} difficulty.
+
+      Each question should have multiple choice options, and you should indicate the correct answer.
+
+      Course Content: {{{courseContent}}}
+
+      Output the questions in JSON format adhering to the schema.
+      `,
+    });
     return output!;
   }
 );

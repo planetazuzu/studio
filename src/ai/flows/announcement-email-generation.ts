@@ -9,12 +9,10 @@
  * - GenerateAnnouncementEmailOutput - The return type for the generateAnnouncementEmail function.
  */
 
-import { getAiInstance } from '@/ai/get-ai-instance';
-import { cookies } from 'next/headers';
+import { ai } from '@/ai/genkit';
+import { googleAI } from '@genkit-ai/googleai';
+import { getGenAIKey } from '@/lib/config';
 import { z } from 'genkit';
-
-const apiKey = cookies().get('genai_api_key')?.value;
-const ai = getAiInstance(apiKey);
 
 const GenerateAnnouncementEmailInputSchema = z.object({
   recipientName: z.string().describe('The name of the person receiving the email.'),
@@ -35,29 +33,36 @@ export async function generateAnnouncementEmail(
   return generateAnnouncementEmailFlow(input);
 }
 
-const prompt = ai.definePrompt({
-  name: 'generateAnnouncementEmailPrompt',
-  input: {schema: GenerateAnnouncementEmailInputSchema},
-  output: {schema: GenerateAnnouncementEmailOutputSchema},
-  prompt: `You are an AI assistant for a corporate training platform called AcademiaAI. Your task is to generate a professional email based on an internal announcement.
-
-  Recipient Name: {{{recipientName}}}
-  Announcement Title: {{{announcementTitle}}}
-  Announcement Content: {{{announcementContent}}}
-
-  Based on this, generate an appropriate subject and body for an email notification. Address the recipient by their name. Keep the tone friendly but professional.
-  The body should be formatted nicely for an email.
-  `,
-});
-
 const generateAnnouncementEmailFlow = ai.defineFlow(
   {
     name: 'generateAnnouncementEmailFlow',
     inputSchema: GenerateAnnouncementEmailInputSchema,
     outputSchema: GenerateAnnouncementEmailOutputSchema,
   },
-  async input => {
-    const {output} = await prompt(input);
+  async (input) => {
+    const apiKey = getGenAIKey();
+    if (!apiKey) {
+      throw new Error('GenAI API key not found.');
+    }
+
+    const llm = googleAI.model('gemini-1.5-flash-latest');
+    const { output } = await ai.generate({
+      model: llm,
+      plugins: [googleAI({ apiKey })],
+      input: input,
+      output: {
+        schema: GenerateAnnouncementEmailOutputSchema,
+      },
+      prompt: `You are an AI assistant for a corporate training platform called AcademiaAI. Your task is to generate a professional email based on an internal announcement.
+
+      Recipient Name: {{{recipientName}}}
+      Announcement Title: {{{announcementTitle}}}
+      Announcement Content: {{{announcementContent}}}
+
+      Based on this, generate an appropriate subject and body for an email notification. Address the recipient by their name. Keep the tone friendly but professional.
+      The body should be formatted nicely for an email.
+      `,
+    });
     return output!;
   }
 );

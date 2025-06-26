@@ -9,12 +9,10 @@
  * - PersonalizedCourseRecommendationsOutput - The return type for the personalizedCourseRecommendations function.
  */
 
-import { getAiInstance } from '@/ai/get-ai-instance';
-import { cookies } from 'next/headers';
+import { ai } from '@/ai/genkit';
+import { googleAI } from '@genkit-ai/googleai';
+import { getGenAIKey } from '@/lib/config';
 import { z } from 'genkit';
-
-const apiKey = cookies().get('genai_api_key')?.value;
-const ai = getAiInstance(apiKey);
 
 const PersonalizedCourseRecommendationsInputSchema = z.object({
   userProfile: z.string().describe('The profile of the user, including their skills, interests, and learning goals.'),
@@ -33,27 +31,34 @@ export async function personalizedCourseRecommendations(
   return personalizedCourseRecommendationsFlow(input);
 }
 
-const prompt = ai.definePrompt({
-  name: 'personalizedCourseRecommendationsPrompt',
-  input: {schema: PersonalizedCourseRecommendationsInputSchema},
-  output: {schema: PersonalizedCourseRecommendationsOutputSchema},
-  prompt: `You are an AI assistant that suggests courses to users based on their profile and learning history.
-
-  User Profile: {{{userProfile}}}
-  Learning History: {{{learningHistory}}}
-
-  Based on this information, suggest relevant courses that would help the user enhance their skills. Only return an array of course titles.
-  `,
-});
-
 const personalizedCourseRecommendationsFlow = ai.defineFlow(
   {
     name: 'personalizedCourseRecommendationsFlow',
     inputSchema: PersonalizedCourseRecommendationsInputSchema,
     outputSchema: PersonalizedCourseRecommendationsOutputSchema,
   },
-  async input => {
-    const {output} = await prompt(input);
+  async (input) => {
+    const apiKey = getGenAIKey();
+    if (!apiKey) {
+      throw new Error('GenAI API key not found.');
+    }
+
+    const llm = googleAI.model('gemini-1.5-flash-latest');
+    const { output } = await ai.generate({
+      model: llm,
+      plugins: [googleAI({ apiKey })],
+      input: input,
+      output: {
+        schema: PersonalizedCourseRecommendationsOutputSchema,
+      },
+      prompt: `You are an AI assistant that suggests courses to users based on their profile and learning history.
+
+      User Profile: {{{userProfile}}}
+      Learning History: {{{learningHistory}}}
+
+      Based on this information, suggest relevant courses that would help the user enhance their skills. Only return an array of course titles.
+      `,
+    });
     return output!;
   }
 );
