@@ -125,9 +125,8 @@ export async function addUser(user: Omit<User, 'id' | 'avatar' | 'isSynced' | 'u
         isSynced: false,
         updatedAt: new Date().toISOString(),
         notificationSettings: {
-            courseReminders: true,
-            newCourses: true,
-            feedbackReady: true,
+            consent: false,
+            channels: [],
         },
     };
     return await db.users.add(newUser);
@@ -141,9 +140,8 @@ export async function bulkAddUsers(users: Omit<User, 'id' | 'avatar' | 'isSynced
         isSynced: false,
         updatedAt: new Date().toISOString(),
         notificationSettings: {
-            courseReminders: true,
-            newCourses: true,
-            feedbackReady: true,
+            consent: false,
+            channels: [],
         },
     }));
     // The 'allKeys' option returns the primary keys of all added objects.
@@ -283,7 +281,7 @@ export async function getEnrolledCoursesForUser(userId: string): Promise<Course[
 
   const courseIds = approvedEnrollments.map(e => e.courseId);
   
-  const enrolledCourses = await db.courses.where('id').anyOf(courseIds).and(course => course.status === 'published').toArray();
+  const enrolledCourses = await db.courses.where('id').anyOf(courseIds).and(course => course.status !== 'draft').toArray();
 
   return enrolledCourses;
 }

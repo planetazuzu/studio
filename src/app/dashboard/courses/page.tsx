@@ -34,11 +34,13 @@ function CoursesPageContent() {
 
   const courses = useLiveQuery(
     () => (isClient ? getAllCourses() : []),
-    [isClient]
+    [isClient],
+    []
   );
   const userProgressData = useLiveQuery(
     () => (isClient && user ? getUserProgressForUser(user.id) : []),
-    [isClient, user?.id]
+    [isClient, user?.id],
+    []
   );
   
   const [filters, setFilters] = useState({
@@ -74,8 +76,8 @@ function CoursesPageContent() {
   const filteredCourses = useMemo(() => {
     if (!courses) return [];
     return courses.filter(course => 
-      // Visibility Check: Managers see all, others only see published
-      (canCreateCourse || course.status === 'published') &&
+      // Visibility Check: Managers see all, non-draft courses are visible to others
+      (canCreateCourse || course.status !== 'draft') &&
       // Modality filter
       filters[course.modality] &&
       // Search query filter
@@ -88,7 +90,7 @@ function CoursesPageContent() {
   }, [courses, filters, searchQuery, canCreateCourse]);
 
   // Handle loading state while client mounts and dexie initializes
-  if (!isClient || !courses || !user) {
+  if (!isClient || !user) {
     return (
       <div className="flex justify-center items-center h-full">
         <div className="text-center">
