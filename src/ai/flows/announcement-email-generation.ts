@@ -5,27 +5,17 @@
  * @fileOverview Generates personalized announcement email content.
  *
  * - generateAnnouncementEmail - A function that creates the subject and body for an announcement email.
- * - GenerateAnnouncementEmailInput - The input type for the generateAnnouncementEmail function.
- * - GenerateAnnouncementEmailOutput - The return type for the generateAnnouncementEmail function.
  */
 
 import { ai } from '@/ai/genkit';
 import { googleAI } from '@genkit-ai/googleai';
 import { getGenAIKey } from '@/lib/config';
-import { z } from 'genkit';
-
-const GenerateAnnouncementEmailInputSchema = z.object({
-  recipientName: z.string().describe('The name of the person receiving the email.'),
-  announcementTitle: z.string().describe('The title of the announcement.'),
-  announcementContent: z.string().describe('The content of the announcement.'),
-});
-export type GenerateAnnouncementEmailInput = z.infer<typeof GenerateAnnouncementEmailInputSchema>;
-
-const GenerateAnnouncementEmailOutputSchema = z.object({
-  subject: z.string().describe('The subject line of the email.'),
-  body: z.string().describe('The body content of the email, formatted for an email client.'),
-});
-export type GenerateAnnouncementEmailOutput = z.infer<typeof GenerateAnnouncementEmailOutputSchema>;
+import {
+  GenerateAnnouncementEmailInput,
+  GenerateAnnouncementEmailInputSchema,
+  GenerateAnnouncementEmailOutput,
+  GenerateAnnouncementEmailOutputSchema,
+} from '@/lib/types';
 
 export async function generateAnnouncementEmail(
   input: GenerateAnnouncementEmailInput

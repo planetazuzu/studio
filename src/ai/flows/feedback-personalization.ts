@@ -5,35 +5,17 @@
  * @fileOverview A flow for generating personalized feedback on tests and assignments.
  *
  * - personalizedFeedback - A function that generates personalized feedback.
- * - PersonalizedFeedbackInput - The input type for the personalizedFeedback function.
- * - PersonalizedFeedbackOutput - The return type for the personalizedFeedback function.
  */
 
 import { ai } from '@/ai/genkit';
 import { googleAI } from '@genkit-ai/googleai';
 import { getGenAIKey } from '@/lib/config';
-import { z } from 'genkit';
-
-const PersonalizedFeedbackInputSchema = z.object({
-  studentName: z.string().describe('The name of the student receiving feedback.'),
-  assignmentName: z.string().describe('The name of the assignment or test.'),
-  score: z.number().describe('The final score of the student as a percentage.'),
-  questions: z
-    .array(
-      z.object({
-        question: z.string(),
-        studentAnswer: z.string(),
-        correctAnswer: z.string(),
-      })
-    )
-    .describe('The list of questions, student answers, and correct answers.'),
-});
-export type PersonalizedFeedbackInput = z.infer<typeof PersonalizedFeedbackInputSchema>;
-
-const PersonalizedFeedbackOutputSchema = z.object({
-  feedback: z.string().describe('Personalized feedback for the student.'),
-});
-export type PersonalizedFeedbackOutput = z.infer<typeof PersonalizedFeedbackOutputSchema>;
+import {
+  PersonalizedFeedbackInput,
+  PersonalizedFeedbackInputSchema,
+  PersonalizedFeedbackOutput,
+  PersonalizedFeedbackOutputSchema,
+} from '@/lib/types';
 
 export async function personalizedFeedback(input: PersonalizedFeedbackInput): Promise<PersonalizedFeedbackOutput> {
   return personalizedFeedbackFlow(input);

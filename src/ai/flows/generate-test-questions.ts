@@ -5,41 +5,18 @@
  * @fileOverview An AI agent for automatically generating tests and quizzes based on course content.
  *
  * - generateTestQuestions - A function that generates test questions based on the provided course content.
- * - GenerateTestQuestionsInput - The input type for the generateTestQuestions function.
- * - GenerateTestQuestionsOutput - The return type for the generateTestQuestions function.
  */
 
 import { ai } from '@/ai/genkit';
 import { googleAI } from '@genkit-ai/googleai';
 import { getGenAIKey } from '@/lib/config';
-import { z } from 'genkit';
+import {
+  GenerateTestQuestionsInput,
+  GenerateTestQuestionsInputSchema,
+  GenerateTestQuestionsOutput,
+  GenerateTestQuestionsOutputSchema,
+} from '@/lib/types';
 
-const GenerateTestQuestionsInputSchema = z.object({
-  courseContent: z
-    .string()
-    .describe('The content of the course for which to generate test questions.'),
-  numberOfQuestions: z
-    .number()
-    .default(5)
-    .describe('The number of test questions to generate.'),
-  difficulty: z
-    .enum(['easy', 'medium', 'hard'])
-    .default('medium')
-    .describe('The difficulty level of the test questions.'),
-});
-export type GenerateTestQuestionsInput = z.infer<typeof GenerateTestQuestionsInputSchema>;
-
-const GenerateTestQuestionsOutputSchema = z.object({
-  questions: z.array(
-    z.object({
-      question: z.string().describe('The test question.'),
-      options: z.array(z.string()).describe('The possible answers for the question.'),
-      correctAnswer: z.string().describe('The correct answer to the question.'),
-    })
-  ).
-describe('The generated test questions.'),
-});
-export type GenerateTestQuestionsOutput = z.infer<typeof GenerateTestQuestionsOutputSchema>;
 
 export async function generateTestQuestions(input: GenerateTestQuestionsInput): Promise<GenerateTestQuestionsOutput> {
   return generateTestQuestionsFlow(input);

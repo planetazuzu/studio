@@ -5,29 +5,17 @@
  * @fileOverview An AI agent for predicting student abandonment risk.
  *
  * - predictAbandonment - A function that analyzes student data to predict their risk of abandoning their studies.
- * - PredictAbandonmentInput - The input type for the function.
- * - PredictAbandonmentOutput - The return type for the function.
  */
 
 import { ai } from '@/ai/genkit';
 import { googleAI } from '@genkit-ai/googleai';
 import { getGenAIKey } from '@/lib/config';
-import { z } from 'genkit';
-
-export const PredictAbandonmentInputSchema = z.object({
-  userName: z.string().describe('The name of the student.'),
-  lastLogin: z.string().describe('Time since the student last logged in (e.g., "hace 3 días", "hace 2 semanas").'),
-  activeCoursesCount: z.number().describe('The number of courses the student is currently enrolled in.'),
-  completedCoursesCount: z.number().describe('The number of courses the student has completed.'),
-  averageProgress: z.number().describe('The average completion percentage across all active courses.'),
-});
-export type PredictAbandonmentInput = z.infer<typeof PredictAbandonmentInputSchema>;
-
-export const PredictAbandonmentOutputSchema = z.object({
-  riskLevel: z.enum(['Bajo', 'Medio', 'Alto']).describe('The predicted risk level of abandonment.'),
-  justification: z.string().describe('A brief, 2-3 sentence justification for the predicted risk level, explaining the key factors.'),
-});
-export type PredictAbandonmentOutput = z.infer<typeof PredictAbandonmentOutputSchema>;
+import {
+  PredictAbandonmentInput,
+  PredictAbandonmentInputSchema,
+  PredictAbandonmentOutput,
+  PredictAbandonmentOutputSchema,
+} from '@/lib/types';
 
 export async function predictAbandonment(input: PredictAbandonmentInput): Promise<PredictAbandonmentOutput> {
   return predictAbandonmentFlow(input);

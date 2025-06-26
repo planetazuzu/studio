@@ -5,22 +5,18 @@
  * @fileOverview An AI agent for summarizing module content.
  *
  * - summarizeModuleContent - A function that generates a summary for a piece of text.
- * - SummarizeModuleContentInput - The input type for the function.
- * - SummarizeModuleContentOutput - The return type for the function.
  */
 
 import { ai } from '@/ai/genkit';
 import { googleAI } from '@genkit-ai/googleai';
 import { getGenAIKey } from '@/lib/config';
-import { z } from 'genkit';
+import {
+  SummarizeModuleContentInput,
+  SummarizeModuleContentInputSchema,
+  SummarizeModuleContentOutput,
+  SummarizeModuleContentOutputSchema,
+} from '@/lib/types';
 
-export const SummarizeModuleContentInputSchema = z.string().describe('The content of the module to be summarized.');
-export type SummarizeModuleContentInput = z.infer<typeof SummarizeModuleContentInputSchema>;
-
-export const SummarizeModuleContentOutputSchema = z.object({
-  summary: z.string().describe("A concise summary of the module's content, highlighting key learning points."),
-});
-export type SummarizeModuleContentOutput = z.infer<typeof SummarizeModuleContentOutputSchema>;
 
 export async function summarizeModuleContent(input: SummarizeModuleContentInput): Promise<SummarizeModuleContentOutput> {
   return summarizeModuleContentFlow(input);
