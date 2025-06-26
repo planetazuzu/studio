@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { MoreHorizontal, PlusCircle, ListFilter, Loader2, Trash2, FilePenLine, Upload, MessageSquare } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, ListFilter, Loader2, Trash2, FilePenLine, Upload, MessageSquare, BrainCircuit, Bot } from 'lucide-react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -37,11 +37,14 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { roles, departments } from '@/lib/data';
 import * as db from '@/lib/db';
-import type { Role, Department, User } from '@/lib/types';
+import type { Role, Department, User, PredictAbandonmentOutput } from '@/lib/types';
 import { useAuth } from '@/contexts/auth';
 import { useToast } from '@/hooks/use-toast';
+import { predictAbandonment } from '@/ai/flows/predict-abandonment';
+
 
 const roleBadgeVariant: Record<Role, 'default' | 'secondary' | 'outline' | 'destructive'> = {
     'Administrador General': 'destructive',
@@ -60,6 +63,8 @@ export default function UsersPage() {
     const users = useLiveQuery(db.getAllUsers, []);
     
     const [userToDelete, setUserToDelete] = useState<User | null>(null);
+    const [predictionLoading, setPredictionLoading] = useState<string | null>(null); // user.id
+    const [predictionResult, setPredictionResult] = useState<Record<string, PredictAbandonmentOutput | null>>({});
 
     const [roleFilters, setRoleFilters] = useState<Record<Role, boolean>>(() => 
         Object.fromEntries(roles.map(r => [r, true])) as Record<Role, boolean>
@@ -115,6 +120,38 @@ export default function UsersPage() {
             toast({ title: "Error", description: "No se pudo eliminar al usuario.", variant: "destructive" });
         } finally {
             setUserToDelete(null);
+        }
+    }
+    
+    const handlePredictAbandonment = async (user: User) => {
+        if (predictionLoading === user.id) return;
+        
+        setPredictionLoading(user.id);
+        setPredictionResult(prev => ({...prev, [user.id]: null}));
+
+        try {
+            // NOTE: In a real-world scenario, this data would be dynamically calculated from the DB.
+            // For this demonstration, we are simulating varied data to showcase the AI feature.
+            const simulatedData = {
+                userName: user.name,
+                lastLogin: "hace 2 semanas",
+                activeCoursesCount: (user.name.length % 3) + 1, // 1 to 3
+                completedCoursesCount: (user.name.length % 5), // 0 to 4
+                averageProgress: (user.email.length * 2) % 100, // 0 to 99
+            };
+
+            const result = await predictAbandonment(simulatedData);
+            setPredictionResult(prev => ({...prev, [user.id]: result}));
+
+        } catch (error) {
+            console.error("Failed to get prediction", error);
+            toast({
+                title: "Error de IA",
+                description: "No se pudo obtener la predicción.",
+                variant: "destructive",
+            });
+        } finally {
+            setPredictionLoading(null);
         }
     }
 
@@ -213,6 +250,7 @@ export default function UsersPage() {
                                     <TableHead>Usuario</TableHead>
                                     <TableHead>Rol</TableHead>
                                     <TableHead>Departamento</TableHead>
+                                    <TableHead>Riesgo Abandono</TableHead>
                                     <TableHead>
                                         <span className="sr-only">Acciones</span>
                                     </TableHead>
@@ -237,6 +275,48 @@ export default function UsersPage() {
                                                 <Badge variant={roleBadgeVariant[u.role]}>{u.role}</Badge>
                                             </TableCell>
                                             <TableCell>{u.department}</TableCell>
+                                            <TableCell>
+                                            <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <Button variant="outline" size="sm" onClick={() => handlePredictAbandonment(u)} disabled={predictionLoading === u.id}>
+                                                        {predictionLoading === u.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <BrainCircuit className="h-4 w-4" />}
+                                                        <span className="ml-2 hidden sm:inline">Analizar</span>
+                                                    </Button>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-80">
+                                                    {predictionLoading === u.id ? (
+                                                        <div className="flex items-center justify-center p-4">
+                                                            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                                                        </div>
+                                                    ) : predictionResult[u.id] ? (
+                                                        <div className="grid gap-4">
+                                                            <div className="space-y-2">
+                                                                <h4 className="font-medium leading-none flex items-center gap-2">
+                                                                    <Bot /> Predicción de Riesgo
+                                                                </h4>
+                                                                <p className="text-sm text-muted-foreground">
+                                                                    Análisis para <span className="font-semibold">{u.name}</span>.
+                                                                </p>
+                                                            </div>
+                                                            <div className="grid gap-2">
+                                                                <div className="flex items-center justify-between">
+                                                                    <span className="text-sm font-medium">Nivel de Riesgo:</span>
+                                                                    <Badge variant={predictionResult[u.id]!.riskLevel === 'Alto' ? 'destructive' : predictionResult[u.id]!.riskLevel === 'Medio' ? 'secondary' : 'default'}>
+                                                                        {predictionResult[u.id]!.riskLevel}
+                                                                    </Badge>
+                                                                </div>
+                                                                 <div className="text-sm">
+                                                                    <p className="font-medium">Justificación:</p>
+                                                                    <p className="text-muted-foreground">{predictionResult[u.id]!.justification}</p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <p className="text-center text-sm text-muted-foreground p-4">Haz clic en "Analizar" para obtener una predicción de la IA.</p>
+                                                    )}
+                                                </PopoverContent>
+                                            </Popover>
+                                        </TableCell>
                                             <TableCell>
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>

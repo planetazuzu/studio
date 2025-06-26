@@ -9,3 +9,4 @@ import '@/ai/flows/course-tutor.ts';
 import '@/ai/flows/announcement-email-generation.ts';
 import '@/ai/flows/generate-course-from-topic.ts';
 import '@/ai/flows/summarize-module-content.ts';
+import '@/ai/flows/predict-abandonment.ts';

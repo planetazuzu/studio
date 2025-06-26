@@ -190,3 +190,9 @@ export type DirectMessageThread = ChatChannel & {
         avatar: string;
     }
 };
+
+import type { PredictAbandonmentInputSchema, PredictAbandonmentOutputSchema } from '@/ai/flows/predict-abandonment';
+import { z } from 'zod';
+
+export type PredictAbandonmentInput = z.infer<typeof PredictAbandonmentInputSchema>;
+export type PredictAbandonmentOutput = z.infer<typeof PredictAbandonmentOutputSchema>;
