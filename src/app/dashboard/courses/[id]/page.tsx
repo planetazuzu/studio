@@ -16,6 +16,7 @@ import { GenerateTestQuestionsOutput } from '@/ai/flows/generate-test-questions'
 import { personalizedFeedback } from '@/ai/flows/feedback-personalization';
 import { generateTestQuestions } from '@/ai/flows/generate-test-questions';
 import { courseTutor } from '@/ai/flows/course-tutor';
+import { summarizeModuleContent } from '@/ai/flows/summarize-module-content';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -31,6 +32,7 @@ import { useToast } from '@/hooks/use-toast';
 import { CertificateTemplate } from '@/components/certificate-template';
 import { Forum } from '@/components/forum';
 import type { Course, ResourceType } from '@/lib/types';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 
 function TestGenerator({ courseTitle, courseContent, studentName }: { courseTitle: string; courseContent: string; studentName: string }) {
@@ -331,6 +333,9 @@ export default function CourseDetailPage() {
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [isCheckingEnrollment, setIsCheckingEnrollment] = useState(true);
 
+  const [summaries, setSummaries] = useState<Record<string, string>>({});
+  const [summaryLoading, setSummaryLoading] = useState<Record<string, boolean>>({});
+
   const fetchCourse = useCallback(async () => {
         setLoadingCourse(true);
         const courseData = await db.getCourseById(courseId);
@@ -482,6 +487,23 @@ export default function CourseDetailPage() {
     });
   };
 
+  const handleGenerateSummary = async (moduleId: string, content: string) => {
+    setSummaryLoading(prev => ({ ...prev, [moduleId]: true }));
+    try {
+      const result = await summarizeModuleContent(content);
+      setSummaries(prev => ({ ...prev, [moduleId]: result.summary }));
+    } catch (e) {
+      console.error("Failed to generate summary", e);
+      toast({
+        title: "Error de IA",
+        description: "No se pudo generar el resumen del módulo.",
+        variant: "destructive"
+      });
+    } finally {
+      setSummaryLoading(prev => ({ ...prev, [moduleId]: false }));
+    }
+  };
+
 
   return (
     <div className="space-y-8">
@@ -547,32 +569,75 @@ export default function CourseDetailPage() {
                 <CardHeader>
                   <CardTitle>Contenido del Curso</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  {course.modules.map((module) => {
-                    const isCompleted = completedModules.has(module.id);
-                    return (
-                        <div key={module.id} className={cn("flex items-start gap-4 p-4 rounded-lg border", isCompleted && "bg-green-50 border-green-200")}>
-                        <CheckCircle className={cn("h-6 w-6 text-muted-foreground mt-1", isCompleted && "text-green-500")} />
-                        <div className="flex-grow">
-                            <h3 className={cn("font-semibold", isCompleted && "line-through")}>{module.title}</h3>
-                            <p className="text-sm text-muted-foreground flex items-center gap-1.5"><Clock className="h-4 w-4" />{module.duration}</p>
-                        </div>
-                        <Button 
-                            variant={isCompleted ? "ghost" : "secondary"}
-                            size="sm"
-                            onClick={() => handleMarkModuleAsCompleted(module.id)}
-                            disabled={isCompleted || !isEnrolled}
-                        >
-                            {isCompleted ? "Completado" : "Marcar como completado"}
-                        </Button>
-                        </div>
-                    );
-                  })}
-                   {!isEnrolled && user && (
-                        <div className="text-center text-sm text-amber-600 bg-amber-50 p-3 rounded-lg">
-                            Debes estar inscrito para marcar tu progreso.
-                        </div>
-                    )}
+                <CardContent>
+                  {course.modules.length > 0 ? (
+                    <Accordion type="single" collapsible className="w-full space-y-2">
+                      {course.modules.map((module) => {
+                        const isCompleted = completedModules.has(module.id);
+                        const isLoadingSummary = summaryLoading[module.id];
+                        const summaryText = summaries[module.id];
+                        return (
+                          <AccordionItem value={module.id} key={module.id} className={cn("border rounded-lg", isCompleted && "bg-green-50 border-green-200")}>
+                            <AccordionTrigger className="hover:no-underline p-4 w-full text-left">
+                              <div className="flex items-center gap-4 flex-grow">
+                                <CheckCircle className={cn("h-6 w-6 text-muted-foreground transition-colors", isCompleted && "text-green-500")} />
+                                <div>
+                                  <h3 className={cn("font-semibold", isCompleted && "line-through text-muted-foreground")}>{module.title}</h3>
+                                  <p className="text-sm text-muted-foreground flex items-center gap-1.5"><Clock className="h-4 w-4" />{module.duration}</p>
+                                </div>
+                              </div>
+                            </AccordionTrigger>
+                            <AccordionContent className="space-y-4 px-4 pb-4">
+                              <div className="pl-10"> {/* Aligns with title */}
+                                <p className="text-muted-foreground whitespace-pre-wrap mb-4">{module.content}</p>
+
+                                {summaryText ? (
+                                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg space-y-2">
+                                    <h4 className="font-semibold text-primary flex items-center gap-2"><Bot /> Resumen IA</h4>
+                                    <p className="text-sm text-blue-900 whitespace-pre-wrap">{summaryText}</p>
+                                  </div>
+                                ) : (
+                                  <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => handleGenerateSummary(module.id, module.content)}
+                                      disabled={isLoadingSummary || !isEnrolled}
+                                      title={!isEnrolled ? "Debes estar inscrito para usar la IA" : ""}
+                                  >
+                                      {isLoadingSummary ? (
+                                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                      ) : (
+                                          <Sparkles className="mr-2 h-4 w-4" />
+                                      )}
+                                      Generar Resumen
+                                  </Button>
+                                )}
+                                
+                                <div className="flex justify-end mt-4">
+                                  <Button 
+                                      variant={isCompleted ? "link" : "default"}
+                                      size="sm"
+                                      className={cn(isCompleted && "text-green-600 font-semibold")}
+                                      onClick={() => handleMarkModuleAsCompleted(module.id)}
+                                      disabled={isCompleted || !isEnrolled}
+                                  >
+                                      {isCompleted ? "✓ Completado" : "Marcar como completado"}
+                                  </Button>
+                                </div>
+                              </div>
+                            </AccordionContent>
+                          </AccordionItem>
+                        );
+                      })}
+                    </Accordion>
+                  ) : (
+                    <p className="text-center text-muted-foreground py-4">Este curso todavía no tiene módulos definidos.</p>
+                  )}
+                  {!isEnrolled && user && course.modules.length > 0 && (
+                      <div className="text-center text-sm text-amber-600 bg-amber-50 p-3 rounded-lg mt-4">
+                          Debes estar inscrito para marcar tu progreso y usar las funciones de IA.
+                      </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -680,7 +745,7 @@ export default function CourseDetailPage() {
                         ) : (
                             <EyeOff className="mr-2 h-4 w-4" />
                         )}
-                        {course.status === 'draft' ? 'Publicar Curso' : 'Ocultar Curso'}
+                        {course.status === 'draft' ? 'Publicar Curso' : 'Ocular Curso'}
                     </Button>
                     <Button variant="outline" className="w-full" onClick={handleScormExport}>
                         <Archive className="mr-2 h-4 w-4" />
