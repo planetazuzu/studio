@@ -21,6 +21,11 @@ import { cn } from '@/lib/utils';
 
 function AnnouncementsPanel({ user }: { user: User }) {
     const announcements = useLiveQuery(() => db.getVisibleAnnouncementsForUser(user), [user], []);
+    const [isClient, setIsClient] = useState(false);
+
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
 
     const announcementIcons: Record<AnnouncementType, React.ElementType> = {
         'Urgente': AlertTriangle,
@@ -63,7 +68,7 @@ function AnnouncementsPanel({ user }: { user: User }) {
                                 <h3 className="font-bold">{announcement.title}</h3>
                                 <p className="text-sm mt-1">{announcement.content}</p>
                                 <p className="text-xs text-muted-foreground mt-2">
-                                    {formatDistanceToNow(new Date(announcement.timestamp), { addSuffix: true, locale: es })}
+                                    {isClient ? formatDistanceToNow(new Date(announcement.timestamp), { addSuffix: true, locale: es }) : '...'}
                                 </p>
                             </div>
                             <Badge variant={announcement.type === 'Urgente' ? 'destructive' : 'secondary'} className="h-fit">{announcement.type}</Badge>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -25,6 +25,11 @@ export function ForumMessageCard({ message, courseId, user, canManage, isTopLeve
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [replyMessage, setReplyMessage] = useState('');
   const [isPostingReply, setIsPostingReply] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const handlePostReply = async () => {
     if (!replyMessage.trim()) return;
@@ -75,7 +80,7 @@ export function ForumMessageCard({ message, courseId, user, canManage, isTopLeve
             <div>
                 <p className="font-semibold">{message.userName}</p>
                 <p className="text-xs text-muted-foreground">
-                {formatDistanceToNow(new Date(message.timestamp), { addSuffix: true, locale: es })}
+                {isClient ? formatDistanceToNow(new Date(message.timestamp), { addSuffix: true, locale: es }) : '...'}
                 </p>
             </div>
             {(canManage || isAuthor) && (
