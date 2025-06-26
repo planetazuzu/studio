@@ -210,6 +210,24 @@ export type CalendarEvent = {
   updatedAt?: string; // ISO date string
 };
 
+export const externalTrainingTypes = ['Curso', 'Certificación', 'Máster', 'Taller', 'Conferencia', 'Otro'] as const;
+export type ExternalTrainingType = typeof externalTrainingTypes[number];
+
+export type ExternalTraining = {
+  id?: number;
+  userId: string;
+  title: string;
+  type: ExternalTrainingType;
+  institution: string;
+  startDate?: string; // ISO date string
+  endDate?: string; // ISO date string
+  fileUrl?: string; // URL to the certificate
+  comments?: string;
+  isRelevant?: boolean;
+  isSynced?: boolean;
+  updatedAt?: string; // ISO date string
+};
+
 
 import type { PredictAbandonmentInputSchema, PredictAbandonmentOutputSchema } from '@/ai/flows/predict-abandonment';
 import { z } from 'zod';

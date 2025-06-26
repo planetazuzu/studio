@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie';
-import type { Course, User, Enrollment, UserProgress, PendingEnrollmentDetails, ForumMessage, ForumMessageWithReplies, Notification, Resource, CourseResource, Announcement, ChatChannel, ChatMessage, Role, ComplianceReportData, DirectMessageThread, CalendarEvent } from './types';
+import type { Course, User, Enrollment, UserProgress, PendingEnrollmentDetails, ForumMessage, ForumMessageWithReplies, Notification, Resource, CourseResource, Announcement, ChatChannel, ChatMessage, Role, ComplianceReportData, DirectMessageThread, CalendarEvent, ExternalTraining } from './types';
 import { courses as initialCourses, users as initialUsers, initialChatChannels } from './data';
 
 const LOGGED_IN_USER_KEY = 'loggedInUserId';
@@ -17,6 +17,7 @@ export class AcademiaAIDB extends Dexie {
   chatChannels!: Table<ChatChannel>;
   chatMessages!: Table<ChatMessage>;
   calendarEvents!: Table<CalendarEvent>;
+  externalTrainings!: Table<ExternalTraining>;
 
 
   constructor() {
@@ -62,6 +63,9 @@ export class AcademiaAIDB extends Dexie {
     });
     this.version(12).stores({
         calendarEvents: '++id, courseId, start, end, isSynced',
+    });
+    this.version(13).stores({
+        externalTrainings: '++id, userId'
     });
   }
 }
@@ -656,4 +660,27 @@ export async function updateCalendarEvent(id: number, data: Partial<Omit<Calenda
 
 export async function deleteCalendarEvent(id: number): Promise<void> {
     await db.calendarEvents.delete(id);
+}
+
+// --- External Training Functions ---
+
+export async function getExternalTrainingsForUser(userId: string): Promise<ExternalTraining[]> {
+    return await db.externalTrainings.where('userId').equals(userId).reverse().sortBy('endDate');
+}
+
+export async function addExternalTraining(training: Omit<ExternalTraining, 'id' | 'isSynced' | 'updatedAt'>): Promise<number> {
+    const newTraining: ExternalTraining = {
+        ...training,
+        isSynced: false,
+        updatedAt: new Date().toISOString(),
+    };
+    return await db.externalTrainings.add(newTraining);
+}
+
+export async function updateExternalTraining(id: number, data: Partial<Omit<ExternalTraining, 'id'>>): Promise<number> {
+    return await db.externalTrainings.update(id, { ...data, updatedAt: new Date().toISOString(), isSynced: false });
+}
+
+export async function deleteExternalTraining(id: number): Promise<void> {
+    await db.externalTrainings.delete(id);
 }
