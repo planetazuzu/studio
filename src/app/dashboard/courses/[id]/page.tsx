@@ -9,7 +9,7 @@ import { format } from 'date-fns';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { CheckCircle, Clock, Bot, Loader2, Sparkles, Send, PlusCircle, CheckCircle2, XCircle, MessageSquare, Book, File, Video, Link as LinkIcon, FilePenLine, AlertTriangle, Pencil, Rocket, EyeOff, Archive, Users } from 'lucide-react';
+import { CheckCircle, Clock, Bot, Loader2, Sparkles, Send, PlusCircle, CheckCircle2, XCircle, MessageSquare, Book, File, Video, Link as LinkIcon, FilePenLine, AlertTriangle, Pencil, Rocket, EyeOff, Archive, Users, FileText } from 'lucide-react';
 import QRCode from 'qrcode';
 import { cn } from '@/lib/utils';
 import { summarizeModuleContent } from '@/ai/flows/summarize-module-content';
@@ -438,7 +438,7 @@ export default function CourseDetailPage() {
                 {isDownloading ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
-                    <FilePenLine className="mr-2 h-4 w-4" />
+                    <FileText className="mr-2 h-4 w-4" />
                 )}
                 {isDownloading ? 'Generando...' : 'Descargar Certificado'}
               </Button>
