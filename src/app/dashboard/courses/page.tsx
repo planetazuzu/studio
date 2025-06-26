@@ -23,28 +23,18 @@ import type { Course } from '@/lib/types';
 
 // The main component now reads search params and filters
 function CoursesPageContent() {
+  // --- 1. HOOKS ---
   const { user } = useAuth();
   const searchParams = useSearchParams();
-  const searchQuery = searchParams.get('q') || '';
-  
   const courses = useLiveQuery(getAllCourses);
   const userProgressData = useLiveQuery(() => user ? getUserProgressForUser(user.id) : [], [user?.id]);
-
-
   const [filters, setFilters] = useState({
     Online: true,
     Presencial: true,
     Mixta: true,
   });
 
-  if (!user) return null; // Should be handled by layout guard
-  
-  const canCreateCourse = ['Jefe de Formación', 'Administrador General'].includes(user.role);
-
-  const handleFilterChange = (modality: keyof typeof filters, checked: boolean) => {
-    setFilters(prev => ({ ...prev, [modality]: checked }));
-  };
-
+  // --- 2. MEMOIZED VALUES (DERIVED STATE) ---
   const progressMap = useMemo(() => {
     if (!userProgressData || !courses) return new Map<string, number>();
 
@@ -60,20 +50,14 @@ function CoursesPageContent() {
         }
         return map;
     }, new Map<string, number>());
-
   }, [userProgressData, courses]);
 
-  // Handle loading state while Dexie initializes
-  if (!courses) {
-    return (
-      <div className="flex justify-center items-center h-full">
-        <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
-          <p className="mt-4 text-muted-foreground">Cargando cursos...</p>
-        </div>
-      </div>
-    );
-  }
+  const canCreateCourse = useMemo(() => {
+    if (!user) return false;
+    return ['Jefe de Formación', 'Administrador General'].includes(user.role);
+  }, [user]);
+  
+  const searchQuery = searchParams.get('q') || '';
 
   const filteredCourses = useMemo(() => {
     if (!courses) return [];
@@ -91,8 +75,32 @@ function CoursesPageContent() {
     );
   }, [courses, filters, searchQuery, canCreateCourse]);
 
+
+  // --- 3. EARLY RETURNS (GUARDS) ---
+  if (!user) {
+    return null; // Layout handles auth check, so this is a safeguard.
+  }
+  
+  // Handle loading state while Dexie initializes
+  if (!courses) {
+    return (
+      <div className="flex justify-center items-center h-full">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
+          <p className="mt-4 text-muted-foreground">Cargando cursos...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // --- 4. HANDLERS & OTHER VARIABLES ---
+  const handleFilterChange = (modality: keyof typeof filters, checked: boolean) => {
+    setFilters(prev => ({ ...prev, [modality]: checked }));
+  };
+
   const allModalities: (keyof typeof filters)[] = ['Online', 'Presencial', 'Mixta'];
 
+  // --- 5. RENDER ---
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
