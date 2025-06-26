@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -14,29 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Progress } from '../ui/progress';
 import { StatusBadge } from '../enrollments/status-badge';
 import { Textarea } from '../ui/textarea';
-
-async function sendAnnouncementAction(courseId: string, courseTitle: string, message: string) {
-    'use server';
-    const students = await db.getStudentsForCourseManagement(courseId);
-    if (students.length === 0) {
-        return { success: false, message: 'No hay estudiantes inscritos para notificar.' };
-    }
-
-    const notifications = students.map(student => ({
-        userId: student.id,
-        message: `Anuncio en "${courseTitle}": ${message}`,
-        type: 'course_announcement' as const,
-        relatedUrl: `/dashboard/courses/${courseId}`,
-        isRead: false,
-        timestamp: new Date().toISOString(),
-    }));
-
-    for (const notification of notifications) {
-        await db.addNotification(notification);
-    }
-    
-    return { success: true, message: `Anuncio enviado a ${students.length} estudiante(s).` };
-}
+import { sendAnnouncementAction } from '@/app/dashboard/courses/actions';
 
 
 export function CourseManagementTab({ course }: { course: Course }) {
