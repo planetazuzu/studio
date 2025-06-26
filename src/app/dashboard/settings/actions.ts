@@ -4,7 +4,6 @@ import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import { getNocoDBConfig } from '@/lib/config';
 import type { User, Course } from '@/lib/types';
-import * as db from '@/lib/db';
 import { createNocoUser, createNocoCourse } from '@/lib/noco';
 
 const cookieOptions = {
@@ -57,8 +56,17 @@ export async function saveApiKeysAction(prevState: any, formData: FormData) {
 }
 
 
-export async function syncAllDataAction(): Promise<{ success: boolean; log: string[], message: string }> {
+export async function syncAllDataAction(data: {
+  users: User[];
+  courses: Course[];
+}): Promise<{
+  success: boolean;
+  log: string[];
+  syncedIds: { users: string[], courses: string[] };
+  message: string;
+}> {
     const log: string[] = [];
+    const syncedIds: { users: string[], courses: string[] } = { users: [], courses: [] };
     
     log.push("Recibida solicitud de sincronización en el servidor.");
 
@@ -70,12 +78,11 @@ export async function syncAllDataAction(): Promise<{ success: boolean; log: stri
         
         log.push("Configuración de NocoDB encontrada y válida.");
 
-        const unsyncedUsers = await db.db.users.where('isSynced').equals(false).toArray();
-        const unsyncedCourses = await db.db.courses.where('isSynced').equals(false).toArray();
+        const { users: unsyncedUsers, courses: unsyncedCourses } = data;
 
         if (unsyncedUsers.length === 0 && unsyncedCourses.length === 0) {
-            log.push("¡Todo está al día! No hay datos nuevos para sincronizar.");
-            return { success: true, log, message: 'No hay datos nuevos para sincronizar.' };
+            log.push("¡Todo está al día! No hay datos nuevos para sincronizar desde el cliente.");
+            return { success: true, log, syncedIds, message: 'No hay datos nuevos para sincronizar.' };
         }
 
         // --- Sync Users ---
@@ -85,9 +92,8 @@ export async function syncAllDataAction(): Promise<{ success: boolean; log: stri
                 try {
                     log.push(`Enviando POST a NocoDB para el usuario: ${user.name} (${user.email})`);
                     await createNocoUser(user);
-                    // Mark as synced in local DB
-                    await db.db.users.update(user.id, { isSynced: true });
-                    log.push(`-> Éxito para ${user.name}. Marcado como sincronizado localmente.`);
+                    syncedIds.users.push(user.id);
+                    log.push(`-> Éxito para ${user.name}. Será marcado como sincronizado en el cliente.`);
                 } catch (error: any) {
                     log.push(`-> ERROR al sincronizar a ${user.name}: ${error.message}`);
                 }
@@ -103,9 +109,8 @@ export async function syncAllDataAction(): Promise<{ success: boolean; log: stri
                 try {
                     log.push(`Enviando POST a NocoDB para el curso: ${course.title}`);
                     await createNocoCourse(course);
-                    // Mark as synced in local DB
-                    await db.db.courses.update(course.id, { isSynced: true });
-                    log.push(`-> Éxito para ${course.title}. Marcado como sincronizado localmente.`);
+                    syncedIds.courses.push(course.id);
+                    log.push(`-> Éxito para ${course.title}. Será marcado como sincronizado en el cliente.`);
                 } catch (error: any) {
                     log.push(`-> ERROR al sincronizar a ${course.title}: ${error.message}`);
                 }
@@ -115,10 +120,10 @@ export async function syncAllDataAction(): Promise<{ success: boolean; log: stri
         }
 
         log.push("Proceso de sincronización finalizado.");
-        return { success: true, log, message: 'Sincronización completada.' };
+        return { success: true, log, syncedIds, message: 'Sincronización completada.' };
 
     } catch (e: any) {
         log.push(`ERROR FATAL: ${e.message}`);
-        return { success: false, log, message: e.message };
+        return { success: false, log, syncedIds, message: e.message };
     }
 }

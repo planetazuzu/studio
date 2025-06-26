@@ -281,24 +281,46 @@ function SyncManager() {
 
     const handleSync = async () => {
         setIsLoading(true);
-        setLog(['Iniciando sincronización...']);
+        setLog(['Iniciando sincronización desde el cliente...']);
+        
         try {
-            const result = await syncAllDataAction();
+            // 1. Get unsynced data from client-side Dexie
+            const unsyncedUsers = await db.db.users.where('isSynced').equals(false).toArray();
+            const unsyncedCourses = await db.db.courses.where('isSynced').equals(false).toArray();
             
+            setLog(prev => [...prev, `Encontrados ${unsyncedUsers.length} usuarios y ${unsyncedCourses.length} cursos para sincronizar.`]);
+
+            // 2. Call server action with the data
+            const result = await syncAllDataAction({ users: unsyncedUsers, courses: unsyncedCourses });
+            
+            // Append server logs to client log
             setLog(prev => [...prev, ...result.log]);
 
             if (result.success) {
                 toast({ title: 'Sincronización Completa', description: result.message });
+                
+                // 3. Mark synced items in local Dexie
+                if (result.syncedIds.users.length > 0) {
+                    await db.db.users.where('id').anyOf(result.syncedIds.users).modify({ isSynced: true });
+                     setLog(prev => [...prev, `Cliente: Marcados ${result.syncedIds.users.length} usuarios como sincronizados.`]);
+                }
+                if (result.syncedIds.courses.length > 0) {
+                    await db.db.courses.where('id').anyOf(result.syncedIds.courses).modify({ isSynced: true });
+                    setLog(prev => [...prev, `Cliente: Marcados ${result.syncedIds.courses.length} cursos como sincronizados.`]);
+                }
+
             } else {
                  toast({ title: 'Error de Sincronización', description: result.message, variant: 'destructive' });
             }
 
         } catch (error: any) {
             console.error("Sync failed", error);
-            setLog(prev => [...prev, `ERROR FATAL: ${error.message}`]);
-            toast({ title: 'Error de Sincronización', description: 'Ocurrió un error inesperado.', variant: 'destructive' });
+            const errorMessage = `ERROR FATAL en el cliente: ${error.message}`;
+            setLog(prev => [...prev, errorMessage]);
+            toast({ title: 'Error de Sincronización', description: 'Ocurrió un error inesperado en el cliente.', variant: 'destructive' });
         } finally {
             setIsLoading(false);
+            setLog(prev => [...prev, "--- Proceso finalizado ---"]);
         }
     };
 
