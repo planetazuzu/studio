@@ -1,3 +1,4 @@
+
 'use server';
 
 import { getNocoDBConfig } from './config';
@@ -6,10 +7,14 @@ import type { User, Course } from './types';
 // These are the specific IDs for your NocoDB project.
 // In a more advanced setup, these might also come from configuration.
 const tableIDs = {
-  users: 'moy9nk38t83b9sv',
-  courses: 'mk12d8jh3jf8eis',
-  enrollments: 'mibmex70eq1kopg',
-  userProgress: 'msal7b37a28ihxv',
+  users: "mua13xx6lp41ne5",
+  courses: "mgf0wk011tfbo06",
+  enrollments: "mcep00xiwbghugn",
+  userProgress: "mgckuvg7dsy2oql",
+  announcements: "mqkl01pvu4gy0bz",
+  calendarEvents: "md6p2feqtxoiff7",
+  externalTrainings: "mgqztsswkhryk02",
+  resources: "mj6q20380uq46ol",
 };
 
 const getHeaders = () => {
@@ -36,7 +41,7 @@ const getUrl = (tableId: string) => {
 
 // For simplicity, we'll just implement create. A full sync would need update (PATCH) and delete.
 // NocoDB uses the primary key from the body to create a record with a specific ID.
-async function createRecord<T extends { id: string }>(tableId: string, record: T): Promise<T> {
+async function createRecord<T extends { id?: string | number }>(tableId: string, record: T): Promise<T> {
   // We remove fields that are local to the app and shouldn't be synced up.
   const { isSynced, updatedAt, ...payload } = record as any;
 
