@@ -1,126 +1,20 @@
-
 'use client';
 
 import { useState, useEffect, useRef, Suspense, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
 import { Hash, Send, Loader2, Users, MessageSquarePlus } from 'lucide-react';
 import { useAuth } from '@/contexts/auth';
 import * as db from '@/lib/db';
-import type { ChatMessage, ChatChannel, DirectMessageThread, User, Role } from '@/lib/types';
-import { cn } from '@/lib/utils';
+import type { ChatChannel, DirectMessageThread } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useSearchParams, useRouter } from 'next/navigation';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { useSearchParams } from 'next/navigation';
+import { NewMessageDialog } from '@/components/chat/NewMessageDialog';
+import { ChatMessageItem } from '@/components/chat/ChatMessageItem';
 
-
-function NewMessageDialog({ open, onOpenChange }: { open: boolean, onOpenChange: (open: boolean) => void }) {
-    const { user: authUser } = useAuth();
-    const router = useRouter();
-    const allUsers = useLiveQuery(() => db.getAllUsers(), []);
-    const [searchTerm, setSearchTerm] = useState('');
-
-    const handleSelectUser = async (targetUser: User) => {
-        if (!authUser || authUser.id === targetUser.id) return;
-        
-        try {
-            const channel = await db.getOrCreateDirectMessageThread(authUser.id, targetUser.id);
-            router.push(`/dashboard/chat?channelId=${channel.id}`);
-            onOpenChange(false); // Close dialog on success
-        } catch(error) {
-            console.error("Failed to start chat", error);
-            // Optionally, add a toast here for user feedback
-        }
-    }
-
-    const filteredUsers = useMemo(() => {
-        if (!allUsers || !authUser) return [];
-
-        // Define administrative/support roles that a 'Trabajador' can contact
-        const contactableRoles: Role[] = ['Formador', 'Gestor de RRHH', 'Jefe de Formación', 'Administrador General'];
-
-        let usersToShow = allUsers;
-
-        // If the current user is a 'Trabajador', only show users with contactable roles
-        if (authUser.role === 'Trabajador') {
-            usersToShow = allUsers.filter(user => contactableRoles.includes(user.role));
-        }
-
-        // Always filter out the current user themselves and apply the search term
-        return usersToShow.filter(
-            user => user.id !== authUser.id && user.name.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-    }, [allUsers, authUser, searchTerm]);
-
-    return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                    <DialogTitle>Nuevo Mensaje Directo</DialogTitle>
-                </DialogHeader>
-                <div className="py-4">
-                    <Input 
-                        placeholder="Buscar por nombre..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="mb-4"
-                    />
-                    <ScrollArea className="h-72">
-                        <div className="space-y-1 pr-2">
-                           {filteredUsers.length > 0 ? filteredUsers.map(user => (
-                               <button key={user.id} onClick={() => handleSelectUser(user)} className="flex items-center gap-3 w-full p-2 rounded-lg hover:bg-muted text-left">
-                                   <Avatar>
-                                       <AvatarImage src={user.avatar} />
-                                       <AvatarFallback>{user.name.slice(0, 2)}</AvatarFallback>
-                                   </Avatar>
-                                   <div>
-                                       <p className="font-semibold">{user.name}</p>
-                                       <p className="text-sm text-muted-foreground">{user.role}</p>
-                                   </div>
-                               </button>
-                           )) : (
-                               <p className="text-sm text-muted-foreground text-center p-4">No se encontraron usuarios.</p>
-                           )}
-                        </div>
-                    </ScrollArea>
-                </div>
-            </DialogContent>
-        </Dialog>
-    )
-}
-
-function ChatMessageItem({ message, isCurrentUser }: { message: ChatMessage, isCurrentUser: boolean }) {
-    return (
-        <div className={cn("flex items-start gap-3", isCurrentUser && "flex-row-reverse")}>
-            <Avatar className="h-9 w-9">
-                <AvatarImage src={message.userAvatar} />
-                <AvatarFallback>{message.userName.slice(0, 2)}</AvatarFallback>
-            </Avatar>
-            <div className={cn("flex flex-col gap-1", isCurrentUser && "items-end")}>
-                 <div className={cn(
-                    "p-3 rounded-lg max-w-sm",
-                    isCurrentUser ? "bg-primary text-primary-foreground" : "bg-muted"
-                )}>
-                    <p className="text-sm font-semibold mb-1">{message.userName}</p>
-                    <p className="text-sm break-words">{message.message}</p>
-                </div>
-                <span className="text-xs text-muted-foreground">
-                    {format(new Date(message.timestamp), 'HH:mm')}
-                </span>
-            </div>
-        </div>
-    );
-}
 
 function ChatPageContent() {
     const { user } = useAuth();
