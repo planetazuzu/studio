@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { getNocoDBConfig } from '@/lib/config';
 import type { User, Course } from '@/lib/types';
 import * as db from '@/lib/db';
-import { noco } from '@/lib/noco';
+import { createNocoUser, createNocoCourse } from '@/lib/noco';
 
 const cookieOptions = {
   httpOnly: true,
@@ -84,7 +84,7 @@ export async function syncAllDataAction(): Promise<{ success: boolean; log: stri
             for (const user of unsyncedUsers) {
                 try {
                     log.push(`Enviando POST a NocoDB para el usuario: ${user.name} (${user.email})`);
-                    await noco.users.create(user);
+                    await createNocoUser(user);
                     // Mark as synced in local DB
                     await db.db.users.update(user.id, { isSynced: true });
                     log.push(`-> Éxito para ${user.name}. Marcado como sincronizado localmente.`);
@@ -102,7 +102,7 @@ export async function syncAllDataAction(): Promise<{ success: boolean; log: stri
             for (const course of unsyncedCourses) {
                 try {
                     log.push(`Enviando POST a NocoDB para el curso: ${course.title}`);
-                    await noco.courses.create(course);
+                    await createNocoCourse(course);
                     // Mark as synced in local DB
                     await db.db.courses.update(course.id, { isSynced: true });
                     log.push(`-> Éxito para ${course.title}. Marcado como sincronizado localmente.`);

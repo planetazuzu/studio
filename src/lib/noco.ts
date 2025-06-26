@@ -34,13 +34,6 @@ const getUrl = (tableId: string) => {
 
 // --- Generic API functions ---
 
-async function getRecords<T>(tableId: string): Promise<T[]> {
-  const res = await fetch(getUrl(tableId), { headers: getHeaders(), cache: 'no-store' });
-  if (!res.ok) throw new Error(`Error al obtener datos de NocoDB (${res.status}): ${res.statusText}`);
-  const data = await res.json();
-  return data.list;
-}
-
 // For simplicity, we'll just implement create. A full sync would need update (PATCH) and delete.
 // NocoDB uses the primary key from the body to create a record with a specific ID.
 async function createRecord<T extends { id: string }>(tableId: string, record: T): Promise<T> {
@@ -73,16 +66,12 @@ async function createRecord<T extends { id: string }>(tableId: string, record: T
 
 
 // --- Public functions ---
+// A "use server" file can only export async functions.
 
-// We are creating a namespaced export for better organization
-export const noco = {
-  users: {
-    getAll: () => getRecords<User>(tableIDs.users),
-    create: (user: User) => createRecord(tableIDs.users, user),
-  },
-  courses: {
-    getAll: () => getRecords<Course>(tableIDs.courses),
-    create: (course: Course) => createRecord(tableIDs.courses, course),
-  },
-  // Add other tables as needed...
-};
+export async function createNocoUser(user: User): Promise<User> {
+    return createRecord(tableIDs.users, user);
+}
+
+export async function createNocoCourse(course: Course): Promise<Course> {
+    return createRecord(tableIDs.courses, course);
+}
