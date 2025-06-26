@@ -301,8 +301,8 @@ export default function EditCoursePage() {
             <div className="xl:col-span-2 space-y-8">
                 <Card>
                     <CardHeader>
-                    <CardTitle>Editar Curso</CardTitle>
-                    <CardDescription>Modifica la información general de la formación.</CardDescription>
+                    <CardTitle>Gestionar Información del Curso</CardTitle>
+                    <CardDescription>Aquí puedes modificar los detalles generales de la formación.</CardDescription>
                     </CardHeader>
                     <CardContent>
                     <Form {...form}>
@@ -400,9 +400,9 @@ export default function EditCoursePage() {
                         <div className="flex justify-between items-center">
                             <div>
                                 <CardTitle>Módulos del Curso</CardTitle>
-                                <CardDescription>Gestiona el contenido.</CardDescription>
+                                <CardDescription>Añade los temas y lecciones aquí.</CardDescription>
                             </div>
-                            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleOpenModuleDialog(null)}>
+                            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => handleOpenModuleDialog(null)} aria-label="Añadir módulo">
                                 <PlusCircle className="h-4 w-4" />
                             </Button>
                         </div>
@@ -424,7 +424,10 @@ export default function EditCoursePage() {
                                     </div>
                                 ))
                             ) : (
-                                <p className="text-center text-muted-foreground py-4 text-sm">Este curso no tiene módulos.</p>
+                                <div className="text-center text-muted-foreground py-4 text-sm border-2 border-dashed rounded-lg">
+                                  <p className="font-semibold">¡Añade el primer módulo!</p>
+                                  <p>Usa el botón '+' para empezar a construir el curso.</p>
+                                </div>
                             )}
                         </div>
                     </CardContent>
@@ -435,9 +438,9 @@ export default function EditCoursePage() {
                         <div className="flex justify-between items-center">
                             <div>
                                 <CardTitle>Recursos del Curso</CardTitle>
-                                <CardDescription>Material de apoyo.</CardDescription>
+                                <CardDescription>Asocia PDFs, vídeos o enlaces.</CardDescription>
                             </div>
-                            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setIsResourceDialogOpen(true)}>
+                            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setIsResourceDialogOpen(true)} aria-label="Asociar recursos">
                                 <Link2 className="h-4 w-4" />
                             </Button>
                         </div>
@@ -454,7 +457,10 @@ export default function EditCoursePage() {
                                     </div>
                                 ))
                             ) : (
-                                 <p className="text-center text-muted-foreground py-4 text-sm">No hay recursos asociados.</p>
+                                <div className="text-center text-muted-foreground py-4 text-sm border-2 border-dashed rounded-lg">
+                                  <p className="font-semibold">Asocia el primer recurso.</p>
+                                  <p>Usa el botón del enlace para añadir material de apoyo.</p>
+                                </div>
                             )}
                         </div>
                     </CardContent>
