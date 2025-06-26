@@ -1,13 +1,14 @@
+
 'use client';
 
-import { useState, useEffect, useRef, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Hash, Send, Loader2, Users, MessageSquarePlus } from 'lucide-react';
 import { useAuth } from '@/contexts/auth';
 import * as db from '@/lib/db';
-import type { ChatMessage, ChatChannel, DirectMessageThread, User } from '@/lib/types';
+import type { ChatMessage, ChatChannel, DirectMessageThread, User, Role } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -42,9 +43,24 @@ function NewMessageDialog({ open, onOpenChange }: { open: boolean, onOpenChange:
         }
     }
 
-    const filteredUsers = allUsers?.filter(
-        user => user.id !== authUser?.id && user.name.toLowerCase().includes(searchTerm.toLowerCase())
-    ) || [];
+    const filteredUsers = useMemo(() => {
+        if (!allUsers || !authUser) return [];
+
+        // Define administrative/support roles that a 'Trabajador' can contact
+        const contactableRoles: Role[] = ['Formador', 'Gestor de RRHH', 'Jefe de Formación', 'Administrador General'];
+
+        let usersToShow = allUsers;
+
+        // If the current user is a 'Trabajador', only show users with contactable roles
+        if (authUser.role === 'Trabajador') {
+            usersToShow = allUsers.filter(user => contactableRoles.includes(user.role));
+        }
+
+        // Always filter out the current user themselves and apply the search term
+        return usersToShow.filter(
+            user => user.id !== authUser.id && user.name.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+    }, [allUsers, authUser, searchTerm]);
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -54,7 +70,7 @@ function NewMessageDialog({ open, onOpenChange }: { open: boolean, onOpenChange:
                 </DialogHeader>
                 <div className="py-4">
                     <Input 
-                        placeholder="Buscar usuario..."
+                        placeholder="Buscar por nombre..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="mb-4"
