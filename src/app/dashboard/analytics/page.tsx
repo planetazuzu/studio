@@ -8,7 +8,7 @@ import { es } from 'date-fns/locale';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, XAxis, YAxis } from 'recharts';
-import { Download, ListFilter, CircleDollarSign, CreditCard, CalendarClock, Scale, CheckSquare, Users, Clock, Loader2, FilePenLine, UserCheck, ShieldCheck } from 'lucide-react';
+import { Download, ListFilter, CircleDollarSign, CreditCard, CalendarClock, Scale, CheckSquare, Users, Clock, Loader2, FilePenLine, UserCheck, ShieldCheck, FileText } from 'lucide-react';
 import {
   ChartConfig,
   ChartContainer,
@@ -25,6 +25,7 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -288,16 +289,14 @@ export default function AnalyticsPage() {
     
     setIsExporting(true);
     try {
-      // Temporarily set a specific background color for the capture
       const originalBg = reportRef.current.style.backgroundColor;
       reportRef.current.style.backgroundColor = 'white';
       
       const canvas = await html2canvas(reportRef.current, {
-        scale: 2, // Higher scale for better quality
+        scale: 2,
         useCORS: true,
       });
 
-      // Restore original background
       reportRef.current.style.backgroundColor = originalBg;
       
       const imgData = canvas.toDataURL('image/png');
@@ -316,6 +315,62 @@ export default function AnalyticsPage() {
     } finally {
       setIsExporting(false);
     }
+  };
+
+  const downloadCsv = (data: any[], filename: string) => {
+    if (!data || data.length === 0) return;
+
+    const headers = Object.keys(data[0]);
+    const csvContent = [
+      headers.join(','),
+      ...data.map(row =>
+        headers.map(header => {
+          let cell = row[header] === null || row[header] === undefined ? '' : String(row[header]);
+          cell = cell.replace(/"/g, '""');
+          if (cell.search(/("|,|\n)/g) >= 0) {
+            cell = `"${cell}"`;
+          }
+          return cell;
+        }).join(',')
+      )
+    ].join('\n');
+
+    const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+  
+  const handleExportComplianceCsv = () => {
+      if(complianceData) {
+          const dataToExport = complianceData.map(d => ({...d, complianceRate: d.complianceRate.toFixed(2)}));
+          downloadCsv(dataToExport, 'informe_cumplimiento.csv');
+      }
+  };
+
+  const handleExportCostsCsv = () => {
+      if(filteredCosts) {
+          const dataToExport = filteredCosts.map(({id, ...rest}) => rest); // remove id
+          downloadCsv(dataToExport, 'informe_costes_filtrados.csv');
+      }
+  };
+
+  const handleExportDepartmentProgressCsv = () => {
+      if(trainingData?.departmentProgress) {
+          downloadCsv(trainingData.departmentProgress, 'progreso_por_departamento.csv');
+      }
+  };
+
+  const handleExportRoleProgressCsv = () => {
+      if(trainingData?.roleProgress) {
+          const dataToExport = trainingData.roleProgress.map(r => ({...r, role: r.role.replace('\n', ' ')}));
+          downloadCsv(dataToExport, 'progreso_por_rol.csv');
+      }
   };
 
 
@@ -355,10 +410,38 @@ export default function AnalyticsPage() {
           <h1 className="text-3xl font-bold">Análisis y Reportes</h1>
           <p className="text-muted-foreground">Visualiza métricas clave de formación, costes y rendimiento.</p>
         </div>
-        <Button onClick={handleExport} disabled={isExporting}>
-           {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-           {isExporting ? 'Exportando...' : 'Exportar Informe'}
-        </Button>
+         <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button>
+                    <Download className="mr-2 h-4 w-4" />
+                    Exportar
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Opciones de Exportación</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleExport} disabled={isExporting}>
+                   {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FilePenLine className="mr-2 h-4 w-4" />}
+                   Informe General (PDF)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportComplianceCsv}>
+                    <FileText className="mr-2 h-4 w-4" />
+                    Cumplimiento (CSV)
+                </DropdownMenuItem>
+                 <DropdownMenuItem onClick={handleExportCostsCsv}>
+                    <FileText className="mr-2 h-4 w-4" />
+                    Costes Filtrados (CSV)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportDepartmentProgressCsv}>
+                    <FileText className="mr-2 h-4 w-4" />
+                    Progreso por Dpto. (CSV)
+                </DropdownMenuItem>
+                 <DropdownMenuItem onClick={handleExportRoleProgressCsv}>
+                    <FileText className="mr-2 h-4 w-4" />
+                    Progreso por Rol (CSV)
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <Tabs defaultValue="training" className="w-full">
