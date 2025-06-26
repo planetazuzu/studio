@@ -14,10 +14,13 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/auth';
 import { Skeleton } from '@/components/ui/skeleton';
 import * as db from '@/lib/db';
-import { Loader2, Server } from 'lucide-react';
+import { Loader2, Server, ServerCog } from 'lucide-react';
 import { useFormState } from 'react-dom';
-import { saveApiKeysAction } from './actions';
+import { saveApiKeysAction, syncAllDataAction } from './actions';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { Textarea } from '@/components/ui/textarea';
+import { ScrollArea } from '@/components/ui/scroll-area';
+
 
 // Helper function to convert HEX to HSL components (string "H S% L%")
 function hexToHsl(hex: string): string {
@@ -273,6 +276,77 @@ function PermissionSettings() {
     );
 }
 
+function SyncManager() {
+    const { toast } = useToast();
+    const [isLoading, setIsLoading] = useState(false);
+    const [log, setLog] = useState<string[]>(['Registro de sincronización listo.']);
+
+    const handleSync = async () => {
+        setIsLoading(true);
+        setLog(['Iniciando sincronización...']);
+        try {
+            const unsyncedUsers = await db.users.where('isSynced').equals(false).toArray();
+            const unsyncedCourses = await db.courses.where('isSynced').equals(false).toArray();
+
+            setLog(prev => [...prev, `...Encontrados ${unsyncedUsers.length} usuarios y ${unsyncedCourses.length} cursos para sincronizar.`]);
+
+            if (unsyncedUsers.length === 0 && unsyncedCourses.length === 0) {
+                setLog(prev => [...prev, '¡Todo está al día! No hay datos nuevos para sincronizar.']);
+                setIsLoading(false);
+                return;
+            }
+            
+            const result = await syncAllDataAction({
+                users: unsyncedUsers,
+                courses: unsyncedCourses
+            });
+            
+            setLog(prev => [...prev, ...result.log]);
+
+            if (result.success) {
+                toast({ title: 'Sincronización Simulada Completa' });
+                // In a real app, update local data after successful sync
+                // await db.users.where('id').anyOf(unsyncedUsers.map(u => u.id)).modify({ isSynced: true });
+                // await db.courses.where('id').anyOf(unsyncedCourses.map(c => c.id)).modify({ isSynced: true });
+                setLog(prev => [...prev, 'NOTA: En una aplicación real, los elementos locales se marcarían como "sincronizados" ahora.']);
+            } else {
+                 toast({ title: 'Error de Sincronización', description: result.message, variant: 'destructive' });
+            }
+
+        } catch (error: any) {
+            console.error("Sync failed", error);
+            setLog(prev => [...prev, `ERROR FATAL: ${error.message}`]);
+            toast({ title: 'Error de Sincronización', description: 'Ocurrió un error inesperado.', variant: 'destructive' });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Sincronización con NocoDB</CardTitle>
+                <CardDescription>
+                    Sincroniza los datos locales (nuevos usuarios, cursos modificados, etc.) con la base de datos remota de NocoDB.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <Button onClick={handleSync} disabled={isLoading} size="lg">
+                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ServerCog className="mr-2 h-4 w-4" />}
+                    {isLoading ? 'Sincronizando...' : 'Iniciar Sincronización'}
+                </Button>
+                <div>
+                    <Label htmlFor="sync-log">Registro de Sincronización</Label>
+                    <ScrollArea className="h-72 w-full rounded-md border mt-2">
+                        <pre id="sync-log" className="p-4 text-xs font-mono whitespace-pre-wrap">
+                            {log.join('\n')}
+                        </pre>
+                    </ScrollArea>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
 
 export default function SettingsPage() {
     const { toast } = useToast();
@@ -391,11 +465,12 @@ export default function SettingsPage() {
             </div>
             <div className="grid grid-cols-1 gap-8">
                  <Tabs defaultValue="profile" className="w-full">
-                    <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-5' : 'grid-cols-2'} max-w-3xl`}>
+                    <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-6' : 'grid-cols-2'} max-w-4xl`}>
                         <TabsTrigger value="profile">Perfil</TabsTrigger>
                         {isAdmin && <TabsTrigger value="general">General</TabsTrigger>}
                         <TabsTrigger value="notifications">Notificaciones</TabsTrigger>
                         {isAdmin && <TabsTrigger value="api">APIs</TabsTrigger>}
+                        {isAdmin && <TabsTrigger value="sync">Sincronización</TabsTrigger>}
                         {isAdmin && <TabsTrigger value="permissions">Permisos</TabsTrigger>}
                     </TabsList>
                     <TabsContent value="profile" className="mt-4">
@@ -409,6 +484,9 @@ export default function SettingsPage() {
                     </TabsContent>
                     {isAdmin && <TabsContent value="api" className="mt-4">
                         <ApiSettings />
+                    </TabsContent>}
+                    {isAdmin && <TabsContent value="sync" className="mt-4">
+                        <SyncManager />
                     </TabsContent>}
                     {isAdmin && <TabsContent value="permissions" className="mt-4">
                         <PermissionSettings />
