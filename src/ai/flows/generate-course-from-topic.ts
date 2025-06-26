@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -8,8 +9,12 @@
  * - GenerateCourseFromTopicOutput - The return type for the function.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { getAiInstance } from '@/ai/get-ai-instance';
+import { cookies } from 'next/headers';
+import { z } from 'genkit';
+
+const apiKey = cookies().get('genai_api_key')?.value;
+const ai = getAiInstance(apiKey);
 
 export const GenerateCourseFromTopicInputSchema = z.string().describe('The topic for which to generate the course.');
 export type GenerateCourseFromTopicInput = z.infer<typeof GenerateCourseFromTopicInputSchema>;

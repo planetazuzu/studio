@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -8,8 +9,12 @@
  * - PersonalizedCourseRecommendationsOutput - The return type for the personalizedCourseRecommendations function.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { getAiInstance } from '@/ai/get-ai-instance';
+import { cookies } from 'next/headers';
+import { z } from 'genkit';
+
+const apiKey = cookies().get('genai_api_key')?.value;
+const ai = getAiInstance(apiKey);
 
 const PersonalizedCourseRecommendationsInputSchema = z.object({
   userProfile: z.string().describe('The profile of the user, including their skills, interests, and learning goals.'),

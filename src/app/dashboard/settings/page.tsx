@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,8 @@ import { useAuth } from '@/contexts/auth';
 import { Skeleton } from '@/components/ui/skeleton';
 import * as db from '@/lib/db';
 import { Loader2 } from 'lucide-react';
+import { useFormState } from 'react-dom';
+import { saveApiKeyAction } from './actions';
 
 // Helper function to convert HEX to HSL components (string "H S% L%")
 function hexToHsl(hex: string): string {
@@ -134,28 +136,51 @@ function GeneralSettings({ general, setGeneral }: { general: any, setGeneral: Fu
 }
 
 function ApiSettings() {
+    const { toast } = useToast();
+    const formRef = useRef<HTMLFormElement>(null);
+    const [state, formAction] = useFormState(saveApiKeyAction, { success: false, message: '' });
+
+    useEffect(() => {
+        if (state.message) {
+            toast({
+                title: state.success ? 'Éxito' : 'Error',
+                description: state.message,
+                variant: state.success ? 'default' : 'destructive',
+            });
+            if (state.success) {
+                formRef.current?.reset();
+            }
+        }
+    }, [state, toast]);
+
     return (
          <Card>
             <CardHeader>
                 <CardTitle>Credenciales de API</CardTitle>
-                <CardDescription>Gestiona las claves de API para servicios externos.</CardDescription>
+                <CardDescription>Gestiona las claves de API para servicios externos. La clave se guarda de forma segura en una cookie de servidor.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-                <div className="space-y-2">
-                    <Label htmlFor="aiApi">Clave API de GenAI</Label>
-                    <Input id="aiApi" type="password" defaultValue="**************" />
-                </div>
-                <div className="space-y-2">
+                <form ref={formRef} action={formAction} className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="apiKey">Clave API de GenAI (Google)</Label>
+                        <div className="flex items-center gap-2">
+                             <Input id="apiKey" name="apiKey" type="password" placeholder="Introduce una clave para guardarla o actualizarla" className="flex-grow" />
+                             <Button type="submit">Guardar</Button>
+                        </div>
+                         <p className="text-xs text-muted-foreground">Deja el campo en blanco y guarda para eliminar la clave actual.</p>
+                    </div>
+                </form>
+                 <div className="space-y-2">
                     <Label htmlFor="nocodbApi">Token de API NocoDB</Label>
-                    <Input id="nocodbApi" type="password" defaultValue="**************" />
+                    <Input id="nocodbApi" type="password" defaultValue="**************" disabled />
                 </div>
                  <div className="space-y-2">
                     <Label htmlFor="whatsappApi">Clave API de WhatsApp</Label>
-                    <Input id="whatsappApi" type="password" defaultValue="**************" />
+                    <Input id="whatsappApi" type="password" defaultValue="**************" disabled />
                 </div>
             </CardContent>
         </Card>
-    )
+    );
 }
 
 function NotificationSettings({ notifications, setNotifications }: { notifications: any, setNotifications: Function }) {

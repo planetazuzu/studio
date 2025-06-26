@@ -1,3 +1,4 @@
+
 // src/ai/flows/feedback-personalization.ts
 'use server';
 
@@ -9,8 +10,12 @@
  * - PersonalizedFeedbackOutput - The return type for the personalizedFeedback function.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { getAiInstance } from '@/ai/get-ai-instance';
+import { cookies } from 'next/headers';
+import { z } from 'genkit';
+
+const apiKey = cookies().get('genai_api_key')?.value;
+const ai = getAiInstance(apiKey);
 
 const PersonalizedFeedbackInputSchema = z.object({
   studentName: z.string().describe('The name of the student receiving feedback.'),

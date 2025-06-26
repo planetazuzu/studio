@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -8,8 +9,12 @@
  * - CourseTutorOutput - The return type for the courseTutor function.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { getAiInstance } from '@/ai/get-ai-instance';
+import { cookies } from 'next/headers';
+import { z } from 'genkit';
+
+const apiKey = cookies().get('genai_api_key')?.value;
+const ai = getAiInstance(apiKey);
 
 const CourseTutorInputSchema = z.object({
     courseContent: z.string().describe('The full content of the course.'),

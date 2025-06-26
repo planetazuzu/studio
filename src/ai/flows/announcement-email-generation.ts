@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -8,8 +9,12 @@
  * - GenerateAnnouncementEmailOutput - The return type for the generateAnnouncementEmail function.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { getAiInstance } from '@/ai/get-ai-instance';
+import { cookies } from 'next/headers';
+import { z } from 'genkit';
+
+const apiKey = cookies().get('genai_api_key')?.value;
+const ai = getAiInstance(apiKey);
 
 const GenerateAnnouncementEmailInputSchema = z.object({
   recipientName: z.string().describe('The name of the person receiving the email.'),
