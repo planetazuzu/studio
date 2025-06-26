@@ -2,11 +2,11 @@
 'use server';
 
 /**
- * @fileOverview Provides personalized course recommendations based on user profile and learning history.
+ * @fileOverview Provides personalized course recommendations based on a user's comprehensive profile.
  *
- * - personalizedCourseRecommendations - A function that returns course recommendations for a user.
- * - PersonalizedCourseRecommendationsInput - The input type for the personalizedCourseRecommendations function.
- * - PersonalizedCourseRecommendationsOutput - The return type for the personalizedCourseRecommendations function.
+ * - personalizedCourseRecommendations - A function that returns personalized course recommendations.
+ * - PersonalizedCourseRecommendationsInput - The input type for the function.
+ * - PersonalizedCourseRecommendationsOutput - The return type for the function.
  */
 
 import { ai } from '@/ai/genkit';
@@ -14,14 +14,21 @@ import { googleAI } from '@genkit-ai/googleai';
 import { getGenAIKey } from '@/lib/config';
 import { z } from 'genkit';
 
-const PersonalizedCourseRecommendationsInputSchema = z.object({
-  userProfile: z.string().describe('The profile of the user, including their skills, interests, and learning goals.'),
-  learningHistory: z.string().describe('The learning history of the user, including completed courses and evaluations.'),
+export const PersonalizedCourseRecommendationsInputSchema = z.object({
+  userRole: z.string().describe("The user's current role in the organization (e.g., 'Técnico de Emergencias', 'Jefe de Formación')."),
+  enrolledCourseTitles: z.array(z.string()).describe('A list of titles of internal courses the user is already enrolled in or has completed.'),
+  externalTrainingTitles: z.array(z.string()).describe('A list of titles of external courses or certifications the user has registered.'),
+  allAvailableCourseTitles: z.array(z.string()).describe('The complete list of internal course titles available in the catalog for suggestion.'),
 });
 export type PersonalizedCourseRecommendationsInput = z.infer<typeof PersonalizedCourseRecommendationsInputSchema>;
 
-const PersonalizedCourseRecommendationsOutputSchema = z.object({
-  courseRecommendations: z.array(z.string()).describe('An array of recommended course titles.'),
+const SuggestionSchema = z.object({
+  courseTitle: z.string().describe('The title of the suggested course. Must be one of the titles from the `allAvailableCourseTitles` list.'),
+  reason: z.string().describe('A brief, one-sentence explanation for why this course is being recommended to the user, in Spanish.'),
+});
+
+export const PersonalizedCourseRecommendationsOutputSchema = z.object({
+  suggestions: z.array(SuggestionSchema).max(3).describe('An array of up to 3 course recommendations.'),
 });
 export type PersonalizedCourseRecommendationsOutput = z.infer<typeof PersonalizedCourseRecommendationsOutputSchema>;
 
@@ -51,13 +58,25 @@ const personalizedCourseRecommendationsFlow = ai.defineFlow(
       output: {
         schema: PersonalizedCourseRecommendationsOutputSchema,
       },
-      prompt: `You are an AI assistant that suggests courses to users based on their profile and learning history.
+      prompt: `You are an expert career advisor for an emergency services training platform. Your task is to recommend relevant internal courses to a user based on their profile.
 
-      User Profile: {{{userProfile}}}
-      Learning History: {{{learningHistory}}}
+      Analyze the user's data:
+      - Role: {{{userRole}}}
+      - Internal Courses Already Taken: {{#if enrolledCourseTitles}} "{{#each enrolledCourseTitles}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}" {{else}}None{{/if}}
+      - External Training Completed: {{#if externalTrainingTitles}} "{{#each externalTrainingTitles}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}" {{else}}None{{/if}}
 
-      Based on this information, suggest relevant courses that would help the user enhance their skills. Only return an array of course titles.
-      `,
+      Here is the complete catalog of available internal courses:
+      {{#each allAvailableCourseTitles}}
+      - "{{this}}"
+      {{/each}}
+
+      Based on all this information, suggest up to 3 courses from the catalog that would be most beneficial for the user.
+      - Do NOT suggest courses the user is already enrolled in.
+      - Prioritize suggestions that complement or build upon their existing external training (e.g., if they have an external 'cardiology' course, suggest an internal 'Advanced EKG' course).
+      - If there are no clear links, suggest courses that are highly relevant to their role.
+      - For each suggestion, provide a short, encouraging reason in Spanish.
+
+      Return the suggestions in the specified JSON format.`,
     });
     return output!;
   }

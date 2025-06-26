@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
@@ -5,7 +6,7 @@ import { Activity, BookCheck, BotMessageSquare, GraduationCap, Lightbulb, Loader
 import { useLiveQuery } from 'dexie-react-hooks';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { personalizedCourseRecommendations } from '@/ai/flows/course-suggestion';
+import { personalizedCourseRecommendations, type PersonalizedCourseRecommendationsOutput } from '@/ai/flows/course-suggestion';
 import { StatCard } from '@/components/stat-card';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -213,21 +214,45 @@ function MyCourses({ user }) {
 }
 
 
-function AiSuggestions({ user }) {
+function AiSuggestions({ user }: { user: User }) {
   const [loading, setLoading] = useState(false);
-  const [recommendations, setRecommendations] = useState<string[]>([]);
+  const [suggestions, setSuggestions] = useState<PersonalizedCourseRecommendationsOutput['suggestions']>([]);
   const [error, setError] = useState<string | null>(null);
 
+  // Fetch all necessary data for the suggestion logic
+  const allCourses = useLiveQuery(() => db.getAllCourses(), []);
+  const enrolledCourses = useLiveQuery(() => db.getEnrolledCoursesForUser(user.id), [user.id]);
+  const externalTrainings = useLiveQuery(() => db.getExternalTrainingsForUser(user.id), [user.id]);
+
   const handleGetSuggestions = async () => {
+    if (!allCourses || !enrolledCourses || !externalTrainings) {
+        setError('No se pudieron cargar los datos necesarios para las sugerencias.');
+        return;
+    }
+
     setLoading(true);
     setError(null);
-    setRecommendations([]);
+    setSuggestions([]);
+
     try {
-      const result = await personalizedCourseRecommendations({
-        userProfile: `Rol: ${user.role}, Intereses: Soporte Vital, Comunicaciones de emergencia`,
-        learningHistory: 'Completado: Conducción de Vehículos de Emergencia, En Progreso: Soporte Vital Básico',
-      });
-      setRecommendations(result.courseRecommendations);
+        const result = await personalizedCourseRecommendations({
+            userRole: user.role,
+            enrolledCourseTitles: enrolledCourses.map(c => c.title),
+            externalTrainingTitles: externalTrainings.map(t => t.title),
+            allAvailableCourseTitles: allCourses.filter(c => c.status !== 'draft').map(c => c.title),
+        });
+        
+        // Find the full course object for the suggested titles to create links
+        const suggestionsWithDetails = result.suggestions.map(suggestion => {
+            const course = allCourses.find(c => c.title === suggestion.courseTitle);
+            return {
+                ...suggestion,
+                courseId: course?.id,
+            }
+        }).filter(s => s.courseId); // Filter out any suggestions where the course wasn't found
+
+        setSuggestions(suggestionsWithDetails);
+
     } catch (e) {
       setError('No se pudieron generar las sugerencias. Inténtelo de nuevo.');
       console.error(e);
@@ -241,34 +266,42 @@ function AiSuggestions({ user }) {
       <CardHeader>
         <div className="flex items-center gap-2">
           <BotMessageSquare className="h-6 w-6 text-primary" />
-          <CardTitle>Sugerencias de la IA</CardTitle>
+          <CardTitle>Cursos que podrían interesarte</CardTitle>
         </div>
-        <CardDescription>Formaciones recomendadas para tu perfil.</CardDescription>
+        <CardDescription>Sugerencias de la IA basadas en tu perfil y formación externa.</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col items-center justify-center text-center space-y-4 min-h-[200px]">
         {loading ? (
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        ) : recommendations.length > 0 ? (
-          <ul className="space-y-2 text-left">
-            {recommendations.map((rec, i) => (
-              <li key={i} className="flex items-start gap-2">
-                <Lightbulb className="h-4 w-4 mt-1 text-yellow-400" />
-                <span className="font-medium">{rec}</span>
+        ) : suggestions.length > 0 ? (
+          <ul className="space-y-3 text-left w-full">
+            {suggestions.map((rec, i) => (
+              <li key={i} className="p-3 border rounded-lg bg-muted/50 text-left">
+                  <Link href={`/dashboard/courses/${rec.courseId}`} className="font-semibold text-primary hover:underline">{rec.courseTitle}</Link>
+                  <p className="text-xs text-muted-foreground mt-1 italic">"{rec.reason}"</p>
               </li>
             ))}
           </ul>
         ) : (
-          <p className="text-muted-foreground">Pulsa el botón para obtener sugerencias.</p>
+           <Button onClick={handleGetSuggestions} disabled={loading || !allCourses || !enrolledCourses || !externalTrainings}>
+              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Lightbulb className="mr-2 h-4 w-4" />}
+              Generar Sugerencias
+           </Button>
         )}
-        {error && <p className="text-sm text-destructive">{error}</p>}
-        <Button onClick={handleGetSuggestions} disabled={loading}>
-          {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Lightbulb className="mr-2 h-4 w-4" />}
-          Generar Sugerencias
-        </Button>
+        {error && <p className="text-sm text-destructive mt-2">{error}</p>}
       </CardContent>
+       {(suggestions.length > 0 && !loading) && (
+          <CardFooter className="justify-center">
+              <Button variant="outline" onClick={handleGetSuggestions} disabled={loading}>
+                 <Lightbulb className="mr-2 h-4 w-4" />
+                 Volver a generar
+              </Button>
+          </CardFooter>
+      )}
     </Card>
   );
 }
+
 
 function AdminApprovalPanel() {
     const [enrollments, setEnrollments] = useState<PendingEnrollmentDetails[]>([]);
