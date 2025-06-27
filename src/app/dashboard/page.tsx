@@ -18,6 +18,7 @@ import type { Course, User, Announcement, AnnouncementType, AIConfig } from '@/l
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { LearningPathPanel } from '@/components/dashboard/learning-path-panel';
 
 
 function AnnouncementsPanel({ user }: { user: User }) {
@@ -328,6 +329,7 @@ export default function DashboardPage() {
         <AnnouncementsPanel user={user} />
       </div>
       <div className="grid gap-4 lg:grid-cols-3">
+        <LearningPathPanel user={user} />
         <MyCourses user={user} />
         {aiConfig?.enabledFeatures.recommendations && <AiSuggestions user={user} />}
       </div>

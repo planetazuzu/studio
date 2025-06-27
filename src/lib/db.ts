@@ -1,6 +1,6 @@
 
 import Dexie, { type Table } from 'dexie';
-import type { Course, User, Enrollment, UserProgress, PendingEnrollmentDetails, ForumMessage, ForumMessageWithReplies, Notification, Resource, CourseResource, Announcement, ChatChannel, ChatMessage, Role, ComplianceReportData, DirectMessageThread, CalendarEvent, ExternalTraining, EnrollmentStatus, EnrollmentWithDetails, Cost, StudentForManagement, AIConfig, AIUsageLog, Badge, UserBadge, UserStatus, CustomCostCategory } from './types';
+import type { Course, User, Enrollment, UserProgress, PendingEnrollmentDetails, ForumMessage, ForumMessageWithReplies, Notification, Resource, CourseResource, Announcement, ChatChannel, ChatMessage, Role, ComplianceReportData, DirectMessageThread, CalendarEvent, ExternalTraining, EnrollmentStatus, EnrollmentWithDetails, Cost, StudentForManagement, AIConfig, AIUsageLog, Badge, UserBadge, UserStatus, CustomCostCategory, LearningPath, UserLearningPathProgress } from './types';
 import { courses as initialCourses, users as initialUsers, initialChatChannels, initialCosts, defaultAIConfig, roles, departments, initialBadges, initialCostCategories } from './data';
 import { sendEmailNotification, sendWhatsAppNotification } from './notification-service';
 
@@ -26,6 +26,8 @@ export class AcademiaAIDB extends Dexie {
   badges!: Table<Badge>;
   userBadges!: Table<UserBadge>;
   costCategories!: Table<CustomCostCategory>;
+  learningPaths!: Table<LearningPath>;
+  userLearningPathProgress!: Table<UserLearningPathProgress>;
 
 
   constructor() {
@@ -120,6 +122,10 @@ export class AcademiaAIDB extends Dexie {
     this.version(25).stores({
         costCategories: '++id, &name'
     });
+    this.version(26).stores({
+      learningPaths: '++id, targetRole',
+      userLearningPathProgress: '++id, [userId+learningPathId]'
+    });
   }
 }
 
@@ -156,6 +162,8 @@ export async function populateDatabase() {
       db.badges.clear(),
       db.userBadges.clear(),
       db.costCategories.clear(),
+      db.learningPaths.clear(),
+      db.userLearningPathProgress.clear(),
     ]);
 
     console.log("Tables cleared. Repopulating with initial data...");
@@ -479,44 +487,41 @@ export async function getUserProgressForUser(userId: string): Promise<UserProgre
 }
 
 export async function markModuleAsCompleted(userId: string, courseId: string, moduleId: string): Promise<void> {
-    const existingProgress = await db.userProgress.where({ userId, courseId }).first();
-    const user = await db.users.get(userId);
+    return db.transaction('rw', db.users, db.userProgress, db.badges, db.userBadges, db.notifications, async () => {
+        const existingProgress = await getUserProgress(userId, courseId);
+        const user = await getUserById(userId);
 
-    if (!user) return;
+        if (!user) return;
 
-    if (existingProgress) {
-        // Add moduleId to the set to avoid duplicates
-        const completed = new Set(existingProgress.completedModules);
-        if (completed.has(moduleId)) return; // Already completed, do nothing.
+        if (existingProgress) {
+            const completed = new Set(existingProgress.completedModules);
+            if (completed.has(moduleId)) return;
+            completed.add(moduleId);
+            await db.userProgress.update(existingProgress.id!, { 
+                completedModules: Array.from(completed),
+                updatedAt: new Date().toISOString(),
+                isSynced: false,
+            });
+        } else {
+            await db.userProgress.add({
+                userId,
+                courseId,
+                completedModules: [moduleId],
+                updatedAt: new Date().toISOString(),
+                isSynced: false,
+            });
+        }
 
-        completed.add(moduleId);
+        await db.users.update(userId, { points: (user.points || 0) + 10 });
         
-        await db.userProgress.update(existingProgress.id!, { 
-            completedModules: Array.from(completed),
-            updatedAt: new Date().toISOString(),
-            isSynced: false,
-        });
-    } else {
-        await db.userProgress.add({
-            userId,
-            courseId,
-            completedModules: [moduleId],
-            updatedAt: new Date().toISOString(),
-            isSynced: false,
-        });
-    }
+        await checkAndAwardModuleBadges(userId);
 
-    // Award points
-    await db.users.update(userId, { points: (user.points || 0) + 10 });
-    
-    // Check for badges
-    await checkAndAwardModuleBadges(userId);
-
-    const course = await db.courses.get(courseId);
-    const updatedProgress = await db.userProgress.where({ userId, courseId }).first();
-    if(course && updatedProgress && course.modules && updatedProgress.completedModules.length === course.modules.length) {
-        await checkAndAwardCourseCompletionBadges(userId);
-    }
+        const course = await getCourseById(courseId);
+        const updatedProgress = await getUserProgress(userId, courseId);
+        if(course && updatedProgress && course.modules && updatedProgress.completedModules.length === course.modules.length) {
+            await handleCourseCompletion(userId, courseId);
+        }
+    });
 }
 
 // --- Forum Functions ---
@@ -967,31 +972,32 @@ export async function getBadgesForUser(userId: string): Promise<UserBadge[]> {
 }
 
 export async function awardBadge(userId: string, badgeId: string): Promise<void> {
-    // Check if user already has the badge
-    const existing = await db.userBadges.where({ userId, badgeId }).first();
-    if (existing) {
-        return;
-    }
+    return db.transaction('rw', db.userBadges, db.notifications, async () => {
+        const existing = await db.userBadges.where({ userId, badgeId }).first();
+        if (existing) {
+            return;
+        }
 
-    await db.userBadges.add({
-        userId,
-        badgeId,
-        earnedAt: new Date().toISOString(),
-        isSynced: false,
-        updatedAt: new Date().toISOString()
-    });
-
-    const badge = await db.badges.get(badgeId);
-    if(badge) {
-        await addNotification({
-            userId: userId,
-            message: `¡Insignia desbloqueada: ${badge.name}!`,
-            type: 'badge_unlocked',
-            relatedUrl: '/dashboard/settings',
-            isRead: false,
-            timestamp: new Date().toISOString(),
+        await db.userBadges.add({
+            userId,
+            badgeId,
+            earnedAt: new Date().toISOString(),
+            isSynced: false,
+            updatedAt: new Date().toISOString()
         });
-    }
+
+        const badge = await db.badges.get(badgeId);
+        if(badge) {
+            await addNotification({
+                userId: userId,
+                message: `¡Insignia desbloqueada: ${badge.name}!`,
+                type: 'badge_unlocked',
+                relatedUrl: '/dashboard/settings',
+                isRead: false,
+                timestamp: new Date().toISOString(),
+            });
+        }
+    });
 }
 
 async function checkAndAwardModuleBadges(userId: string) {
@@ -1003,15 +1009,46 @@ async function checkAndAwardModuleBadges(userId: string) {
     if (totalModulesCompleted >= 15) await awardBadge(userId, '15_modules');
 }
 
-async function checkAndAwardCourseCompletionBadges(userId: string) {
-    const completedCoursesCount = await db.enrollments.where({ studentId: userId, status: 'completed' }).count();
-
-    // Note: The status is updated *after* progress hits 100%. So we check for count + 1.
-    if (completedCoursesCount + 1 >= 1) await awardBadge(userId, 'first_course');
-    if (completedCoursesCount + 1 >= 3) await awardBadge(userId, '3_courses');
-
-    // Here we would also update the enrollment status to 'completed'
-    // This logic needs to be called from a place that knows the courseId.
+async function handleCourseCompletion(userId: string, courseId: string) {
+    return db.transaction('rw', db.users, db.enrollments, db.userLearningPathProgress, async () => {
+        // Mark enrollment as completed
+        const enrollment = await db.enrollments.where({ studentId: userId, courseId }).first();
+        if (enrollment && enrollment.status !== 'completed') {
+            await db.enrollments.update(enrollment.id!, { status: 'completed', updatedAt: new Date().toISOString() });
+        }
+        
+        // Award points for course completion
+        const user = await db.users.get(userId);
+        if(user) {
+            await db.users.update(userId, { points: (user.points || 0) + 50 });
+        }
+        
+        // Check for course-related badges
+        const allCompletedEnrollments = await db.enrollments.where({ studentId: userId, status: 'completed' }).toArray();
+        if (allCompletedEnrollments.length >= 1) await awardBadge(userId, 'first_course');
+        if (allCompletedEnrollments.length >= 3) await awardBadge(userId, '3_courses');
+        
+        // Update learning path progress
+        const allLearningPaths = await db.learningPaths.toArray();
+        const relevantPaths = allLearningPaths.filter(p => p.courseIds.includes(courseId));
+        
+        for (const path of relevantPaths) {
+            let progress = await db.userLearningPathProgress.where({ userId, learningPathId: path.id! }).first();
+            if (progress) {
+                const completed = new Set(progress.completedCourseIds);
+                completed.add(courseId);
+                await db.userLearningPathProgress.update(progress.id!, { completedCourseIds: Array.from(completed) });
+            } else {
+                await db.userLearningPathProgress.add({
+                    userId,
+                    learningPathId: path.id!,
+                    completedCourseIds: [courseId],
+                    isSynced: false,
+                    updatedAt: new Date().toISOString()
+                });
+            }
+        }
+    });
 }
 
 
@@ -1034,4 +1071,47 @@ export async function logAIUsage(log: Omit<AIUsageLog, 'id' | 'timestamp'>): Pro
     return await db.aiUsageLog.add(newLog);
 }
 
+
+// --- Learning Path Functions ---
+
+export async function getAllLearningPaths(): Promise<LearningPath[]> {
+    return await db.learningPaths.reverse().sortBy('title');
+}
+
+export async function getLearningPathById(id: number): Promise<LearningPath | undefined> {
+    return await db.learningPaths.get(id);
+}
+
+export async function addLearningPath(path: Omit<LearningPath, 'id'>): Promise<number> {
+    return await db.learningPaths.add({
+        ...path,
+        isSynced: false,
+        updatedAt: new Date().toISOString(),
+    });
+}
+
+export async function updateLearningPath(id: number, data: Partial<LearningPath>): Promise<number> {
+    return await db.learningPaths.update(id, { ...data, isSynced: false, updatedAt: new Date().toISOString() });
+}
+
+export async function deleteLearningPath(id: number): Promise<void> {
+    await db.transaction('rw', db.learningPaths, db.userLearningPathProgress, async () => {
+        await db.userLearningPathProgress.where('learningPathId').equals(id).delete();
+        await db.learningPaths.delete(id);
+    });
+}
+
+export async function getLearningPathsForUser(user: User): Promise<(LearningPath & { progress: UserLearningPathProgress | undefined })[]> {
+    const paths = await db.learningPaths.where('targetRole').equals(user.role).toArray();
+    const pathIds = paths.map(p => p.id!);
     
+    if (pathIds.length === 0) return [];
+    
+    const progresses = await db.userLearningPathProgress.where('userId').equals(user.id).and(p => pathIds.includes(p.learningPathId)).toArray();
+    const progressMap = new Map(progresses.map(p => [p.learningPathId, p]));
+    
+    return paths.map(path => ({
+        ...path,
+        progress: progressMap.get(path.id!)
+    }));
+}

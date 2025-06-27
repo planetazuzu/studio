@@ -107,6 +107,26 @@ export type Cost = {
   updatedAt?: string; // ISO date string
 };
 
+export type LearningPath = {
+  id?: number;
+  title: string;
+  description: string;
+  targetRole: Role;
+  courseIds: string[]; // Ordered list of course IDs
+  isSynced?: boolean;
+  updatedAt?: string;
+};
+
+export type UserLearningPathProgress = {
+  id?: number;
+  userId: string;
+  learningPathId: number;
+  completedCourseIds: string[]; // Unordered list of completed course IDs from the path
+  isSynced?: boolean;
+  updatedAt?: string;
+};
+
+
 // For displaying pending enrollments with user and course names
 export type PendingEnrollmentDetails = Enrollment & {
   userName: string;
