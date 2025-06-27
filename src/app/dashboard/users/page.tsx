@@ -41,10 +41,12 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { roles, departments } from '@/lib/data';
 import * as db from '@/lib/db';
-import type { Role, Department, User, PredictAbandonmentOutput, AIConfig } from '@/lib/types';
+import type { Role, Department, User, PredictAbandonmentOutput, AIConfig, UserStatus } from '@/lib/types';
 import { useAuth } from '@/contexts/auth';
 import { useToast } from '@/hooks/use-toast';
 import { predictAbandonment } from '@/ai/flows/predict-abandonment';
+import { Switch } from '@/components/ui/switch';
+
 
 const roleBadgeVariant: Record<Role, 'default' | 'secondary' | 'outline' | 'destructive'> = {
     'Administrador General': 'destructive',
@@ -135,6 +137,19 @@ export default function UsersPage() {
             });
         } finally {
             setPredictionLoading(null);
+        }
+    }
+    
+    const handleStatusToggle = async (userId: string, newStatus: boolean) => {
+        try {
+            const status: UserStatus = newStatus ? 'approved' : 'suspended';
+            await db.updateUserStatus(userId, status);
+            toast({
+                title: "Estado actualizado",
+                description: "El estado del usuario ha sido cambiado."
+            });
+        } catch (error) {
+            toast({ title: "Error", description: "No se pudo cambiar el estado del usuario.", variant: "destructive" });
         }
     }
 
@@ -233,6 +248,7 @@ export default function UsersPage() {
                                     <TableHead>Usuario</TableHead>
                                     <TableHead>Rol</TableHead>
                                     <TableHead>Departamento</TableHead>
+                                    <TableHead>Estado</TableHead>
                                     {aiConfig?.enabledFeatures.abandonmentPrediction && <TableHead>Riesgo Abandono</TableHead>}
                                     <TableHead>
                                         <span className="sr-only">Acciones</span>
@@ -258,6 +274,19 @@ export default function UsersPage() {
                                                 {u.role ? <Badge variant={roleBadgeVariant[u.role]}>{u.role}</Badge> : '-'}
                                             </TableCell>
                                             <TableCell>{u.department || '-'}</TableCell>
+                                             <TableCell>
+                                                <div className="flex items-center gap-2">
+                                                    <Switch
+                                                        id={`status-${u.id}`}
+                                                        checked={u.status === 'approved'}
+                                                        onCheckedChange={(checked) => handleStatusToggle(u.id, checked)}
+                                                        disabled={authUser.id === u.id}
+                                                    />
+                                                    <Badge variant={u.status === 'approved' ? 'default' : 'secondary'}>
+                                                        {u.status === 'approved' ? 'Activo' : 'Inactivo'}
+                                                    </Badge>
+                                                </div>
+                                            </TableCell>
                                             {aiConfig?.enabledFeatures.abandonmentPrediction && (
                                                 <TableCell>
                                                 <Popover>

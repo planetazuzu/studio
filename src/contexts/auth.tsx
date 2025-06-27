@@ -26,16 +26,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const initializeApp = async () => {
       try {
         await db.populateDatabase();
-        // For development: auto-login as admin user
-        const defaultUser = await db.getUserById('user_1'); // Elena Vargas
-        if (defaultUser && defaultUser.password) {
-          const loggedInUser = await db.login(defaultUser.email, defaultUser.password);
-          setUser(loggedInUser);
-        } else {
-          // Fallback to normal flow if default user isn't available
-          const loggedInUser = await db.getLoggedInUser();
-          setUser(loggedInUser);
-        }
+        const loggedInUser = await db.getLoggedInUser();
+        setUser(loggedInUser);
       } catch (error) {
         console.error("Failed to initialize app", error);
         setUser(null);
@@ -69,7 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value = { user, isLoading, login, logout };
 
   // If loading, show a spinner, unless we're on a public page
-  const isPublicPage = ['/login', '/register', '/pending-approval'].includes(pathname);
+  const isPublicPage = ['/login', '/register'].includes(pathname);
   if (isLoading && !isPublicPage) {
       return (
           <div className="flex h-screen w-full items-center justify-center">

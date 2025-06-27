@@ -15,6 +15,8 @@ export type Department = 'Técnicos de Emergencias' | 'Teleoperadores' | 'Admini
 export type NotificationChannel = 'email' | 'whatsapp' | 'app';
 export const notificationChannels: NotificationChannel[] = ['email', 'whatsapp', 'app'];
 
+export type UserStatus = 'approved' | 'suspended';
+
 export type User = {
   id: string;
   name: string;
@@ -24,6 +26,7 @@ export type User = {
   role: Role;
   department: Department;
   points: number;
+  status: UserStatus;
 
   notificationSettings?: {
     consent: boolean;

@@ -1,7 +1,7 @@
 
 
 import Dexie, { type Table } from 'dexie';
-import type { Course, User, Enrollment, UserProgress, PendingEnrollmentDetails, ForumMessage, ForumMessageWithReplies, Notification, Resource, CourseResource, Announcement, ChatChannel, ChatMessage, Role, ComplianceReportData, DirectMessageThread, CalendarEvent, ExternalTraining, EnrollmentStatus, EnrollmentWithDetails, Cost, StudentForManagement, AIConfig, AIUsageLog, Badge, UserBadge } from './types';
+import type { Course, User, Enrollment, UserProgress, PendingEnrollmentDetails, ForumMessage, ForumMessageWithReplies, Notification, Resource, CourseResource, Announcement, ChatChannel, ChatMessage, Role, ComplianceReportData, DirectMessageThread, CalendarEvent, ExternalTraining, EnrollmentStatus, EnrollmentWithDetails, Cost, StudentForManagement, AIConfig, AIUsageLog, Badge, UserBadge, UserStatus } from './types';
 import { courses as initialCourses, users as initialUsers, initialChatChannels, initialCosts, defaultAIConfig, roles, departments, initialBadges } from './data';
 
 const LOGGED_IN_USER_KEY = 'loggedInUserId';
@@ -98,7 +98,10 @@ export class AcademiaAIDB extends Dexie {
     // Remove the status-related fields from the users table definition
     this.version(20).stores({
         users: 'id, &email, points, isSynced',
-    })
+    });
+    this.version(21).stores({
+        users: 'id, &email, status, points, isSynced',
+    });
   }
 }
 
@@ -153,6 +156,9 @@ export async function login(email: string, password?: string): Promise<User | nu
     if (user.password !== password) {
         throw new Error('La contraseña es incorrecta.');
     }
+    if (user.status !== 'approved') {
+        throw new Error('Esta cuenta ha sido desactivada.');
+    }
     
     localStorage.setItem(LOGGED_IN_USER_KEY, user.id);
     return user;
@@ -171,7 +177,7 @@ export async function getLoggedInUser(): Promise<User | null> {
 
 
 // --- User Management Functions ---
-export async function addUser(user: Omit<User, 'id' | 'avatar' | 'isSynced' | 'updatedAt' | 'notificationSettings' | 'points'>): Promise<string> {
+export async function addUser(user: Omit<User, 'id' | 'avatar' | 'isSynced' | 'updatedAt' | 'notificationSettings' | 'points' | 'status'>): Promise<string> {
     const existingUser = await db.users.where('email').equalsIgnoreCase(user.email).first();
     if (existingUser) {
         throw new Error('Este correo electrónico ya está registrado.');
@@ -181,6 +187,7 @@ export async function addUser(user: Omit<User, 'id' | 'avatar' | 'isSynced' | 'u
         ...user,
         id: `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
         avatar: `https://i.pravatar.cc/150?u=user${Date.now()}`,
+        status: 'approved',
         isSynced: false,
         points: 0,
         updatedAt: new Date().toISOString(),
@@ -192,11 +199,12 @@ export async function addUser(user: Omit<User, 'id' | 'avatar' | 'isSynced' | 'u
     return await db.users.add(newUser);
 }
 
-export async function bulkAddUsers(users: Omit<User, 'id' | 'avatar' | 'isSynced' | 'updatedAt' | 'notificationSettings' | 'points'>[]): Promise<string[]> {
+export async function bulkAddUsers(users: Omit<User, 'id' | 'avatar' | 'isSynced' | 'updatedAt' | 'notificationSettings' | 'points' | 'status'>[]): Promise<string[]> {
     const newUsers: User[] = users.map(user => ({
         ...user,
         id: `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
         avatar: `https://i.pravatar.cc/150?u=user${Date.now()}${Math.random()}`,
+        status: 'approved',
         isSynced: false,
         points: 0,
         updatedAt: new Date().toISOString(),
@@ -218,6 +226,10 @@ export async function getUserById(id: string): Promise<User | undefined> {
 
 export async function updateUser(id: string, data: Partial<Omit<User, 'id' | 'isSynced' | 'password'>>): Promise<number> {
     return await db.users.update(id, { ...data, updatedAt: new Date().toISOString(), isSynced: false });
+}
+
+export async function updateUserStatus(userId: string, status: UserStatus): Promise<number> {
+    return await db.users.update(userId, { status, updatedAt: new Date().toISOString(), isSynced: false });
 }
 
 export async function deleteUser(id: string): Promise<void> {

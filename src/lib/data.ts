@@ -33,6 +33,7 @@ export const users: Omit<User, 'isSynced' | 'updatedAt'>[] = [
         department: 'Administración',
         points: 120,
         notificationSettings: { consent: true, channels: ['email', 'app'] },
+        status: 'approved',
     },
     {
         id: 'user_2',
@@ -44,6 +45,7 @@ export const users: Omit<User, 'isSynced' | 'updatedAt'>[] = [
         department: 'Técnicos de Emergencias',
         points: 50,
         notificationSettings: { consent: true, channels: ['app'] },
+        status: 'approved',
     },
     {
         id: 'user_3',
@@ -55,6 +57,7 @@ export const users: Omit<User, 'isSynced' | 'updatedAt'>[] = [
         department: 'Teleoperadores',
         points: 210,
         notificationSettings: { consent: false, channels: [] },
+        status: 'approved',
     },
     {
         id: 'user_4',
@@ -66,6 +69,7 @@ export const users: Omit<User, 'isSynced' | 'updatedAt'>[] = [
         department: 'Formación',
         points: 0,
         notificationSettings: { consent: true, channels: ['email'] },
+        status: 'approved',
     },
     {
         id: 'user_5',
@@ -77,6 +81,7 @@ export const users: Omit<User, 'isSynced' | 'updatedAt'>[] = [
         department: 'Formación',
         points: 300,
         notificationSettings: { consent: true, channels: ['email', 'whatsapp', 'app'] },
+        status: 'approved',
     },
     {
         id: 'user_6',
@@ -88,6 +93,7 @@ export const users: Omit<User, 'isSynced' | 'updatedAt'>[] = [
         department: 'Administración',
         points: 15,
         notificationSettings: { consent: true, channels: ['email'] },
+        status: 'approved',
     },
 ];
 
