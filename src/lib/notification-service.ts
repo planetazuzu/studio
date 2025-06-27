@@ -1,52 +1,82 @@
+
 'use server';
 
 /**
  * @fileOverview A service for handling external notifications.
- * This module simulates sending emails and WhatsApp messages.
- * In a production environment, you would replace the console.log statements
- * with actual API calls to services like SendGrid, Twilio, etc.
+ * This module connects to real email and WhatsApp services.
  */
 import type { User } from './types';
+import sgMail from '@sendgrid/mail';
+import twilio from 'twilio';
 
-interface EmailOptions {
-  to: string;
-  subject: string;
-  body: string;
-}
+// --- Email Service (SendGrid) ---
 
 export async function sendEmailNotification(user: User, subject: string, body: string): Promise<void> {
-  const emailOptions: EmailOptions = {
+  const { SENDGRID_API_KEY, SENDGRID_FROM_EMAIL } = process.env;
+
+  if (!SENDGRID_API_KEY || !SENDGRID_FROM_EMAIL) {
+    console.warn('--- [EMAIL SIMULATION] ---');
+    console.warn('SendGrid environment variables not set. Simulating email send.');
+    console.log(`To: ${user.email}`);
+    console.log(`Subject: ${subject}`);
+    console.log(`Body: ${body}`);
+    console.log('--------------------------');
+    return;
+  }
+
+  sgMail.setApiKey(SENDGRID_API_KEY);
+
+  const msg = {
     to: user.email,
+    from: SENDGRID_FROM_EMAIL,
     subject: subject,
-    body: body,
+    html: body,
   };
-  
-  console.log('--- [EMAIL SIMULATION] ---');
-  console.log(`Provider: SendGrid (or similar)`);
-  console.log(`Recipient: ${emailOptions.to}`);
-  console.log(`Subject: ${emailOptions.subject}`);
-  console.log(`Body: ${emailOptions.body}`);
-  console.log('--------------------------');
-  // In a real app, the API call would be here:
-  // await sendgrid.send(emailOptions);
+
+  try {
+    await sgMail.send(msg);
+    console.log(`Email sent successfully to ${user.email}`);
+  } catch (error) {
+    console.error('Error sending email with SendGrid:', error);
+    if ((error as any).response) {
+      console.error((error as any).response.body);
+    }
+  }
 }
 
-interface WhatsAppOptions {
-  to: string; // E.164 format phone number
-  message: string;
-}
+// --- WhatsApp Service (Twilio) ---
 
 export async function sendWhatsAppNotification(user: User, message: string): Promise<void> {
-   const whatsAppOptions: WhatsAppOptions = {
-     to: '+1234567890', // Placeholder phone number
-     message: `Hola ${user.name}, tienes una nueva notificación de EmergenciaAI: ${message}`,
-   };
+  const { TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_WHATSAPP_FROM } = process.env;
+  
+  // A real implementation would require storing the user's phone number.
+  // We'll use a placeholder for now.
+  const userPhoneNumber = user.id === 'user_5' ? process.env.TWILIO_WHATSAPP_TO_TEST : null;
 
-   console.log('--- [WHATSAPP SIMULATION] ---');
-   console.log(`Provider: Twilio (or similar)`);
-   console.log(`Recipient: ${whatsAppOptions.to} (User: ${user.name})`);
-   console.log(`Message: ${whatsAppOptions.message}`);
-   console.log('-----------------------------');
-   // In a real app, the API call would be here:
-   // await twilio.messages.create(whatsAppOptions);
+  if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_WHATSAPP_FROM) {
+    console.warn('--- [WHATSAPP SIMULATION] ---');
+    console.warn('Twilio environment variables not set. Simulating WhatsApp send.');
+    console.log(`To User: ${user.name}`);
+    console.log(`Message: ${message}`);
+    console.log('-----------------------------');
+    return;
+  }
+  
+  if (!userPhoneNumber) {
+    console.log(`Skipping WhatsApp for ${user.name} - no test phone number.`);
+    return;
+  }
+
+  const client = twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
+
+  try {
+    await client.messages.create({
+      from: `whatsapp:${TWILIO_WHATSAPP_FROM}`,
+      to: `whatsapp:${userPhoneNumber}`,
+      body: `Hola ${user.name}, tienes una nueva notificación de EmergenciaAI: ${message}`,
+    });
+    console.log(`WhatsApp message sent successfully to ${user.name}`);
+  } catch (error) {
+    console.error('Error sending WhatsApp message with Twilio:', error);
+  }
 }
