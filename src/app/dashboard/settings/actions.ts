@@ -3,7 +3,7 @@
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import { getNocoDBConfig } from '@/lib/config';
-import type { User, Course } from '@/lib/types';
+import type { User, Course, AIConfig } from '@/lib/types';
 import { createNocoUser, createNocoCourse } from '@/lib/noco';
 
 const cookieOptions = {
@@ -52,6 +52,30 @@ export async function saveApiKeysAction(prevState: any, formData: FormData) {
   } catch (error) {
     console.error('Failed to save API keys', error);
     return { success: false, message: 'Error al guardar la configuración de las APIs.' };
+  }
+}
+
+export async function saveAIConfigAction(prevState: any, formData: FormData) {
+  try {
+    const openaiApiKey = formData.get('openai_api_key') as string;
+    if (openaiApiKey) {
+      cookies().set('openai_api_key', openaiApiKey, cookieOptions);
+    } else if (formData.has('openai_api_key')) {
+      cookies().delete('openai_api_key');
+    }
+
+    const geminiApiKey = formData.get('gemini_api_key') as string;
+    if (geminiApiKey) {
+      cookies().set('gemini_api_key', geminiApiKey, cookieOptions);
+    } else if (formData.has('gemini_api_key')) {
+      cookies().delete('gemini_api_key');
+    }
+
+    revalidatePath('/dashboard/settings');
+    return { success: true, message: 'La configuración de IA ha sido actualizada.' };
+  } catch (error) {
+    console.error('Failed to save AI config', error);
+    return { success: false, message: 'Error al guardar la configuración de IA.' };
   }
 }
 

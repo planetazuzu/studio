@@ -1,4 +1,4 @@
-import { User, Course, Role, Department, ChatChannel, CostCategory } from './types';
+import { User, Course, Role, Department, ChatChannel, CostCategory, AIConfig } from './types';
 
 export const roles: Role[] = [
   'Trabajador',
@@ -315,4 +315,16 @@ export const initialChatChannels: ChatChannel[] = [
         description: 'Para conversaciones distendidas y temas no relacionados con el trabajo.',
         type: 'public',
     }
-]
+];
+
+export const defaultAIConfig: AIConfig = {
+    id: 'singleton',
+    activeModel: 'Gemini',
+    enabledFeatures: {
+        feedback: true,
+        recommendations: true,
+        questionGeneration: true,
+        tutor: true,
+        summarization: true,
+    }
+};

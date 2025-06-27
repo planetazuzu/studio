@@ -1,7 +1,7 @@
 
 import Dexie, { type Table } from 'dexie';
-import type { Course, User, Enrollment, UserProgress, PendingEnrollmentDetails, ForumMessage, ForumMessageWithReplies, Notification, Resource, CourseResource, Announcement, ChatChannel, ChatMessage, Role, ComplianceReportData, DirectMessageThread, CalendarEvent, ExternalTraining, EnrollmentStatus, EnrollmentWithDetails, Cost, StudentForManagement } from './types';
-import { courses as initialCourses, users as initialUsers, initialChatChannels, initialCosts } from './data';
+import type { Course, User, Enrollment, UserProgress, PendingEnrollmentDetails, ForumMessage, ForumMessageWithReplies, Notification, Resource, CourseResource, Announcement, ChatChannel, ChatMessage, Role, ComplianceReportData, DirectMessageThread, CalendarEvent, ExternalTraining, EnrollmentStatus, EnrollmentWithDetails, Cost, StudentForManagement, AIConfig, AIUsageLog } from './types';
+import { courses as initialCourses, users as initialUsers, initialChatChannels, initialCosts, defaultAIConfig } from './data';
 
 const LOGGED_IN_USER_KEY = 'loggedInUserId';
 
@@ -20,6 +20,8 @@ export class AcademiaAIDB extends Dexie {
   calendarEvents!: Table<CalendarEvent>;
   externalTrainings!: Table<ExternalTraining>;
   costs!: Table<Cost>;
+  aiConfig!: Table<AIConfig>;
+  aiUsageLog!: Table<AIUsageLog>;
 
 
   constructor() {
@@ -78,6 +80,10 @@ export class AcademiaAIDB extends Dexie {
     this.version(16).stores({
       courses: 'id, instructor, status, isSynced, *mandatoryForRoles'
     });
+    this.version(17).stores({
+        aiConfig: 'id',
+        aiUsageLog: '++id, timestamp'
+    });
   }
 }
 
@@ -107,6 +113,12 @@ export async function populateDatabase() {
   if (costCount === 0) {
     console.log("Populating costs...");
     await db.costs.bulkAdd(initialCosts.map(c => ({...c, isSynced: true})));
+  }
+
+  const aiConfigCount = await db.aiConfig.count();
+  if (aiConfigCount === 0) {
+      console.log("Populating default AI config...");
+      await db.aiConfig.add(defaultAIConfig);
   }
 }
 
@@ -809,4 +821,23 @@ export async function getStudentsForCourseManagement(courseId: string): Promise<
             status: enrollmentStatus,
         };
     }).sort((a, b) => a.name.localeCompare(b.name));
+}
+
+// --- AI Configuration Functions ---
+
+export async function getAIConfig(): Promise<AIConfig> {
+    const config = await db.aiConfig.get('singleton');
+    return config || defaultAIConfig;
+}
+
+export async function saveAIConfig(config: AIConfig): Promise<string> {
+    return await db.aiConfig.put(config, 'singleton');
+}
+
+export async function logAIUsage(log: Omit<AIUsageLog, 'id' | 'timestamp'>): Promise<number> {
+    const newLog: AIUsageLog = {
+        ...log,
+        timestamp: new Date().toISOString()
+    };
+    return await db.aiUsageLog.add(newLog);
 }

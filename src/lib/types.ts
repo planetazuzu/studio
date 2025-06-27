@@ -259,6 +259,36 @@ export type StudentForManagement = {
   status: EnrollmentStatus;
 };
 
+// --- AI Management Types ---
+
+export const aiModels = ['Gemini', 'OpenAI', 'Claude', 'HuggingFace', 'Whisper'] as const;
+export type AIModel = typeof aiModels[number];
+
+export const aiFeatures = [
+    { id: 'feedback', label: 'Feedback de Ejercicios', description: 'Permite a la IA dar feedback sobre tests.' },
+    { id: 'recommendations', label: 'Recomendaciones de Cursos', description: 'Sugiere cursos basados en el perfil del usuario.' },
+    { id: 'questionGeneration', label: 'Generador de Cuestionarios', description: 'Crea tests a partir del contenido del curso.' },
+    { id: 'tutor', label: 'Tutor Virtual IA', description: 'Permite a los usuarios chatear con una IA sobre el curso.' },
+    { id: 'summarization', label: 'Resumen Automático de Módulos', description: 'Genera resúmenes del contenido de los módulos.' },
+] as const;
+
+export type AIFeature = typeof aiFeatures[number]['id'];
+
+export type AIConfig = {
+    id: 'singleton'; // Primary key for the single config object
+    activeModel: AIModel;
+    enabledFeatures: Record<AIFeature, boolean>;
+};
+
+export type AIUsageLog = {
+    id?: number;
+    timestamp: string; // ISO string
+    userId: string;
+    feature: AIFeature;
+    modelUsed: AIModel;
+    isSynced?: boolean;
+};
+
 // --- AI Flow Schemas ---
 
 // From: src/ai/flows/announcement-email-generation.ts

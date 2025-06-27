@@ -17,6 +17,7 @@ import { GeneralSettings } from '@/components/settings/general-settings';
 import { ApiSettings } from '@/components/settings/api-settings';
 import { SyncManager } from '@/components/settings/sync-manager';
 import { PermissionSettings } from '@/components/settings/permission-settings';
+import { AISettings } from '@/components/settings/ai-settings';
 
 
 // Helper function to convert HEX to HSL components (string "H S% L%")
@@ -181,6 +182,7 @@ export default function SettingsPage() {
         { value: 'api', label: 'APIs' },
         { value: 'sync', label: 'Sincronización' },
         { value: 'permissions', label: 'Permisos' },
+        { value: 'ai', label: 'Inteligencia Artificial' },
     ];
 
     const visibleTabs = isAdmin ? adminTabs : userTabs;
@@ -193,7 +195,7 @@ export default function SettingsPage() {
             </div>
             <div className="grid grid-cols-1 gap-8">
                  <Tabs defaultValue="profile" className="w-full">
-                    <TabsList className={`grid w-full max-w-4xl`} style={{ gridTemplateColumns: `repeat(${visibleTabs.length}, 1fr)` }}>
+                    <TabsList className={`grid w-full max-w-5xl`} style={{ gridTemplateColumns: `repeat(${visibleTabs.length}, 1fr)` }}>
                         {visibleTabs.map(tab => (
                              <TabsTrigger key={tab.value} value={tab.value}>{tab.label}</TabsTrigger>
                         ))}
@@ -220,6 +222,9 @@ export default function SettingsPage() {
                             </TabsContent>
                              <TabsContent value="permissions" className="mt-4">
                                 <PermissionSettings />
+                            </TabsContent>
+                             <TabsContent value="ai" className="mt-4">
+                                <AISettings />
                             </TabsContent>
                         </>
                     )}
