@@ -91,7 +91,7 @@ export class AcademiaAIDB extends Dexie {
         users: 'id, &email, status, isSynced',
     });
     this.version(19).stores({
-        users: 'id, &email, status, points, isSynced',
+        users: 'id, &email, points, isSynced',
         badges: 'id',
         userBadges: '++id, [userId+badgeId]'
     });
@@ -110,39 +110,46 @@ export const db = new AcademiaAIDB();
 // --- Database Population ---
 
 export async function populateDatabase() {
-  const userCount = await db.users.count();
-  if (userCount === 0) {
-    console.log("Populating database with initial data...");
+  const adminUser = await db.users.get('user_1'); // Check for the main admin user
+
+  // If the main admin user doesn't exist, we assume the DB is new or has been cleared.
+  // We'll reset it to a known good state to ensure test accounts are always available.
+  if (!adminUser) {
+    console.warn("Main admin user not found. Resetting and populating database with initial data...");
+    
+    // Clear all tables to ensure a clean slate
+    await Promise.all([
+      db.courses.clear(),
+      db.users.clear(),
+      db.enrollments.clear(),
+      db.userProgress.clear(),
+      db.forumMessages.clear(),
+      db.notifications.clear(),
+      db.resources.clear(),
+      db.courseResources.clear(),
+      db.announcements.clear(),
+      db.chatChannels.clear(),
+      db.chatMessages.clear(),
+      db.calendarEvents.clear(),
+      db.externalTrainings.clear(),
+      db.costs.clear(),
+      db.aiConfig.clear(),
+      db.aiUsageLog.clear(),
+      db.badges.clear(),
+      db.userBadges.clear(),
+    ]);
+
+    console.log("Tables cleared. Repopulating with initial data...");
+
+    // Repopulate with initial data
     await db.courses.bulkAdd(initialCourses.map(c => ({...c, isSynced: true})));
-    try {
-        await db.users.bulkAdd(initialUsers.map(u => ({...u, isSynced: true})));
-    } catch(e) {
-        console.error("Failed to bulk add users, maybe duplicates in data.ts", e);
-    }
-  }
-
-  const channelCount = await db.chatChannels.count();
-  if (channelCount === 0) {
-    console.log("Populating chat channels...");
+    await db.users.bulkAdd(initialUsers.map(u => ({...u, isSynced: true})));
     await db.chatChannels.bulkAdd(initialChatChannels);
-  }
-
-  const costCount = await db.costs.count();
-  if (costCount === 0) {
-    console.log("Populating costs...");
     await db.costs.bulkAdd(initialCosts.map(c => ({...c, isSynced: true})));
-  }
+    await db.aiConfig.add(defaultAIConfig);
+    await db.badges.bulkAdd(initialBadges);
 
-  const aiConfigCount = await db.aiConfig.count();
-  if (aiConfigCount === 0) {
-      console.log("Populating default AI config...");
-      await db.aiConfig.add(defaultAIConfig);
-  }
-  
-  const badgeCount = await db.badges.count();
-  if (badgeCount === 0) {
-      console.log("Populating badges...");
-      await db.badges.bulkAdd(initialBadges);
+    console.log("Database population complete.");
   }
 }
 
@@ -157,7 +164,7 @@ export async function login(email: string, password?: string): Promise<User | nu
         throw new Error('La contraseña es incorrecta.');
     }
     if (user.status !== 'approved') {
-        throw new Error('Esta cuenta ha sido desactivada.');
+        throw new Error('Esta cuenta ha sido desactivada. Contacta con un administrador.');
     }
     
     localStorage.setItem(LOGGED_IN_USER_KEY, user.id);
