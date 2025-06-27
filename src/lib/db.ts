@@ -110,12 +110,12 @@ export const db = new AcademiaAIDB();
 // --- Database Population ---
 
 export async function populateDatabase() {
-  const adminUser = await db.users.get('user_1'); // Check for the main admin user
+  const adminUser = await db.users.get('user_1');
 
-  // If the main admin user doesn't exist, we assume the DB is new or has been cleared.
+  // If the main admin user doesn't exist, or their status is incorrect, we assume the DB is stale.
   // We'll reset it to a known good state to ensure test accounts are always available.
-  if (!adminUser) {
-    console.warn("Main admin user not found. Resetting and populating database with initial data...");
+  if (!adminUser || adminUser.status !== 'approved') {
+    console.warn("Main admin user not found or has incorrect status. Resetting and populating database with initial data...");
     
     // Clear all tables to ensure a clean slate
     await Promise.all([
@@ -964,3 +964,5 @@ export async function logAIUsage(log: Omit<AIUsageLog, 'id' | 'timestamp'>): Pro
     };
     return await db.aiUsageLog.add(newLog);
 }
+
+    
