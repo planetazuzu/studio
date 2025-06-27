@@ -24,7 +24,7 @@ import * as db from '@/lib/db';
 import { useToast } from '@/hooks/use-toast';
 import { CertificateTemplate } from '@/components/certificate-template';
 import { Forum } from '@/components/forum';
-import type { Course } from '@/lib/types';
+import type { Course, AIConfig } from '@/lib/types';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { TestGenerator } from '@/components/course-detail/test-generator';
 import { CourseChat } from '@/components/course-detail/course-chat';
@@ -51,6 +51,8 @@ export default function CourseDetailPage() {
 
   const [summaries, setSummaries] = useState<Record<string, string>>({});
   const [summaryLoading, setSummaryLoading] = useState<Record<string, boolean>>({});
+
+  const aiConfig = useLiveQuery<AIConfig | undefined>(() => db.getAIConfig());
 
   const fetchCourse = useCallback(async () => {
         setLoadingCourse(true);
@@ -268,8 +270,8 @@ export default function CourseDetailPage() {
               <TabsTrigger value="overview">Descripción</TabsTrigger>
               <TabsTrigger value="modules">Módulos</TabsTrigger>
               <TabsTrigger value="resources">Recursos</TabsTrigger>
-              <TabsTrigger value="test">Test IA</TabsTrigger>
-              <TabsTrigger value="chat">Tutor IA</TabsTrigger>
+              {aiConfig?.enabledFeatures.questionGeneration && <TabsTrigger value="test">Test IA</TabsTrigger>}
+              {aiConfig?.enabledFeatures.tutor && <TabsTrigger value="chat">Tutor IA</TabsTrigger>}
               <TabsTrigger value="forum">Foro</TabsTrigger>
               {canManageCourse && <TabsTrigger value="manage"><Users className="mr-2 h-4 w-4"/>Gestión</TabsTrigger>}
             </TabsList>
@@ -315,7 +317,7 @@ export default function CourseDetailPage() {
                                     <h4 className="font-semibold text-primary flex items-center gap-2"><Bot /> Resumen IA</h4>
                                     <p className="text-sm text-blue-900 whitespace-pre-wrap">{summaryText}</p>
                                   </div>
-                                ) : (
+                                ) : aiConfig?.enabledFeatures.summarization ? (
                                   <Button
                                       variant="outline"
                                       size="sm"
@@ -330,7 +332,7 @@ export default function CourseDetailPage() {
                                       )}
                                       Generar Resumen
                                   </Button>
-                                )}
+                                ) : null}
                                 
                                 <div className="flex justify-end mt-4">
                                   <Button 
@@ -371,12 +373,16 @@ export default function CourseDetailPage() {
                 </CardContent>
               </Card>
             </TabsContent>
-            <TabsContent value="test" className="mt-4">
-              <TestGenerator courseTitle={course.title} courseContent={course.longDescription} studentName={user?.name || 'Estudiante'} />
-            </TabsContent>
-            <TabsContent value="chat" className="mt-4">
-              <CourseChat courseTitle={course.title} courseContent={course.longDescription} />
-            </TabsContent>
+            {aiConfig?.enabledFeatures.questionGeneration && (
+              <TabsContent value="test" className="mt-4">
+                <TestGenerator courseTitle={course.title} courseContent={course.longDescription} studentName={user?.name || 'Estudiante'} aiConfig={aiConfig} />
+              </TabsContent>
+            )}
+            {aiConfig?.enabledFeatures.tutor && (
+              <TabsContent value="chat" className="mt-4">
+                <CourseChat courseTitle={course.title} courseContent={course.longDescription} />
+              </TabsContent>
+            )}
             <TabsContent value="forum" className="mt-4">
               {isCheckingEnrollment ? (
                   <div className="flex justify-center items-center h-64">

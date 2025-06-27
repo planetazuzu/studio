@@ -14,7 +14,7 @@ import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/contexts/auth';
 import * as db from '@/lib/db';
 import Image from 'next/image';
-import type { PendingEnrollmentDetails, Course, User, Announcement, AnnouncementType } from '@/lib/types';
+import type { PendingEnrollmentDetails, Course, User, Announcement, AnnouncementType, AIConfig } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -371,6 +371,8 @@ function StudentDashboardView({ user }: { user: User }) {
     const isManager = ['Gestor de RRHH', 'Jefe de Formación', 'Administrador General'].includes(user.role);
     const canViewCosts = isManager;
 
+    const aiConfig = useLiveQuery<AIConfig | undefined>(() => db.getAIConfig());
+
     return (
         <div className="flex flex-col gap-8">
             <div>
@@ -390,7 +392,7 @@ function StudentDashboardView({ user }: { user: User }) {
             <div className="grid gap-4 lg:grid-cols-3">
                 {isManager && <AdminApprovalPanel />}
                 {!isManager && <MyCourses user={user} />}
-                <AiSuggestions user={user} />
+                {aiConfig?.enabledFeatures.recommendations && <AiSuggestions user={user} />}
             </div>
         </div>
     );

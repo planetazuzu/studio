@@ -265,11 +265,14 @@ export const aiModels = ['Gemini', 'OpenAI', 'Claude', 'HuggingFace', 'Whisper']
 export type AIModel = typeof aiModels[number];
 
 export const aiFeatures = [
-    { id: 'feedback', label: 'Feedback de Ejercicios', description: 'Permite a la IA dar feedback sobre tests.' },
-    { id: 'recommendations', label: 'Recomendaciones de Cursos', description: 'Sugiere cursos basados en el perfil del usuario.' },
+    { id: 'courseGeneration', label: 'Generador de Cursos', description: 'Permite crear una estructura de curso desde un tema.' },
     { id: 'questionGeneration', label: 'Generador de Cuestionarios', description: 'Crea tests a partir del contenido del curso.' },
-    { id: 'tutor', label: 'Tutor Virtual IA', description: 'Permite a los usuarios chatear con una IA sobre el curso.' },
     { id: 'summarization', label: 'Resumen Automático de Módulos', description: 'Genera resúmenes del contenido de los módulos.' },
+    { id: 'tutor', label: 'Tutor Virtual IA', description: 'Permite a los usuarios chatear con una IA sobre el curso.' },
+    { id: 'recommendations', label: 'Recomendaciones de Cursos', description: 'Sugiere cursos basados en el perfil del usuario.' },
+    { id: 'feedback', label: 'Feedback de Ejercicios', description: 'Da feedback personalizado sobre los resultados de los tests.' },
+    { id: 'abandonmentPrediction', label: 'Predicción de Abandono', description: 'Analiza el riesgo de que un alumno abandone.' },
+    { id: 'emailGeneration', label: 'Redacción de Emails', description: 'Genera borradores de emails para comunicaciones.' },
 ] as const;
 
 export type AIFeature = typeof aiFeatures[number]['id'];

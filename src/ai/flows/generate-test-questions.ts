@@ -8,8 +8,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { googleAI } from '@genkit-ai/googleai';
-import { getGenAIKey } from '@/lib/config';
+import { getActiveAIProvider } from '@/ai/provider';
 import {
   GenerateTestQuestionsInput,
   GenerateTestQuestionsInputSchema,
@@ -29,15 +28,11 @@ const generateTestQuestionsFlow = ai.defineFlow(
     outputSchema: GenerateTestQuestionsOutputSchema,
   },
   async (input) => {
-    const apiKey = getGenAIKey();
-    if (!apiKey) {
-      throw new Error('GenAI API key not found.');
-    }
-
-    const llm = googleAI.model('gemini-1.5-flash-latest');
+    const { llm, plugins } = await getActiveAIProvider();
+    
     const { output } = await ai.generate({
       model: llm,
-      plugins: [googleAI({ apiKey })],
+      plugins: plugins,
       input,
       output: {
         schema: GenerateTestQuestionsOutputSchema,

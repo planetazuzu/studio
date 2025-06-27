@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -40,7 +41,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { roles, departments } from '@/lib/data';
 import * as db from '@/lib/db';
-import type { Role, Department, User, PredictAbandonmentOutput } from '@/lib/types';
+import type { Role, Department, User, PredictAbandonmentOutput, AIConfig } from '@/lib/types';
 import { useAuth } from '@/contexts/auth';
 import { useToast } from '@/hooks/use-toast';
 import { predictAbandonment } from '@/ai/flows/predict-abandonment';
@@ -61,6 +62,7 @@ export default function UsersPage() {
     const { toast } = useToast();
 
     const users = useLiveQuery(db.getAllUsers, []);
+    const aiConfig = useLiveQuery<AIConfig | undefined>(() => db.getAIConfig());
     
     const [userToDelete, setUserToDelete] = useState<User | null>(null);
     const [predictionLoading, setPredictionLoading] = useState<string | null>(null); // user.id
@@ -234,7 +236,7 @@ export default function UsersPage() {
                                     <TableHead>Usuario</TableHead>
                                     <TableHead>Rol</TableHead>
                                     <TableHead>Departamento</TableHead>
-                                    <TableHead>Riesgo Abandono</TableHead>
+                                    {aiConfig?.enabledFeatures.abandonmentPrediction && <TableHead>Riesgo Abandono</TableHead>}
                                     <TableHead>
                                         <span className="sr-only">Acciones</span>
                                     </TableHead>
@@ -259,48 +261,50 @@ export default function UsersPage() {
                                                 <Badge variant={roleBadgeVariant[u.role]}>{u.role}</Badge>
                                             </TableCell>
                                             <TableCell>{u.department}</TableCell>
-                                            <TableCell>
-                                            <Popover>
-                                                <PopoverTrigger asChild>
-                                                    <Button variant="outline" size="sm" onClick={() => handlePredictAbandonment(u)} disabled={predictionLoading === u.id}>
-                                                        {predictionLoading === u.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <BrainCircuit className="h-4 w-4" />}
-                                                        <span className="ml-2 hidden sm:inline">Analizar</span>
-                                                    </Button>
-                                                </PopoverTrigger>
-                                                <PopoverContent className="w-80">
-                                                    {predictionLoading === u.id ? (
-                                                        <div className="flex items-center justify-center p-4">
-                                                            <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                                                        </div>
-                                                    ) : predictionResult[u.id] ? (
-                                                        <div className="grid gap-4">
-                                                            <div className="space-y-2">
-                                                                <h4 className="font-medium leading-none flex items-center gap-2">
-                                                                    <Bot /> Predicción de Riesgo
-                                                                </h4>
-                                                                <p className="text-sm text-muted-foreground">
-                                                                    Análisis para <span className="font-semibold">{u.name}</span>.
-                                                                </p>
+                                            {aiConfig?.enabledFeatures.abandonmentPrediction && (
+                                                <TableCell>
+                                                <Popover>
+                                                    <PopoverTrigger asChild>
+                                                        <Button variant="outline" size="sm" onClick={() => handlePredictAbandonment(u)} disabled={predictionLoading === u.id}>
+                                                            {predictionLoading === u.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <BrainCircuit className="h-4 w-4" />}
+                                                            <span className="ml-2 hidden sm:inline">Analizar</span>
+                                                        </Button>
+                                                    </PopoverTrigger>
+                                                    <PopoverContent className="w-80">
+                                                        {predictionLoading === u.id ? (
+                                                            <div className="flex items-center justify-center p-4">
+                                                                <Loader2 className="h-6 w-6 animate-spin text-primary" />
                                                             </div>
-                                                            <div className="grid gap-2">
-                                                                <div className="flex items-center justify-between">
-                                                                    <span className="text-sm font-medium">Nivel de Riesgo:</span>
-                                                                    <Badge variant={predictionResult[u.id]!.riskLevel === 'Alto' ? 'destructive' : predictionResult[u.id]!.riskLevel === 'Medio' ? 'secondary' : 'default'}>
-                                                                        {predictionResult[u.id]!.riskLevel}
-                                                                    </Badge>
+                                                        ) : predictionResult[u.id] ? (
+                                                            <div className="grid gap-4">
+                                                                <div className="space-y-2">
+                                                                    <h4 className="font-medium leading-none flex items-center gap-2">
+                                                                        <Bot /> Predicción de Riesgo
+                                                                    </h4>
+                                                                    <p className="text-sm text-muted-foreground">
+                                                                        Análisis para <span className="font-semibold">{u.name}</span>.
+                                                                    </p>
                                                                 </div>
-                                                                 <div className="text-sm">
-                                                                    <p className="font-medium">Justificación:</p>
-                                                                    <p className="text-muted-foreground">{predictionResult[u.id]!.justification}</p>
+                                                                <div className="grid gap-2">
+                                                                    <div className="flex items-center justify-between">
+                                                                        <span className="text-sm font-medium">Nivel de Riesgo:</span>
+                                                                        <Badge variant={predictionResult[u.id]!.riskLevel === 'Alto' ? 'destructive' : predictionResult[u.id]!.riskLevel === 'Medio' ? 'secondary' : 'default'}>
+                                                                            {predictionResult[u.id]!.riskLevel}
+                                                                        </Badge>
+                                                                    </div>
+                                                                     <div className="text-sm">
+                                                                        <p className="font-medium">Justificación:</p>
+                                                                        <p className="text-muted-foreground">{predictionResult[u.id]!.justification}</p>
+                                                                    </div>
                                                                 </div>
                                                             </div>
-                                                        </div>
-                                                    ) : (
-                                                        <p className="text-center text-sm text-muted-foreground p-4">Haz clic en "Analizar" para obtener una predicción de la IA.</p>
-                                                    )}
-                                                </PopoverContent>
-                                            </Popover>
-                                        </TableCell>
+                                                        ) : (
+                                                            <p className="text-center text-sm text-muted-foreground p-4">Haz clic en "Analizar" para obtener una predicción de la IA.</p>
+                                                        )}
+                                                    </PopoverContent>
+                                                </Popover>
+                                            </TableCell>
+                                            )}
                                             <TableCell>
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>

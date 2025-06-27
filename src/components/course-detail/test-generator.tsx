@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -9,8 +10,9 @@ import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import type { AIConfig } from '@/lib/types';
 
-export function TestGenerator({ courseTitle, courseContent, studentName }: { courseTitle: string; courseContent: string; studentName: string }) {
+export function TestGenerator({ courseTitle, courseContent, studentName, aiConfig }: { courseTitle: string; courseContent: string; studentName: string, aiConfig: AIConfig | undefined }) {
   const [loading, setLoading] = useState(false);
   const [testData, setTestData] = useState<GenerateTestQuestionsOutput | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -147,10 +149,12 @@ export function TestGenerator({ courseTitle, courseContent, studentName }: { cou
                          <Sparkles className="mr-2 h-4 w-4" />
                          Intentar de Nuevo
                     </Button>
-                    <Button variant="outline" onClick={handleGetFeedback} disabled={feedbackLoading}>
-                        {feedbackLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Bot className="mr-2 h-4 w-4" />}
-                        Obtener Feedback
-                    </Button>
+                    {aiConfig?.enabledFeatures.feedback && (
+                        <Button variant="outline" onClick={handleGetFeedback} disabled={feedbackLoading}>
+                            {feedbackLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Bot className="mr-2 h-4 w-4" />}
+                            Obtener Feedback
+                        </Button>
+                    )}
                 </div>
             )}
             {feedback && (

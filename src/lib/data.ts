@@ -1,3 +1,4 @@
+
 import { User, Course, Role, Department, ChatChannel, CostCategory, AIConfig } from './types';
 
 export const roles: Role[] = [
@@ -321,10 +322,13 @@ export const defaultAIConfig: AIConfig = {
     id: 'singleton',
     activeModel: 'Gemini',
     enabledFeatures: {
-        feedback: true,
-        recommendations: true,
+        courseGeneration: true,
         questionGeneration: true,
-        tutor: true,
         summarization: true,
+        tutor: true,
+        recommendations: true,
+        feedback: true,
+        abandonmentPrediction: true,
+        emailGeneration: true,
     }
 };

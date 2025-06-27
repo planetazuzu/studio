@@ -1,11 +1,17 @@
+
 'use client';
 
 import Link from 'next/link';
 import { ArrowLeft, Edit, Sparkles, Upload } from 'lucide-react';
+import { useLiveQuery } from 'dexie-react-hooks';
+import * as db from '@/lib/db';
+import type { AIConfig } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function CreateCourseHubPage() {
+  const aiConfig = useLiveQuery<AIConfig | undefined>(() => db.getAIConfig());
+
   return (
     <div className="space-y-8">
       <Button variant="outline" size="sm" asChild>
@@ -37,21 +43,23 @@ export default function CreateCourseHubPage() {
           </Card>
         </Link>
 
-        <Link href="/dashboard/courses/ai-generator" className="block">
-          <Card className="h-full hover:border-primary hover:shadow-lg transition-all">
-            <CardHeader className="items-center text-center">
-              <div className="p-4 bg-primary/10 rounded-full mb-2">
-                <Sparkles className="h-8 w-8 text-primary" />
-              </div>
-              <CardTitle>Generador con IA</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <CardDescription className="text-center">
-                Describe un tema y deja que la inteligencia artificial genere una estructura de curso completa, incluyendo módulos y descripciones.
-              </CardDescription>
-            </CardContent>
-          </Card>
-        </Link>
+        {aiConfig?.enabledFeatures.courseGeneration && (
+            <Link href="/dashboard/courses/ai-generator" className="block">
+              <Card className="h-full hover:border-primary hover:shadow-lg transition-all">
+                <CardHeader className="items-center text-center">
+                  <div className="p-4 bg-primary/10 rounded-full mb-2">
+                    <Sparkles className="h-8 w-8 text-primary" />
+                  </div>
+                  <CardTitle>Generador con IA</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription className="text-center">
+                    Describe un tema y deja que la inteligencia artificial genere una estructura de curso completa, incluyendo módulos y descripciones.
+                  </CardDescription>
+                </CardContent>
+              </Card>
+            </Link>
+        )}
 
         <Link href="/dashboard/courses/scorm-import" className="block">
           <Card className="h-full hover:border-primary hover:shadow-lg transition-all">

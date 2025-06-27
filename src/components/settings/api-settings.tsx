@@ -39,14 +39,6 @@ export function ApiSettings() {
             <CardContent>
                 <form ref={formRef} action={formAction} className="space-y-6">
                     <div>
-                        <h3 className="text-lg font-semibold mb-2">GenAI (Google)</h3>
-                         <div className="space-y-2">
-                            <Label htmlFor="genaiApiKey">Clave API de GenAI</Label>
-                            <Input id="genaiApiKey" name="genaiApiKey" type="password" placeholder="Introduce o actualiza la clave API" />
-                            <p className="text-xs text-muted-foreground">Deja el campo en blanco y guarda para eliminar la clave actual.</p>
-                        </div>
-                    </div>
-                    <div className="border-t pt-6">
                         <h3 className="text-lg font-semibold mb-2">NocoDB (Base de Datos Remota)</h3>
                          <div className="space-y-4">
                             <div className="space-y-2">
@@ -60,7 +52,7 @@ export function ApiSettings() {
                         </div>
                     </div>
                     <div className="flex justify-end">
-                        <Button type="submit">Guardar Configuración de APIs</Button>
+                        <Button type="submit">Guardar Configuración de NocoDB</Button>
                     </div>
                 </form>
                  <Alert className="mt-6">
