@@ -42,9 +42,7 @@ export default function LoginPage() {
         });
         router.push('/dashboard');
       } else {
-        // The login function in db.ts will throw specific errors
-        // This is a fallback
-        setError('Credenciales incorrectas o cuenta no aprobada.');
+        setError('Credenciales incorrectas.');
       }
     } catch (err: any) {
       setError(err.message || 'Ha ocurrido un error inesperado.');

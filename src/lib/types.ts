@@ -1,4 +1,5 @@
 
+
 import { z } from 'zod';
 
 export type Role =
@@ -14,8 +15,6 @@ export type Department = 'Técnicos de Emergencias' | 'Teleoperadores' | 'Admini
 export type NotificationChannel = 'email' | 'whatsapp' | 'app';
 export const notificationChannels: NotificationChannel[] = ['email', 'whatsapp', 'app'];
 
-export type UserStatus = 'pending' | 'approved' | 'rejected' | 'suspended';
-
 export type User = {
   id: string;
   name: string;
@@ -25,11 +24,6 @@ export type User = {
   role: Role;
   department: Department;
   points: number;
-  
-  // New approval-flow fields
-  status: UserStatus;
-  authorizedBy?: string; // email of admin
-  createdAt: string; // ISO date string
 
   notificationSettings?: {
     consent: boolean;

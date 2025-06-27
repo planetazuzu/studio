@@ -19,6 +19,7 @@ export default function RegisterPage() {
   const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+    const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -33,12 +34,18 @@ export default function RegisterPage() {
 
     setIsLoading(true);
     try {
-      await db.register(email, password);
-      toast({
-        title: "Registro Enviado",
-        description: "Tu solicitud ha sido enviada. Recibirás una notificación cuando un administrador la apruebe.",
+      await db.addUser({
+        name,
+        email,
+        password,
+        role: 'Trabajador',
+        department: 'Técnicos de Emergencias'
       });
-      router.push('/pending-approval');
+      toast({
+        title: "Registro completado",
+        description: "Tu cuenta ha sido creada. Ahora puedes iniciar sesión.",
+      });
+      router.push('/login');
     } catch (err: any) {
       setError(err.message || 'Ha ocurrido un error inesperado.');
       console.error(err);
@@ -66,6 +73,17 @@ export default function RegisterPage() {
                     <AlertDescription>{error}</AlertDescription>
                 </Alert>
             )}
+            <div className="space-y-2">
+              <Label htmlFor="name">Nombre Completo</Label>
+              <Input 
+                id="name" 
+                type="text" 
+                placeholder="Tu nombre y apellidos" 
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required 
+              />
+            </div>
             <div className="space-y-2">
               <Label htmlFor="email">Correo electrónico</Label>
               <Input 

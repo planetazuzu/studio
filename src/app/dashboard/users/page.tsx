@@ -1,10 +1,10 @@
 
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { MoreHorizontal, PlusCircle, ListFilter, Loader2, Trash2, FilePenLine, Upload, BrainCircuit, Bot, Check, X, ShieldCheck } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, ListFilter, Loader2, Trash2, FilePenLine, Upload, BrainCircuit, Bot } from 'lucide-react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -41,14 +41,10 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { roles, departments } from '@/lib/data';
 import * as db from '@/lib/db';
-import type { Role, Department, User, PredictAbandonmentOutput, AIConfig, UserStatus } from '@/lib/types';
+import type { Role, Department, User, PredictAbandonmentOutput, AIConfig } from '@/lib/types';
 import { useAuth } from '@/contexts/auth';
 import { useToast } from '@/hooks/use-toast';
 import { predictAbandonment } from '@/ai/flows/predict-abandonment';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Switch } from '@/components/ui/switch';
-import { cn } from '@/lib/utils';
-
 
 const roleBadgeVariant: Record<Role, 'default' | 'secondary' | 'outline' | 'destructive'> = {
     'Administrador General': 'destructive',
@@ -59,148 +55,6 @@ const roleBadgeVariant: Record<Role, 'default' | 'secondary' | 'outline' | 'dest
     'Personal Externo': 'outline',
 };
 
-const statusBadgeVariant: Record<Exclude<UserStatus, 'approved' | 'suspended'>, 'default' | 'secondary' | 'outline' | 'destructive'> = {
-    'pending': 'secondary',
-    'rejected': 'destructive'
-};
-
-function UsersTable({ users, authUser, onPredict, onSetUserToDelete, onStatusChange, predictionLoading, predictionResult, aiConfig } : {
-    users: User[],
-    authUser: User,
-    onPredict: (user: User) => void,
-    onSetUserToDelete: (user: User) => void,
-    onStatusChange: (user: User, isChecked: boolean) => void,
-    predictionLoading: string | null,
-    predictionResult: Record<string, PredictAbandonmentOutput | null>,
-    aiConfig: AIConfig | undefined,
-}) {
-     return (
-        <Table>
-            <TableHeader>
-                <TableRow>
-                <TableHead>Usuario</TableHead>
-                <TableHead>Rol</TableHead>
-                <TableHead>Departamento</TableHead>
-                <TableHead>Estado</TableHead>
-                {aiConfig?.enabledFeatures.abandonmentPrediction && <TableHead>Riesgo Abandono</TableHead>}
-                <TableHead>
-                    <span className="sr-only">Acciones</span>
-                </TableHead>
-                </TableRow>
-            </TableHeader>
-            <TableBody>
-                {users.map(u => (
-                    <TableRow key={u.id}>
-                        <TableCell className="font-medium">
-                            <div className="flex items-center gap-3">
-                                <Avatar className="h-9 w-9">
-                                    <AvatarImage src={u.avatar} alt={u.name} />
-                                    <AvatarFallback>{u.name?.slice(0, 2) ?? '?'}</AvatarFallback>
-                                </Avatar>
-                                <div className="grid gap-0.5">
-                                    <p className="font-semibold">{u.name || u.email}</p>
-                                    <p className="text-xs text-muted-foreground">{u.email}</p>
-                                </div>
-                            </div>
-                        </TableCell>
-                        <TableCell>
-                            {u.role ? <Badge variant={roleBadgeVariant[u.role]}>{u.role}</Badge> : '-'}
-                        </TableCell>
-                        <TableCell>{u.department || '-'}</TableCell>
-                        <TableCell>
-                           {u.status === 'approved' || u.status === 'suspended' ? (
-                                <div className="flex items-center gap-2">
-                                    <Switch
-                                        checked={u.status === 'approved'}
-                                        disabled={authUser.id === u.id}
-                                        onCheckedChange={(isChecked) => onStatusChange(u, isChecked)}
-                                        aria-label={`Estado del usuario ${u.name}`}
-                                    />
-                                    <span className={cn("capitalize text-sm font-medium", u.status === 'approved' ? 'text-green-600' : 'text-destructive')}>
-                                        {u.status === 'approved' ? 'Activo' : 'Inactivo'}
-                                    </span>
-                                </div>
-                            ) : (
-                                <Badge variant={statusBadgeVariant[u.status]} className="capitalize">{u.status}</Badge>
-                            )}
-                        </TableCell>
-                        {aiConfig?.enabledFeatures.abandonmentPrediction && (
-                            <TableCell>
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button variant="outline" size="sm" onClick={() => onPredict(u)} disabled={predictionLoading === u.id}>
-                                        {predictionLoading === u.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <BrainCircuit className="h-4 w-4" />}
-                                        <span className="ml-2 hidden sm:inline">Analizar</span>
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-80">
-                                    {predictionLoading === u.id ? (
-                                        <div className="flex items-center justify-center p-4">
-                                            <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                                        </div>
-                                    ) : predictionResult[u.id] ? (
-                                        <div className="grid gap-4">
-                                            <div className="space-y-2">
-                                                <h4 className="font-medium leading-none flex items-center gap-2">
-                                                    <Bot /> Predicción de Riesgo
-                                                </h4>
-                                                <p className="text-sm text-muted-foreground">
-                                                    Análisis para <span className="font-semibold">{u.name}</span>.
-                                                </p>
-                                            </div>
-                                            <div className="grid gap-2">
-                                                <div className="flex items-center justify-between">
-                                                    <span className="text-sm font-medium">Nivel de Riesgo:</span>
-                                                    <Badge variant={predictionResult[u.id]!.riskLevel === 'Alto' ? 'destructive' : predictionResult[u.id]!.riskLevel === 'Medio' ? 'secondary' : 'default'}>
-                                                        {predictionResult[u.id]!.riskLevel}
-                                                    </Badge>
-                                                </div>
-                                                    <div className="text-sm">
-                                                    <p className="font-medium">Justificación:</p>
-                                                    <p className="text-muted-foreground">{predictionResult[u.id]!.justification}</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <p className="text-center text-sm text-muted-foreground p-4">Haz clic en "Analizar" para obtener una predicción de la IA.</p>
-                                    )}
-                                </PopoverContent>
-                            </Popover>
-                        </TableCell>
-                        )}
-                        <TableCell>
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                            <Button aria-haspopup="true" size="icon" variant="ghost">
-                                <MoreHorizontal className="h-4 w-4" />
-                                <span className="sr-only">Toggle menu</span>
-                            </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                            <DropdownMenuItem asChild>
-                                <Link href={`/dashboard/users/${u.id}/edit`}>
-                                    <FilePenLine className="mr-2 h-4 w-4" />
-                                    Editar
-                                </Link>
-                            </DropdownMenuItem>
-                            <AlertDialogTrigger asChild>
-                                <DropdownMenuItem onSelect={() => onSetUserToDelete(u)} className="text-destructive focus:bg-destructive/10 focus:text-destructive" disabled={authUser.id === u.id}>
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    Eliminar
-                                </DropdownMenuItem>
-                            </AlertDialogTrigger>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                        </TableCell>
-                    </TableRow>
-                ))}
-            </TableBody>
-        </Table>
-    );
-}
-
-
 export default function UsersPage() {
     const { user: authUser } = useAuth();
     const router = useRouter();
@@ -208,7 +62,6 @@ export default function UsersPage() {
 
     const users = useLiveQuery(db.getAllUsers, []);
     const aiConfig = useLiveQuery<AIConfig | undefined>(() => db.getAIConfig());
-    const pendingUsers = useLiveQuery(() => db.getPendingUsers(), []);
     
     const [userToDelete, setUserToDelete] = useState<User | null>(null);
     const [predictionLoading, setPredictionLoading] = useState<string | null>(null); // user.id
@@ -285,35 +138,7 @@ export default function UsersPage() {
         }
     }
 
-    const handleApproval = async (user: User, approve: boolean) => {
-        try {
-            if(approve) {
-                await db.approveUser(user.id, authUser.email);
-                toast({ title: "Usuario Aprobado", description: `${user.email} ahora puede acceder a la plataforma.` });
-            } else {
-                await db.rejectUser(user.id);
-                toast({ title: "Usuario Rechazado", description: `La solicitud de ${user.email} ha sido rechazada.` });
-            }
-        } catch (error) {
-             toast({ title: "Error", description: "No se pudo procesar la solicitud.", variant: "destructive" });
-        }
-    }
-    
-    const handleUserStatusChange = async (user: User, isChecked: boolean) => {
-        const newStatus = isChecked ? 'approved' : 'suspended';
-        try {
-            await db.updateUserStatus(user.id, newStatus);
-            toast({
-                title: 'Estado Actualizado',
-                description: `El usuario ${user.name} ha sido ${newStatus === 'approved' ? 'activado' : 'desactivado'}.`,
-            });
-        } catch (error) {
-             toast({ title: "Error", description: "No se pudo actualizar el estado del usuario.", variant: "destructive" });
-        }
-    };
-
     const filteredUsers = users ? users.filter(u => roleFilters[u.role] && departmentFilters[u.department]) : [];
-    const pendingCount = pendingUsers?.length || 0;
 
     return (
         <div className="space-y-8">
@@ -321,7 +146,7 @@ export default function UsersPage() {
                 <div>
                 <h1 className="text-3xl font-bold">Gestión de Usuarios</h1>
                 <p className="text-muted-foreground">
-                    Visualiza, gestiona y aprueba a los miembros de tu organización.
+                    Visualiza y gestiona a los miembros de tu organización.
                 </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -342,112 +167,172 @@ export default function UsersPage() {
             
             <AlertDialog onOpenChange={(open) => !open && setUserToDelete(null)}>
                 <Card>
-                    <Tabs defaultValue="all-users">
-                        <CardHeader>
-                            <div className='flex flex-col md:flex-row md:items-center justify-between gap-4'>
-                                 <TabsList className="grid w-full grid-cols-2 max-w-sm">
-                                    <TabsTrigger value="all-users">Todos los Usuarios</TabsTrigger>
-                                    <TabsTrigger value="pending" className="relative">
-                                        Solicitudes Pendientes
-                                        {pendingCount > 0 && <Badge className="absolute -top-2 -right-2 h-5 w-5 justify-center p-0">{pendingCount}</Badge>}
-                                    </TabsTrigger>
-                                </TabsList>
-                                <div className="flex items-center gap-2 self-end">
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="outline" size="sm" className="h-9 gap-1">
-                                                <ListFilter className="h-3.5 w-3.5" />
-                                                <span className="sr-only sm:not-sr-only">Rol</span>
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                            <DropdownMenuLabel>Filtrar por rol</DropdownMenuLabel>
-                                            <DropdownMenuSeparator />
-                                            {roles.map(role => (
-                                                <DropdownMenuCheckboxItem 
-                                                    key={role}
-                                                    checked={roleFilters[role]}
-                                                    onCheckedChange={(checked) => handleRoleFilterChange(role, !!checked)}
-                                                >
-                                                    {role}
-                                                </DropdownMenuCheckboxItem>
-                                            ))}
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="outline" size="sm" className="h-9 gap-1">
-                                                <ListFilter className="h-3.5 w-3.5" />
-                                                <span className="sr-only sm:not-sr-only">Dept.</span>
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                            <DropdownMenuLabel>Filtrar por departamento</DropdownMenuLabel>
-                                            <DropdownMenuSeparator />
-                                            {departments.map(dept => (
-                                                <DropdownMenuCheckboxItem 
-                                                    key={dept}
-                                                    checked={departmentFilters[dept]}
-                                                    onCheckedChange={(checked) => handleDepartmentFilterChange(dept, !!checked)}
-                                                >
-                                                    {dept}
-                                                </DropdownMenuCheckboxItem>
-                                            ))}
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </div>
+                    <CardHeader>
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <CardTitle>Usuarios Registrados</CardTitle>
+                                <CardDescription>
+                                    Un total de {users?.length || 0} usuarios en la plataforma.
+                                </CardDescription>
                             </div>
-                        </CardHeader>
-                        <CardContent>
-                            <TabsContent value="all-users">
-                                {!users ? (
-                                    <div className="flex justify-center items-center h-48">
-                                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                                    </div>
-                                ) : (
-                                    <UsersTable 
-                                        users={filteredUsers} 
-                                        authUser={authUser} 
-                                        onPredict={handlePredictAbandonment} 
-                                        onSetUserToDelete={setUserToDelete}
-                                        onStatusChange={handleUserStatusChange}
-                                        predictionLoading={predictionLoading} 
-                                        predictionResult={predictionResult} 
-                                        aiConfig={aiConfig} 
-                                    />
-                                )}
-                            </TabsContent>
-                             <TabsContent value="pending">
-                                {!pendingUsers ? (
-                                    <div className="flex justify-center items-center h-48">
-                                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                                    </div>
-                                ) : pendingUsers.length === 0 ? (
-                                    <div className="text-center py-12 text-muted-foreground">
-                                        <ShieldCheck className="mx-auto h-12 w-12" />
-                                        <p className="mt-4 font-semibold">No hay solicitudes pendientes.</p>
-                                        <p className="text-sm">Todo el mundo está aprobado o rechazado.</p>
-                                    </div>
-                                ) : (
-                                    <Table>
-                                        <TableHeader><TableRow><TableHead>Usuario</TableHead><TableHead>Fecha de Registro</TableHead><TableHead className="text-right">Acciones</TableHead></TableRow></TableHeader>
-                                        <TableBody>
-                                            {pendingUsers.map(u => (
-                                                <TableRow key={u.id}>
-                                                    <TableCell className="font-medium">{u.email}</TableCell>
-                                                    <TableCell>{new Date(u.createdAt).toLocaleDateString()}</TableCell>
-                                                    <TableCell className="text-right space-x-2">
-                                                        <Button size="sm" variant="outline" className="text-green-600 hover:bg-green-50 hover:text-green-700" onClick={() => handleApproval(u, true)}><Check className="mr-2 h-4 w-4" />Aprobar</Button>
-                                                        <Button size="sm" variant="outline" className="text-red-600 hover:bg-red-50 hover:text-red-700" onClick={() => handleApproval(u, false)}><X className="mr-2 h-4 w-4" />Rechazar</Button>
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
-                                )}
-                            </TabsContent>
-                        </CardContent>
-                    </Tabs>
+                            <div className="flex items-center gap-2">
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="outline" size="sm" className="h-9 gap-1">
+                                            <ListFilter className="h-3.5 w-3.5" />
+                                            <span className="sr-only sm:not-sr-only">Rol</span>
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        <DropdownMenuLabel>Filtrar por rol</DropdownMenuLabel>
+                                        <DropdownMenuSeparator />
+                                        {roles.map(role => (
+                                            <DropdownMenuCheckboxItem 
+                                                key={role}
+                                                checked={roleFilters[role]}
+                                                onCheckedChange={(checked) => handleRoleFilterChange(role, !!checked)}
+                                            >
+                                                {role}
+                                            </DropdownMenuCheckboxItem>
+                                        ))}
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="outline" size="sm" className="h-9 gap-1">
+                                            <ListFilter className="h-3.5 w-3.5" />
+                                            <span className="sr-only sm:not-sr-only">Dept.</span>
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        <DropdownMenuLabel>Filtrar por departamento</DropdownMenuLabel>
+                                        <DropdownMenuSeparator />
+                                        {departments.map(dept => (
+                                            <DropdownMenuCheckboxItem 
+                                                key={dept}
+                                                checked={departmentFilters[dept]}
+                                                onCheckedChange={(checked) => handleDepartmentFilterChange(dept, !!checked)}
+                                            >
+                                                {dept}
+                                            </DropdownMenuCheckboxItem>
+                                        ))}
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        {!users ? (
+                            <div className="flex justify-center items-center h-48">
+                                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                            </div>
+                        ) : (
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                    <TableHead>Usuario</TableHead>
+                                    <TableHead>Rol</TableHead>
+                                    <TableHead>Departamento</TableHead>
+                                    {aiConfig?.enabledFeatures.abandonmentPrediction && <TableHead>Riesgo Abandono</TableHead>}
+                                    <TableHead>
+                                        <span className="sr-only">Acciones</span>
+                                    </TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {filteredUsers.map(u => (
+                                        <TableRow key={u.id}>
+                                            <TableCell className="font-medium">
+                                                <div className="flex items-center gap-3">
+                                                    <Avatar className="h-9 w-9">
+                                                        <AvatarImage src={u.avatar} alt={u.name} />
+                                                        <AvatarFallback>{u.name?.slice(0, 2) ?? '?'}</AvatarFallback>
+                                                    </Avatar>
+                                                    <div className="grid gap-0.5">
+                                                        <p className="font-semibold">{u.name || u.email}</p>
+                                                        <p className="text-xs text-muted-foreground">{u.email}</p>
+                                                    </div>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                {u.role ? <Badge variant={roleBadgeVariant[u.role]}>{u.role}</Badge> : '-'}
+                                            </TableCell>
+                                            <TableCell>{u.department || '-'}</TableCell>
+                                            {aiConfig?.enabledFeatures.abandonmentPrediction && (
+                                                <TableCell>
+                                                <Popover>
+                                                    <PopoverTrigger asChild>
+                                                        <Button variant="outline" size="sm" onClick={() => handlePredictAbandonment(u)} disabled={predictionLoading === u.id}>
+                                                            {predictionLoading === u.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <BrainCircuit className="h-4 w-4" />}
+                                                            <span className="ml-2 hidden sm:inline">Analizar</span>
+                                                        </Button>
+                                                    </PopoverTrigger>
+                                                    <PopoverContent className="w-80">
+                                                        {predictionLoading === u.id ? (
+                                                            <div className="flex items-center justify-center p-4">
+                                                                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                                                            </div>
+                                                        ) : predictionResult[u.id] ? (
+                                                            <div className="grid gap-4">
+                                                                <div className="space-y-2">
+                                                                    <h4 className="font-medium leading-none flex items-center gap-2">
+                                                                        <Bot /> Predicción de Riesgo
+                                                                    </h4>
+                                                                    <p className="text-sm text-muted-foreground">
+                                                                        Análisis para <span className="font-semibold">{u.name}</span>.
+                                                                    </p>
+                                                                </div>
+                                                                <div className="grid gap-2">
+                                                                    <div className="flex items-center justify-between">
+                                                                        <span className="text-sm font-medium">Nivel de Riesgo:</span>
+                                                                        <Badge variant={predictionResult[u.id]!.riskLevel === 'Alto' ? 'destructive' : predictionResult[u.id]!.riskLevel === 'Medio' ? 'secondary' : 'default'}>
+                                                                            {predictionResult[u.id]!.riskLevel}
+                                                                        </Badge>
+                                                                    </div>
+                                                                        <div className="text-sm">
+                                                                        <p className="font-medium">Justificación:</p>
+                                                                        <p className="text-muted-foreground">{predictionResult[u.id]!.justification}</p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        ) : (
+                                                            <p className="text-center text-sm text-muted-foreground p-4">Haz clic en "Analizar" para obtener una predicción de la IA.</p>
+                                                        )}
+                                                    </PopoverContent>
+                                                </Popover>
+                                            </TableCell>
+                                            )}
+                                            <TableCell>
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                <Button aria-haspopup="true" size="icon" variant="ghost">
+                                                    <MoreHorizontal className="h-4 w-4" />
+                                                    <span className="sr-only">Toggle menu</span>
+                                                </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                                                <DropdownMenuItem asChild>
+                                                    <Link href={`/dashboard/users/${u.id}/edit`}>
+                                                        <FilePenLine className="mr-2 h-4 w-4" />
+                                                        Editar
+                                                    </Link>
+                                                </DropdownMenuItem>
+                                                <AlertDialogTrigger asChild>
+                                                    <DropdownMenuItem onSelect={() => setUserToDelete(u)} className="text-destructive focus:bg-destructive/10 focus:text-destructive" disabled={authUser.id === u.id}>
+                                                        <Trash2 className="mr-2 h-4 w-4" />
+                                                        Eliminar
+                                                    </DropdownMenuItem>
+                                                </AlertDialogTrigger>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        )}
+                    </CardContent>
                 </Card>
                 <AlertDialogContent>
                     <AlertDialogHeader>

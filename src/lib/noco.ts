@@ -51,31 +51,6 @@ async function createRecord<T extends { id?: string | number }>(tableId: string,
     delete (payload as any).password;
   }
   
-  // NocoDB uses `rol_actual` instead of `role`
-  if ('role' in payload) {
-      (payload as any).rol_actual = (payload as any).role;
-      delete (payload as any).role;
-  }
-
-  // NocoDB uses `creado_en` instead of `createdAt`
-  if ('createdAt' in payload) {
-      (payload as any).creado_en = (payload as any).createdAt;
-      delete (payload as any).createdAt;
-  }
-  
-   // NocoDB uses `estado` instead of `status`
-  if ('status' in payload) {
-      (payload as any).estado = (payload as any).status;
-      delete (payload as any).status;
-  }
-  
-   // NocoDB uses `autorizado_por` instead of `authorizedBy`
-  if ('authorizedBy' in payload) {
-      (payload as any).autorizado_por = (payload as any).authorizedBy;
-      delete (payload as any).authorizedBy;
-  }
-
-
   // NocoDB doesn't like empty fields for relations, etc.
   const cleanedPayload = Object.entries(payload).reduce((acc, [key, value]) => {
     // Drop notificationSettings as it's not in the NocoDB schema

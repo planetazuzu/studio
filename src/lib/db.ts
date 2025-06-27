@@ -1,6 +1,7 @@
 
+
 import Dexie, { type Table } from 'dexie';
-import type { Course, User, Enrollment, UserProgress, PendingEnrollmentDetails, ForumMessage, ForumMessageWithReplies, Notification, Resource, CourseResource, Announcement, ChatChannel, ChatMessage, Role, ComplianceReportData, DirectMessageThread, CalendarEvent, ExternalTraining, EnrollmentStatus, EnrollmentWithDetails, Cost, StudentForManagement, AIConfig, AIUsageLog, UserStatus, Badge, UserBadge } from './types';
+import type { Course, User, Enrollment, UserProgress, PendingEnrollmentDetails, ForumMessage, ForumMessageWithReplies, Notification, Resource, CourseResource, Announcement, ChatChannel, ChatMessage, Role, ComplianceReportData, DirectMessageThread, CalendarEvent, ExternalTraining, EnrollmentStatus, EnrollmentWithDetails, Cost, StudentForManagement, AIConfig, AIUsageLog, Badge, UserBadge } from './types';
 import { courses as initialCourses, users as initialUsers, initialChatChannels, initialCosts, defaultAIConfig, roles, departments, initialBadges } from './data';
 
 const LOGGED_IN_USER_KEY = 'loggedInUserId';
@@ -94,6 +95,10 @@ export class AcademiaAIDB extends Dexie {
         badges: 'id',
         userBadges: '++id, [userId+badgeId]'
     });
+    // Remove the status-related fields from the users table definition
+    this.version(20).stores({
+        users: 'id, &email, points, isSynced',
+    })
   }
 }
 
@@ -145,48 +150,12 @@ export async function login(email: string, password?: string): Promise<User | nu
     if (!user) {
         throw new Error('El usuario no existe.');
     }
-    if (user.status === 'pending') {
-        throw new Error('Tu cuenta está pendiente de aprobación por un administrador.');
-    }
-    if (user.status === 'rejected') {
-        throw new Error('Tu solicitud de registro ha sido rechazada.');
-    }
-     if (user.status === 'suspended') {
-        throw new Error('Esta cuenta ha sido desactivada temporalmente.');
-    }
     if (user.password !== password) {
         throw new Error('La contraseña es incorrecta.');
     }
     
     localStorage.setItem(LOGGED_IN_USER_KEY, user.id);
     return user;
-}
-
-export async function register(email: string, password?: string): Promise<string> {
-    const existingUser = await db.users.where('email').equalsIgnoreCase(email).first();
-    if (existingUser) {
-        throw new Error('Este correo electrónico ya está registrado.');
-    }
-
-    const newUser: User = {
-        id: `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-        email,
-        password,
-        name: email.split('@')[0], // Default name
-        avatar: `https://i.pravatar.cc/150?u=${email}`,
-        role: 'Trabajador', // Default role
-        department: 'Técnicos de Emergencias', // Default department
-        points: 0,
-        status: 'pending',
-        createdAt: new Date().toISOString(),
-        isSynced: false,
-        updatedAt: new Date().toISOString(),
-        notificationSettings: {
-            consent: true,
-            channels: ['app'],
-        },
-    };
-    return await db.users.add(newUser);
 }
 
 export function logout(): void {
@@ -202,13 +171,16 @@ export async function getLoggedInUser(): Promise<User | null> {
 
 
 // --- User Management Functions ---
-export async function addUser(user: Omit<User, 'id' | 'avatar' | 'isSynced' | 'updatedAt' | 'notificationSettings' | 'status' | 'createdAt' | 'points'>): Promise<string> {
+export async function addUser(user: Omit<User, 'id' | 'avatar' | 'isSynced' | 'updatedAt' | 'notificationSettings' | 'points'>): Promise<string> {
+    const existingUser = await db.users.where('email').equalsIgnoreCase(user.email).first();
+    if (existingUser) {
+        throw new Error('Este correo electrónico ya está registrado.');
+    }
+    
     const newUser: User = {
         ...user,
         id: `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
         avatar: `https://i.pravatar.cc/150?u=user${Date.now()}`,
-        status: 'approved', // Directly approved
-        createdAt: new Date().toISOString(),
         isSynced: false,
         points: 0,
         updatedAt: new Date().toISOString(),
@@ -220,13 +192,11 @@ export async function addUser(user: Omit<User, 'id' | 'avatar' | 'isSynced' | 'u
     return await db.users.add(newUser);
 }
 
-export async function bulkAddUsers(users: Omit<User, 'id' | 'avatar' | 'isSynced' | 'updatedAt' | 'notificationSettings' | 'status' | 'createdAt' | 'points'>[]): Promise<string[]> {
+export async function bulkAddUsers(users: Omit<User, 'id' | 'avatar' | 'isSynced' | 'updatedAt' | 'notificationSettings' | 'points'>[]): Promise<string[]> {
     const newUsers: User[] = users.map(user => ({
         ...user,
         id: `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
         avatar: `https://i.pravatar.cc/150?u=user${Date.now()}${Math.random()}`,
-        status: 'approved',
-        createdAt: new Date().toISOString(),
         isSynced: false,
         points: 0,
         updatedAt: new Date().toISOString(),
@@ -236,35 +206,6 @@ export async function bulkAddUsers(users: Omit<User, 'id' | 'avatar' | 'isSynced
         },
     }));
     return await db.users.bulkAdd(newUsers, { allKeys: true });
-}
-
-export async function getPendingUsers(): Promise<User[]> {
-    return await db.users.where('status').equals('pending').toArray();
-}
-
-export async function approveUser(userId: string, adminEmail: string): Promise<number> {
-    return await db.users.update(userId, { 
-        status: 'approved',
-        authorizedBy: adminEmail,
-        updatedAt: new Date().toISOString(),
-        isSynced: false 
-    });
-}
-
-export async function rejectUser(userId: string): Promise<number> {
-    return await db.users.update(userId, { 
-        status: 'rejected',
-        updatedAt: new Date().toISOString(),
-        isSynced: false 
-    });
-}
-
-export async function updateUserStatus(userId: string, status: 'approved' | 'suspended'): Promise<number> {
-    return await db.users.update(userId, { 
-        status,
-        updatedAt: new Date().toISOString(),
-        isSynced: false 
-    });
 }
 
 export async function getAllUsers(): Promise<User[]> {

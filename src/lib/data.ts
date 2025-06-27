@@ -22,7 +22,7 @@ export const costCategories: CostCategory[] = ['Honorarios Formador', 'Licencias
 
 export const announcementChannels: string[] = ['Todos', ...roles, ...departments];
 
-export const users: User[] = [
+export const users: Omit<User, 'isSynced' | 'updatedAt'>[] = [
     {
         id: 'user_1',
         name: 'Elena Vargas',
@@ -33,8 +33,6 @@ export const users: User[] = [
         department: 'Administración',
         points: 120,
         notificationSettings: { consent: true, channels: ['email', 'app'] },
-        status: 'approved',
-        createdAt: new Date().toISOString(),
     },
     {
         id: 'user_2',
@@ -46,8 +44,6 @@ export const users: User[] = [
         department: 'Técnicos de Emergencias',
         points: 50,
         notificationSettings: { consent: true, channels: ['app'] },
-        status: 'approved',
-        createdAt: new Date().toISOString(),
     },
     {
         id: 'user_3',
@@ -59,8 +55,6 @@ export const users: User[] = [
         department: 'Teleoperadores',
         points: 210,
         notificationSettings: { consent: false, channels: [] },
-        status: 'approved',
-        createdAt: new Date().toISOString(),
     },
     {
         id: 'user_4',
@@ -72,8 +66,6 @@ export const users: User[] = [
         department: 'Formación',
         points: 0,
         notificationSettings: { consent: true, channels: ['email'] },
-        status: 'approved',
-        createdAt: new Date().toISOString(),
     },
     {
         id: 'user_5',
@@ -85,8 +77,6 @@ export const users: User[] = [
         department: 'Formación',
         points: 300,
         notificationSettings: { consent: true, channels: ['email', 'whatsapp', 'app'] },
-        status: 'approved',
-        createdAt: new Date().toISOString(),
     },
     {
         id: 'user_6',
@@ -98,8 +88,6 @@ export const users: User[] = [
         department: 'Administración',
         points: 15,
         notificationSettings: { consent: true, channels: ['email'] },
-        status: 'approved',
-        createdAt: new Date().toISOString(),
     },
 ];
 

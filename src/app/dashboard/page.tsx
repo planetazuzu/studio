@@ -14,11 +14,10 @@ import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/contexts/auth';
 import * as db from '@/lib/db';
 import Image from 'next/image';
-import type { PendingEnrollmentDetails, Course, User, Announcement, AnnouncementType, AIConfig } from '@/lib/types';
+import type { Course, User, Announcement, AnnouncementType, AIConfig } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { InstructorDashboardView } from '@/components/dashboard/instructor-view';
 
 
 function AnnouncementsPanel({ user }: { user: User }) {
@@ -303,110 +302,35 @@ function AiSuggestions({ user }: { user: User }) {
   );
 }
 
-
-function AdminApprovalPanel() {
-    const [enrollments, setEnrollments] = useState<PendingEnrollmentDetails[]>([]);
-    const [loading, setLoading] = useState(true);
-    const { toast } = useToast();
-
-    const fetchEnrollments = async () => {
-        setLoading(true);
-        const data = await db.getPendingEnrollmentsWithDetails();
-        setEnrollments(data);
-        setLoading(false);
-    }
-
-    useEffect(() => {
-        fetchEnrollments();
-    }, []);
-    
-    const handleApproval = async (id: number, studentId: string, courseId: string, approved: boolean) => {
-        await db.updateEnrollmentStatus(id, approved ? 'approved' : 'rejected');
-        toast({
-            title: `Solicitud ${approved ? 'aprobada' : 'rechazada'}`,
-            description: "La lista de solicitudes ha sido actualizada.",
-        })
-        fetchEnrollments(); // Refresh the list
-    }
-
-    return (
-        <Card className="shadow-lg col-span-1 lg:col-span-3">
-            <CardHeader>
-                <CardTitle>Solicitudes de Inscripción Pendientes</CardTitle>
-                <CardDescription>Aprueba o rechaza las solicitudes de inscripción a cursos.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                {loading ? <Loader2 className="mx-auto h-8 w-8 animate-spin"/> :
-                 enrollments.length > 0 ? (
-                    <ul className="space-y-3">
-                        {enrollments.map(e => (
-                            <li key={e.id} className="flex items-center justify-between gap-4 p-3 bg-muted/50 rounded-lg">
-                                <div>
-                                    <p><span className="font-bold">{e.userName}</span> quiere inscribirse en</p>
-                                    <p className="text-primary font-semibold">{e.courseTitle}</p>
-                                </div>
-                                <div className="flex gap-2">
-                                    <Button size="icon" variant="outline" className="text-green-600 hover:text-green-600 hover:bg-green-100" onClick={() => handleApproval(e.id!, e.studentId, e.courseId, true)}>
-                                        <Check className="h-4 w-4" />
-                                    </Button>
-                                    <Button size="icon" variant="outline" className="text-red-600 hover:text-red-600 hover:bg-red-100" onClick={() => handleApproval(e.id!, e.studentId, e.courseId, false)}>
-                                        <X className="h-4 w-4"/>
-                                    </Button>
-                                </div>
-                            </li>
-                        ))}
-                    </ul>
-                ) : (
-                    <div className="text-center py-8 text-muted-foreground">
-                        <Inbox className="mx-auto h-12 w-12" />
-                        <p className="mt-2">No hay solicitudes pendientes.</p>
-                    </div>
-                )}
-            </CardContent>
-        </Card>
-    )
-}
-
-function StudentDashboardView({ user }: { user: User }) {
-    const isManager = ['Gestor de RRHH', 'Jefe de Formación', 'Administrador General'].includes(user.role);
-    const canViewCosts = isManager;
-
-    const aiConfig = useLiveQuery<AIConfig | undefined>(() => db.getAIConfig());
-
-    return (
-        <div className="flex flex-col gap-8">
-            <div>
-                <h1 className="text-3xl font-bold">Bienvenido, {user.name.split(' ')[0]}</h1>
-                <p className="text-muted-foreground">Aquí tienes un resumen de tu actividad formativa.</p>
-            </div>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <StatCard title="Cursos Activos" value="4" icon={Activity} description="+2 desde el mes pasado" />
-                <StatCard title="Formaciones Completadas" value="12" icon={BookCheck} description="Año actual" />
-                <StatCard title="Certificados Obtenidos" value="8" icon={GraduationCap} description="Pendientes: 2" />
-                {canViewCosts && <StatCard title="Coste Total" value="8,950€" icon={Wallet} description="Presupuesto: 15,000€" />}
-            </div>
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-                <MandatoryCoursesPanel user={user} />
-                <AnnouncementsPanel user={user} />
-            </div>
-            <div className="grid gap-4 lg:grid-cols-3">
-                {isManager && <AdminApprovalPanel />}
-                {!isManager && <MyCourses user={user} />}
-                {aiConfig?.enabledFeatures.recommendations && <AiSuggestions user={user} />}
-            </div>
-        </div>
-    );
-}
-
 export default function DashboardPage() {
   const { user } = useAuth();
   if (!user) return null;
 
-  const isInstructor = user.role === 'Formador';
+  const isManager = ['Gestor de RRHH', 'Jefe de Formación', 'Administrador General'].includes(user.role);
+  const canViewCosts = isManager;
+  
+  const aiConfig = useLiveQuery<AIConfig | undefined>(() => db.getAIConfig());
 
-  if (isInstructor) {
-      return <InstructorDashboardView user={user} />;
-  }
-
-  return <StudentDashboardView user={user} />;
+  return (
+    <div className="flex flex-col gap-8">
+      <div>
+        <h1 className="text-3xl font-bold">Bienvenido, {user.name.split(' ')[0]}</h1>
+        <p className="text-muted-foreground">Aquí tienes un resumen de tu actividad formativa.</p>
+      </div>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <StatCard title="Cursos Activos" value="4" icon={Activity} description="+2 desde el mes pasado" />
+        <StatCard title="Formaciones Completadas" value="12" icon={BookCheck} description="Año actual" />
+        <StatCard title="Certificados Obtenidos" value="8" icon={GraduationCap} description="Pendientes: 2" />
+        {canViewCosts && <StatCard title="Coste Total" value="8,950€" icon={Wallet} description="Presupuesto: 15,000€" />}
+      </div>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <MandatoryCoursesPanel user={user} />
+        <AnnouncementsPanel user={user} />
+      </div>
+      <div className="grid gap-4 lg:grid-cols-3">
+        <MyCourses user={user} />
+        {aiConfig?.enabledFeatures.recommendations && <AiSuggestions user={user} />}
+      </div>
+    </div>
+  );
 }
