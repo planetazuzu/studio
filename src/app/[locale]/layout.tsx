@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/contexts/auth';
 import '../globals.css';
 import { Inter } from 'next/font/google';
-
+ 
 const inter = Inter({ subsets: ['latin'] });
  
 export const metadata = {
@@ -14,11 +14,13 @@ export const metadata = {
  
 export default async function LocaleLayout({
   children,
-  params: {locale}
+  params: { locale }
 }: {
   children: React.ReactNode;
-  params: {locale: string};
+  params: { locale: string };
 }) {
+  // Providing all messages to the client
+  // side is the easiest way to get started
   const messages = await getMessages();
  
   return (
@@ -29,7 +31,7 @@ export default async function LocaleLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body bg-background">
-        <NextIntlClientProvider messages={messages}>
+        <NextIntlClientProvider locale={locale} messages={messages}>
             <AuthProvider>
                 {children}
             </AuthProvider>
