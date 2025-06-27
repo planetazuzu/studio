@@ -13,15 +13,17 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal, Loader2 } from 'lucide-react';
 import * as db from '@/lib/db';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/auth';
 
 export default function RegisterPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { isLoading: isAuthLoading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-    const [name, setName] = useState('');
+  const [name, setName] = useState('');
   const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,7 +34,7 @@ export default function RegisterPage() {
         return;
     }
 
-    setIsLoading(true);
+    setIsSubmitting(true);
     try {
       await db.addUser({
         name,
@@ -50,9 +52,11 @@ export default function RegisterPage() {
       setError(err.message || 'Ha ocurrido un error inesperado.');
       console.error(err);
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
+
+  const formIsDisabled = isAuthLoading || isSubmitting;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
@@ -81,7 +85,8 @@ export default function RegisterPage() {
                 placeholder="Tu nombre y apellidos" 
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                required 
+                required
+                disabled={formIsDisabled}
               />
             </div>
             <div className="space-y-2">
@@ -92,7 +97,8 @@ export default function RegisterPage() {
                 placeholder="tu.correo@empresa.com" 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                required 
+                required
+                disabled={formIsDisabled}
               />
             </div>
             <div className="space-y-2">
@@ -103,15 +109,16 @@ export default function RegisterPage() {
                 placeholder="Debe tener al menos 8 caracteres"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                required 
+                required
+                disabled={formIsDisabled}
               />
             </div>
-            <Button type="submit" className="w-full text-lg h-12" disabled={isLoading}>
-              {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/> Registrando...</> : 'Crear Cuenta'}
+            <Button type="submit" className="w-full text-lg h-12" disabled={formIsDisabled}>
+              {formIsDisabled ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/> {isAuthLoading ? 'Inicializando...' : 'Registrando...'}</> : 'Crear Cuenta'}
             </Button>
             <div className="text-center text-sm">
               <span>¿Ya tienes una cuenta? </span>
-              <Link href="/login" className="text-primary hover:underline font-semibold">
+              <Link href="/login" className={`text-primary hover:underline font-semibold ${formIsDisabled ? 'pointer-events-none opacity-50' : ''}`}>
                 Inicia sesión
               </Link>
             </div>

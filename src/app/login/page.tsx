@@ -16,12 +16,12 @@ import { useToast } from '@/hooks/use-toast';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, user } = useAuth();
+  const { login, user, isLoading: isAuthLoading } = useAuth();
   const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -32,7 +32,7 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    setIsLoading(true);
+    setIsSubmitting(true);
     try {
       const loggedInUser = await login(email, password);
       if (loggedInUser) {
@@ -48,9 +48,11 @@ export default function LoginPage() {
       setError(err.message || 'Ha ocurrido un error inesperado.');
       console.error(err);
     } finally {
-        setIsLoading(false);
+        setIsSubmitting(false);
     }
   };
+  
+  const formIsDisabled = isAuthLoading || isSubmitting;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
@@ -79,7 +81,8 @@ export default function LoginPage() {
                 placeholder="nombre@empresa.com" 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                required 
+                required
+                disabled={formIsDisabled}
               />
             </div>
             <div className="space-y-2">
@@ -89,15 +92,16 @@ export default function LoginPage() {
                 type="password" 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                required 
+                required
+                disabled={formIsDisabled}
                 />
             </div>
-            <Button type="submit" className="w-full text-lg h-12" disabled={isLoading}>
-              {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/> Iniciando...</> : 'Iniciar Sesión'}
+            <Button type="submit" className="w-full text-lg h-12" disabled={formIsDisabled}>
+              {formIsDisabled ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/> {isAuthLoading ? 'Inicializando...' : 'Iniciando...'}</> : 'Iniciar Sesión'}
             </Button>
             <div className="text-center text-sm space-x-2">
                 <span>¿No tienes cuenta?</span>
-                <Link href="/register" className="text-primary hover:underline font-semibold">
+                <Link href="/register" className={`text-primary hover:underline font-semibold ${formIsDisabled ? 'pointer-events-none opacity-50' : ''}`}>
                     Regístrate
                 </Link>
             </div>
