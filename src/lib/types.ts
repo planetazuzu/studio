@@ -1,5 +1,6 @@
 
 
+
 import { z } from 'zod';
 
 export type Role =
@@ -51,6 +52,7 @@ export type Course = {
   modules: Module[];
   status: 'draft' | 'published';
   isScorm?: boolean;
+  scormPackage?: Blob;
   mandatoryForRoles?: Role[];
   startDate?: string; // ISO date string
   endDate?: string; // ISO date string

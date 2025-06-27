@@ -1,5 +1,6 @@
 
 
+
 import Dexie, { type Table } from 'dexie';
 import type { Course, User, Enrollment, UserProgress, PendingEnrollmentDetails, ForumMessage, ForumMessageWithReplies, Notification, Resource, CourseResource, Announcement, ChatChannel, ChatMessage, Role, ComplianceReportData, DirectMessageThread, CalendarEvent, ExternalTraining, EnrollmentStatus, EnrollmentWithDetails, Cost, StudentForManagement, AIConfig, AIUsageLog, Badge, UserBadge, UserStatus } from './types';
 import { courses as initialCourses, users as initialUsers, initialChatChannels, initialCosts, defaultAIConfig, roles, departments, initialBadges } from './data';
@@ -110,7 +111,12 @@ export class AcademiaAIDB extends Dexie {
       enrollments: '++id, studentId, courseId, status, [studentId+status]',
       chatMessages: '++id, channelId, timestamp, [channelId+timestamp]',
       notifications: '++id, userId, isRead, timestamp, [userId+timestamp]',
-    })
+    });
+    this.version(24).stores({
+        // Dexie supports blobs out of the box, no explicit schema change needed for `scormPackage`
+        // Bumping version ensures schema is re-evaluated if needed.
+        courses: 'id, instructor, status, isScorm, isSynced, *mandatoryForRoles'
+    });
   }
 }
 
@@ -270,6 +276,7 @@ export async function addCourse(course: Partial<Omit<Course, 'id' | 'isSynced' |
     status: course.status || 'draft',
     mandatoryForRoles: course.mandatoryForRoles || [],
     isScorm: course.isScorm || false,
+    scormPackage: course.scormPackage,
     isSynced: false,
     updatedAt: new Date().toISOString(),
     ...(course.startDate && { startDate: course.startDate }),

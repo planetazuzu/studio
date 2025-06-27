@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Loader2, Upload, FileCheck2, PackageCheck, PlusCircle } from 'lucide-react';
+import JSZip from 'jszip';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,7 +22,6 @@ export default function ScormImportPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [file, setFile] = useState<File | null>(null);
-  const [fileName, setFileName] = useState('');
   const [isParsing, setIsParsing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [preview, setPreview] = useState<ScormPreview | null>(null);
@@ -30,8 +30,7 @@ export default function ScormImportPage() {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
       setFile(selectedFile);
-      setFileName(selectedFile.name);
-      setPreview(null); // Reset preview on new file selection
+      setPreview(null);
     }
   };
 
@@ -42,35 +41,54 @@ export default function ScormImportPage() {
     }
     
     setIsParsing(true);
-    // In a real application, you would use a library like JSZip to read the file
-    // and parse the imsmanifest.xml file inside.
-    // Here, we simulate this process.
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    setPreview(null);
+    try {
+      const zip = await JSZip.loadAsync(file);
+      const manifestFile = zip.file("imsmanifest.xml");
+      if (!manifestFile) {
+        throw new Error("El archivo imsmanifest.xml no se encontró en el paquete. Asegúrate de que es un paquete SCORM válido.");
+      }
+      const manifestText = await manifestFile.async("text");
+      
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(manifestText, "application/xml");
+      
+      const errorNode = xmlDoc.querySelector("parsererror");
+      if (errorNode) {
+        throw new Error("Error al procesar el archivo imsmanifest.xml.");
+      }
+      
+      const title = xmlDoc.querySelector("organization > title")?.textContent || file.name.replace('.zip', '');
+      const resourceNodes = xmlDoc.querySelectorAll("resource[scormtype='sco']");
+      
+      if (resourceNodes.length === 0) {
+        throw new Error("No se encontraron recursos de tipo SCO en el manifiesto. El paquete puede no ser un curso interactivo.");
+      }
+      
+      const modules = Array.from(resourceNodes).map(node => {
+          const itemIdentifier = node.getAttribute("identifier");
+          const itemNode = xmlDoc.querySelector(`item[identifierref='${itemIdentifier}'] > title`);
+          return itemNode?.textContent || node.getAttribute("href") || "Módulo sin nombre";
+      });
+      
+      setPreview({ title, modules });
+      toast({ title: "Paquete procesado", description: "Se ha leído la estructura del curso SCORM." });
 
-    // Simulate finding a manifest and creating a preview
-    setPreview({
-      title: 'Curso de Primeros Auxilios (SCORM)',
-      modules: [
-        'Introducción a los Primeros Auxilios',
-        'Evaluación de la Escena',
-        'Soporte Vital Básico',
-        'Manejo de Heridas y Hemorragias',
-        'Examen Final',
-      ],
-    });
-    
-    setIsParsing(false);
-    toast({ title: "Paquete procesado", description: "Se ha leído la estructura del curso SCORM." });
+    } catch (err: any) {
+      toast({ title: "Error al Procesar", description: err.message, variant: "destructive" });
+    } finally {
+      setIsParsing(false);
+    }
   };
   
   const handleSaveCourse = async () => {
-    if (!preview) return;
+    if (!preview || !file) return;
     setIsSaving(true);
     
     try {
         const newCourseData = {
             title: preview.title,
-            description: `Curso importado desde el paquete SCORM: ${fileName}`,
+            description: `Curso importado desde el paquete SCORM: ${file.name}`,
             longDescription: `Este curso ha sido importado desde un paquete SCORM. El contenido se reproduce a través del visor SCORM de la plataforma. El paquete contiene ${preview.modules.length} módulos.`,
             instructor: 'Instructor SCORM',
             duration: 'Variable',
@@ -78,6 +96,7 @@ export default function ScormImportPage() {
             image: 'https://placehold.co/600x400.png',
             aiHint: 'scorm elearning',
             isScorm: true,
+            scormPackage: file, // Store the blob
             modules: preview.modules.map((title, i) => ({
                 id: `scorm_mod_${Date.now()}_${i}`,
                 title,
@@ -90,7 +109,7 @@ export default function ScormImportPage() {
         
         toast({
             title: "Curso Importado",
-            description: "El curso SCORM se ha guardado como borrador. Ahora puedes editarlo y añadir el resto de detalles.",
+            description: "El curso SCORM se ha guardado como borrador. Ahora puedes editarlo y publicarlo.",
         });
         
         router.push(`/dashboard/courses/${newCourseId}/edit`);
@@ -124,7 +143,7 @@ export default function ScormImportPage() {
                     <div className="space-y-2">
                         <Label htmlFor="scorm-file">1. Selecciona el archivo del paquete SCORM</Label>
                         <Input id="scorm-file" type="file" accept=".zip" onChange={handleFileChange} />
-                        {fileName && <p className="text-sm text-muted-foreground flex items-center gap-2"><FileCheck2 className="h-4 w-4 text-green-500" /> Archivo seleccionado: {fileName}</p>}
+                        {file && <p className="text-sm text-muted-foreground flex items-center gap-2"><FileCheck2 className="h-4 w-4 text-green-500" /> Archivo seleccionado: {file.name}</p>}
                     </div>
                     <Button onClick={handleParsePackage} disabled={!file || isParsing}>
                         {isParsing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PackageCheck className="mr-2 h-4 w-4" />}
