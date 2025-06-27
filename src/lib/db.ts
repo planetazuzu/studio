@@ -151,6 +151,9 @@ export async function login(email: string, password?: string): Promise<User | nu
     if (user.status === 'rejected') {
         throw new Error('Tu solicitud de registro ha sido rechazada.');
     }
+     if (user.status === 'suspended') {
+        throw new Error('Esta cuenta ha sido desactivada temporalmente.');
+    }
     if (user.password !== password) {
         throw new Error('La contraseña es incorrecta.');
     }
@@ -251,6 +254,14 @@ export async function approveUser(userId: string, adminEmail: string): Promise<n
 export async function rejectUser(userId: string): Promise<number> {
     return await db.users.update(userId, { 
         status: 'rejected',
+        updatedAt: new Date().toISOString(),
+        isSynced: false 
+    });
+}
+
+export async function updateUserStatus(userId: string, status: 'approved' | 'suspended'): Promise<number> {
+    return await db.users.update(userId, { 
+        status,
         updatedAt: new Date().toISOString(),
         isSynced: false 
     });

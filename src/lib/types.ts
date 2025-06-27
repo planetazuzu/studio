@@ -14,7 +14,7 @@ export type Department = 'Técnicos de Emergencias' | 'Teleoperadores' | 'Admini
 export type NotificationChannel = 'email' | 'whatsapp' | 'app';
 export const notificationChannels: NotificationChannel[] = ['email', 'whatsapp', 'app'];
 
-export type UserStatus = 'pending' | 'approved' | 'rejected';
+export type UserStatus = 'pending' | 'approved' | 'rejected' | 'suspended';
 
 export type User = {
   id: string;

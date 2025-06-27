@@ -46,6 +46,8 @@ import { useAuth } from '@/contexts/auth';
 import { useToast } from '@/hooks/use-toast';
 import { predictAbandonment } from '@/ai/flows/predict-abandonment';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Switch } from '@/components/ui/switch';
+import { cn } from '@/lib/utils';
 
 
 const roleBadgeVariant: Record<Role, 'default' | 'secondary' | 'outline' | 'destructive'> = {
@@ -57,17 +59,17 @@ const roleBadgeVariant: Record<Role, 'default' | 'secondary' | 'outline' | 'dest
     'Personal Externo': 'outline',
 };
 
-const statusBadgeVariant: Record<UserStatus, 'default' | 'secondary' | 'outline' | 'destructive'> = {
-    'approved': 'default',
+const statusBadgeVariant: Record<Exclude<UserStatus, 'approved' | 'suspended'>, 'default' | 'secondary' | 'outline' | 'destructive'> = {
     'pending': 'secondary',
     'rejected': 'destructive'
 };
 
-function UsersTable({ users, authUser, onPredict, onSetUserToDelete, predictionLoading, predictionResult, aiConfig } : {
+function UsersTable({ users, authUser, onPredict, onSetUserToDelete, onStatusChange, predictionLoading, predictionResult, aiConfig } : {
     users: User[],
     authUser: User,
     onPredict: (user: User) => void,
     onSetUserToDelete: (user: User) => void,
+    onStatusChange: (user: User, isChecked: boolean) => void,
     predictionLoading: string | null,
     predictionResult: Record<string, PredictAbandonmentOutput | null>,
     aiConfig: AIConfig | undefined,
@@ -106,7 +108,21 @@ function UsersTable({ users, authUser, onPredict, onSetUserToDelete, predictionL
                         </TableCell>
                         <TableCell>{u.department || '-'}</TableCell>
                         <TableCell>
-                           <Badge variant={statusBadgeVariant[u.status]} className="capitalize">{u.status}</Badge>
+                           {u.status === 'approved' || u.status === 'suspended' ? (
+                                <div className="flex items-center gap-2">
+                                    <Switch
+                                        checked={u.status === 'approved'}
+                                        disabled={authUser.id === u.id}
+                                        onCheckedChange={(isChecked) => onStatusChange(u, isChecked)}
+                                        aria-label={`Estado del usuario ${u.name}`}
+                                    />
+                                    <span className={cn("capitalize text-sm font-medium", u.status === 'approved' ? 'text-green-600' : 'text-destructive')}>
+                                        {u.status === 'approved' ? 'Activo' : 'Inactivo'}
+                                    </span>
+                                </div>
+                            ) : (
+                                <Badge variant={statusBadgeVariant[u.status]} className="capitalize">{u.status}</Badge>
+                            )}
                         </TableCell>
                         {aiConfig?.enabledFeatures.abandonmentPrediction && (
                             <TableCell>
@@ -282,6 +298,19 @@ export default function UsersPage() {
              toast({ title: "Error", description: "No se pudo procesar la solicitud.", variant: "destructive" });
         }
     }
+    
+    const handleUserStatusChange = async (user: User, isChecked: boolean) => {
+        const newStatus = isChecked ? 'approved' : 'suspended';
+        try {
+            await db.updateUserStatus(user.id, newStatus);
+            toast({
+                title: 'Estado Actualizado',
+                description: `El usuario ${user.name} ha sido ${newStatus === 'approved' ? 'activado' : 'desactivado'}.`,
+            });
+        } catch (error) {
+             toast({ title: "Error", description: "No se pudo actualizar el estado del usuario.", variant: "destructive" });
+        }
+    };
 
     const filteredUsers = users ? users.filter(u => roleFilters[u.role] && departmentFilters[u.department]) : [];
     const pendingCount = pendingUsers?.length || 0;
@@ -376,7 +405,16 @@ export default function UsersPage() {
                                         <Loader2 className="h-8 w-8 animate-spin text-primary" />
                                     </div>
                                 ) : (
-                                    <UsersTable users={filteredUsers} authUser={authUser} onPredict={handlePredictAbandonment} onSetUserToDelete={setUserToDelete} predictionLoading={predictionLoading} predictionResult={predictionResult} aiConfig={aiConfig} />
+                                    <UsersTable 
+                                        users={filteredUsers} 
+                                        authUser={authUser} 
+                                        onPredict={handlePredictAbandonment} 
+                                        onSetUserToDelete={setUserToDelete}
+                                        onStatusChange={handleUserStatusChange}
+                                        predictionLoading={predictionLoading} 
+                                        predictionResult={predictionResult} 
+                                        aiConfig={aiConfig} 
+                                    />
                                 )}
                             </TabsContent>
                              <TabsContent value="pending">
