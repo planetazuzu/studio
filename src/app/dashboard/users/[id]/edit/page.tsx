@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect } from 'react';
@@ -35,6 +36,12 @@ export default function EditUserPage() {
   const userId = params.id as string;
   const form = useForm<EditUserFormValues>({
     resolver: zodResolver(editUserFormSchema),
+    defaultValues: {
+      name: '',
+      email: '',
+      role: undefined,
+      department: undefined,
+    },
   });
   
   const { isSubmitting, isDirty } = form.formState;

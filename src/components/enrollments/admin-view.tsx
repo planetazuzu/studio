@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useForm, Controller } from 'react-hook-form';
 import { format } from 'date-fns';
@@ -45,7 +46,20 @@ function UpdateStatusDialog({
     const { toast } = useToast();
     const form = useForm<StatusUpdateFormValues>({
         resolver: zodResolver(statusUpdateSchema),
+        defaultValues: {
+            justification: '',
+            status: undefined
+        }
     });
+
+    useEffect(() => {
+        if (open && enrollment) {
+            form.reset({
+                status: enrollment.status,
+                justification: enrollment.justification || ''
+            });
+        }
+    }, [open, enrollment, form]);
 
     const onSubmit = async (data: StatusUpdateFormValues) => {
         if (!enrollment?.id) return;

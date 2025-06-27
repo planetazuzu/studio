@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useRouter } from 'next/navigation';
@@ -32,6 +33,13 @@ export default function NewUserPage() {
   
   const form = useForm<UserFormValues>({
     resolver: zodResolver(userFormSchema),
+    defaultValues: {
+      name: '',
+      email: '',
+      password: '',
+      role: undefined,
+      department: undefined,
+    },
     mode: 'onChange',
   });
   
