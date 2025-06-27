@@ -6,16 +6,24 @@ import * as db from '@/lib/db';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, Trophy, Award } from 'lucide-react';
-import { useMemo } from 'react';
+import { Loader2, Trophy } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { departments } from '@/lib/data';
 
 export default function LeaderboardPage() {
     const users = useLiveQuery(() => db.getAllUsers(), []);
+    const [departmentFilter, setDepartmentFilter] = useState('all');
 
     const sortedUsers = useMemo(() => {
         if (!users) return [];
-        return users.sort((a, b) => (b.points || 0) - (a.points || 0));
-    }, [users]);
+        
+        const filtered = departmentFilter === 'all'
+            ? users
+            : users.filter(user => user.department === departmentFilter);
+            
+        return filtered.sort((a, b) => (b.points || 0) - (a.points || 0));
+    }, [users, departmentFilter]);
     
     if (!users) {
         return (
@@ -39,9 +47,24 @@ export default function LeaderboardPage() {
                 <p className="text-muted-foreground">Compite con tus compañeros y gana puntos completando formaciones.</p>
             </div>
             <Card>
-                <CardHeader>
-                    <CardTitle>Top de la Organización</CardTitle>
-                    <CardDescription>Usuarios con la mayor cantidad de puntos de experiencia (XP).</CardDescription>
+                <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
+                    <div>
+                        <CardTitle>Top de la Organización</CardTitle>
+                        <CardDescription>Usuarios con la mayor cantidad de puntos de experiencia (XP).</CardDescription>
+                    </div>
+                     <div className="w-full sm:w-auto sm:max-w-xs mt-4 sm:mt-0">
+                        <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Filtrar por Departamento" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Todos los Departamentos</SelectItem>
+                                {departments.map(dept => (
+                                    <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
                 </CardHeader>
                 <CardContent>
                     <div className="border rounded-lg">

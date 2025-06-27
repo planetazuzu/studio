@@ -519,6 +519,11 @@ export async function markModuleAsCompleted(userId: string, courseId: string, mo
 
         await db.users.update(userId, { points: (user.points || 0) + 10 });
         
+        // --- Gamification ---
+        const dayOfWeek = new Date().getDay(); // 0 = Sunday, 6 = Saturday
+        if (dayOfWeek === 0 || dayOfWeek === 6) {
+            await awardBadge(userId, 'weekend_warrior');
+        }
         await checkAndAwardModuleBadges(userId);
 
         const course = await getCourseById(courseId);
@@ -537,7 +542,27 @@ export async function addForumMessage(message: Omit<ForumMessage, 'id' | 'isSync
         isSynced: false,
         updatedAt: new Date().toISOString(),
     }
-    return await db.forumMessages.add(newMessage);
+    const newId = await db.forumMessages.add(newMessage);
+
+    // --- Gamification ---
+    await db.transaction('rw', db.users, db.forumMessages, db.userBadges, db.notifications, async () => {
+        const user = await db.users.get(message.userId);
+        if (!user) return;
+
+        const pointsToAdd = message.parentId ? 2 : 5; // 2 for reply, 5 for new thread
+        await db.users.update(user.id, { points: (user.points || 0) + pointsToAdd });
+
+        const userMessageCount = await db.forumMessages.where('userId').equals(user.id).count();
+        if (userMessageCount === 1) {
+            await awardBadge(user.id, 'forum_first_post');
+        }
+        if (userMessageCount === 5) {
+            await awardBadge(user.id, 'forum_collaborator');
+        }
+    });
+    // --- End Gamification ---
+    
+    return newId;
 }
 
 export async function getForumMessages(courseId: string): Promise<ForumMessageWithReplies[]> {
@@ -1015,7 +1040,10 @@ async function checkAndAwardModuleBadges(userId: string) {
 }
 
 async function handleCourseCompletion(userId: string, courseId: string) {
-    return db.transaction('rw', db.users, db.enrollments, db.userLearningPathProgress, async () => {
+    return db.transaction('rw', db.users, db.enrollments, db.userLearningPathProgress, db.courses, db.badges, db.userBadges, db.notifications, async () => {
+        const course = await db.courses.get(courseId);
+        if (!course) return;
+
         // Mark enrollment as completed
         const enrollment = await db.enrollments.where({ studentId: userId, courseId }).first();
         if (enrollment && enrollment.status !== 'completed') {
@@ -1025,7 +1053,13 @@ async function handleCourseCompletion(userId: string, courseId: string) {
         // Award points for course completion
         const user = await db.users.get(userId);
         if(user) {
-            await db.users.update(userId, { points: (user.points || 0) + 50 });
+            let pointsToAdd = 50;
+            // Check for on-time completion bonus
+            if (course.endDate && new Date() < new Date(course.endDate)) {
+                pointsToAdd += 25; // Bonus points
+                await awardBadge(userId, 'on_time_completion');
+            }
+            await db.users.update(userId, { points: (user.points || 0) + pointsToAdd });
         }
         
         // Check for course-related badges

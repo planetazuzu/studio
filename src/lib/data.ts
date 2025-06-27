@@ -335,6 +335,10 @@ export const initialBadges: Badge[] = [
     { id: 'first_course', name: 'Pionero', description: 'Completa tu primer curso.', icon: 'Rocket' },
     { id: '3_courses', name: 'Especialista', description: 'Completa 3 cursos.', icon: 'GraduationCap' },
     { id: 'perfect_score', name: 'Perfeccionista', description: 'Obtén un 100% en un test de IA.', icon: 'Target' },
+    { id: 'forum_first_post', name: 'Rompiendo el Hielo', description: 'Publica tu primer mensaje en un foro.', icon: 'MessageSquarePlus' },
+    { id: 'forum_collaborator', name: 'Colaborador Activo', description: 'Publica 5 mensajes en los foros.', icon: 'MessagesSquare' },
+    { id: 'weekend_warrior', name: 'Guerrero de Fin de Semana', description: 'Completa un módulo durante el fin de semana.', icon: 'Coffee' },
+    { id: 'on_time_completion', name: 'Puntualidad Impecable', description: 'Completa un curso antes de su fecha de finalización.', icon: 'CalendarCheck' },
 ];
 
 export const defaultAIConfig: AIConfig = {
