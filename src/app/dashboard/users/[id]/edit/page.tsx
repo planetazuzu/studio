@@ -121,7 +121,7 @@ export default function EditUserPage() {
                                     <FormItem>
                                         <FormLabel>Nombre Completo</FormLabel>
                                         <FormControl>
-                                            <Input {...field} />
+                                            <Input {...field} value={field.value || ''} />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -134,7 +134,7 @@ export default function EditUserPage() {
                                     <FormItem>
                                         <FormLabel>Correo Electrónico</FormLabel>
                                         <FormControl>
-                                            <Input type="email" {...field} />
+                                            <Input type="email" {...field} value={field.value || ''} />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>

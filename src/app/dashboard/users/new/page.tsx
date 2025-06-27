@@ -94,7 +94,7 @@ export default function NewUserPage() {
                                     <FormItem>
                                         <FormLabel>Nombre Completo</FormLabel>
                                         <FormControl>
-                                            <Input placeholder="Ej: Juan Pérez" {...field} />
+                                            <Input placeholder="Ej: Juan Pérez" {...field} value={field.value || ''} />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -107,7 +107,7 @@ export default function NewUserPage() {
                                     <FormItem>
                                         <FormLabel>Correo Electrónico</FormLabel>
                                         <FormControl>
-                                            <Input type="email" placeholder="juan.perez@example.com" {...field} />
+                                            <Input type="email" placeholder="juan.perez@example.com" {...field} value={field.value || ''} />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -121,7 +121,7 @@ export default function NewUserPage() {
                                 <FormItem>
                                     <FormLabel>Contraseña</FormLabel>
                                     <FormControl>
-                                        <Input type="password" placeholder="Establece una contraseña segura" {...field} />
+                                        <Input type="password" placeholder="Establece una contraseña segura" {...field} value={field.value || ''} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -134,7 +134,7 @@ export default function NewUserPage() {
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Rol</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <Select onValueChange={field.onChange} value={field.value}>
                                             <FormControl>
                                                 <SelectTrigger>
                                                     <SelectValue placeholder="Selecciona un rol" />
@@ -154,7 +154,7 @@ export default function NewUserPage() {
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Departamento</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <Select onValueChange={field.onChange} value={field.value}>
                                             <FormControl>
                                                 <SelectTrigger>
                                                     <SelectValue placeholder="Selecciona un departamento" />
