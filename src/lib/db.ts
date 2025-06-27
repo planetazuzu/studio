@@ -105,6 +105,12 @@ export class AcademiaAIDB extends Dexie {
     this.version(22).stores({
       courses: 'id, instructor, status, isScorm, isSynced, *mandatoryForRoles'
     });
+    this.version(23).stores({
+      // Optimization: Add compound indexes for faster queries
+      enrollments: '++id, studentId, courseId, status, [studentId+status]',
+      chatMessages: '++id, channelId, timestamp, [channelId+timestamp]',
+      notifications: '++id, userId, isRead, timestamp, [userId+timestamp]',
+    })
   }
 }
 
@@ -416,6 +422,38 @@ export async function getEnrolledCoursesForUser(userId: string): Promise<Course[
   return enrolledCourses;
 }
 
+export async function getIncompleteMandatoryCoursesForUser(user: User): Promise<Course[]> {
+    // Find all courses that are mandatory for the user's role and are published.
+    const allCourses = await db.courses.toArray();
+    const mandatoryCourses = allCourses.filter(c => 
+        c.status === 'published' && c.mandatoryForRoles?.includes(user.role)
+    );
+
+    if (mandatoryCourses.length === 0) {
+        return [];
+    }
+
+    // Get all progress records for the user.
+    const userProgressRecords = await db.userProgress.where('userId').equals(user.id).toArray();
+    const progressMap = new Map(userProgressRecords.map(p => [p.courseId, p]));
+
+    // Filter to find which mandatory courses are not yet completed.
+    const incompleteCourses = mandatoryCourses.filter(course => {
+        const progress = progressMap.get(course.id);
+        
+        // A course is considered complete if it has modules and all are marked as complete.
+        const isCompleted = 
+            progress && 
+            course.modules && 
+            course.modules.length > 0 && 
+            progress.completedModules.length === course.modules.length;
+
+        return !isCompleted;
+    });
+
+    return incompleteCourses;
+}
+
 
 // --- User Progress Functions ---
 
@@ -721,38 +759,23 @@ export async function getOrCreateDirectMessageThread(currentUserId: string, othe
 
 // --- Compliance and Mandatory Courses ---
 
-export async function getIncompleteMandatoryCoursesForUser(user: User): Promise<Course[]> {
-    const mandatoryCourses = await db.courses.where('mandatoryForRoles').equals(user.role).toArray();
-    if (mandatoryCourses.length === 0) return [];
-
-    const progressData = await getUserProgressForUser(user.id);
-    const progressMap = new Map(progressData.map(p => [p.courseId, p]));
-
-    const incompleteCourses = mandatoryCourses.filter(course => {
-        const progress = progressMap.get(course.id);
-        const moduleCount = course.modules?.length || 0;
-        if (!progress || moduleCount === 0) {
-            return true; // No progress or no modules means incomplete
-        }
-        return progress.completedModules.length < moduleCount;
-    });
-
-    return incompleteCourses;
-}
-
+// Optimization: This function is now more efficient.
 export async function getComplianceReportData(departmentFilter: string = 'all', roleFilter: string = 'all'): Promise<ComplianceReportData[]> {
-    let usersToReport = await db.users.toArray();
+    let query = db.users.toCollection();
 
     if (departmentFilter !== 'all') {
-      usersToReport = usersToReport.filter(u => u.department === departmentFilter);
+        query = query.filter(u => u.department === departmentFilter);
     }
     if (roleFilter !== 'all') {
-      usersToReport = usersToReport.filter(u => u.role === roleFilter);
+        query = query.filter(u => u.role === roleFilter);
     }
 
-    const allCourses = await db.courses.toArray();
-    const allProgress = await db.userProgress.where('userId').anyOf(usersToReport.map(u => u.id)).toArray();
+    const usersToReport = await query.toArray();
+    const userIds = usersToReport.map(u => u.id);
 
+    const allCourses = await db.courses.toArray();
+    const allProgress = await db.userProgress.where('userId').anyOf(userIds).toArray();
+    
     const progressMap = new Map<string, UserProgress>();
     allProgress.forEach(p => {
         const key = `${p.userId}-${p.courseId}`;
