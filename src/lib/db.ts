@@ -1,6 +1,6 @@
 
 import Dexie, { type Table } from 'dexie';
-import type { Course, User, Enrollment, UserProgress, PendingEnrollmentDetails, ForumMessage, ForumMessageWithReplies, Notification, Resource, CourseResource, Announcement, ChatChannel, ChatMessage, Role, ComplianceReportData, DirectMessageThread, CalendarEvent, ExternalTraining, EnrollmentStatus, EnrollmentWithDetails, Cost, StudentForManagement, AIConfig, AIUsageLog, Badge, UserBadge, UserStatus, CustomCostCategory, LearningPath, UserLearningPathProgress } from './types';
+import type { Course, User, Enrollment, UserProgress, PendingEnrollmentDetails, ForumMessage, ForumMessageWithReplies, Notification, Resource, CourseResource, Announcement, ChatChannel, ChatMessage, Role, ComplianceReportData, DirectMessageThread, CalendarEvent, ExternalTraining, EnrollmentStatus, EnrollmentWithDetails, Cost, StudentForManagement, AIConfig, AIUsageLog, Badge, UserBadge, UserStatus, CustomCostCategory, LearningPath, UserLearningPathProgress, CourseRating } from './types';
 import { courses as initialCourses, users as initialUsers, initialChatChannels, initialCosts, defaultAIConfig, roles, departments, initialBadges, initialCostCategories } from './data';
 import { sendEmailNotification, sendWhatsAppNotification } from './notification-service';
 
@@ -28,6 +28,7 @@ export class AcademiaAIDB extends Dexie {
   costCategories!: Table<CustomCostCategory>;
   learningPaths!: Table<LearningPath>;
   userLearningPathProgress!: Table<UserLearningPathProgress>;
+  courseRatings!: Table<CourseRating>;
 
 
   constructor() {
@@ -126,6 +127,9 @@ export class AcademiaAIDB extends Dexie {
       learningPaths: '++id, targetRole',
       userLearningPathProgress: '++id, [userId+learningPathId]'
     });
+    this.version(27).stores({
+        courseRatings: '++id, [courseId+userId], courseId, instructorName',
+    });
   }
 }
 
@@ -164,6 +168,7 @@ export async function populateDatabase() {
       db.costCategories.clear(),
       db.learningPaths.clear(),
       db.userLearningPathProgress.clear(),
+      db.courseRatings.clear(),
     ]);
 
     console.log("Tables cleared. Repopulating with initial data...");
@@ -1114,4 +1119,23 @@ export async function getLearningPathsForUser(user: User): Promise<(LearningPath
         ...path,
         progress: progressMap.get(path.id!)
     }));
+}
+
+
+// --- Course Rating Functions ---
+
+export async function addCourseRating(rating: Omit<CourseRating, 'id'>): Promise<number> {
+    return await db.courseRatings.add(rating);
+}
+
+export async function getRatingByUserAndCourse(userId: string, courseId: string): Promise<CourseRating | undefined> {
+    return await db.courseRatings.where({ userId, courseId }).first();
+}
+
+export async function getRatingsForCourse(courseId: string): Promise<CourseRating[]> {
+    return await db.courseRatings.where('courseId').equals(courseId).reverse().sortBy('timestamp');
+}
+
+export async function getRatingsForInstructor(instructorName: string): Promise<CourseRating[]> {
+    return await db.courseRatings.where('instructorName').equals(instructorName).toArray();
 }

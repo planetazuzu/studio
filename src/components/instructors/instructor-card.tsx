@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -12,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '../ui/scroll-area';
+import Link from 'next/link';
 
 interface InstructorCardProps {
     instructor: User;
@@ -83,9 +85,11 @@ export function InstructorCard({ instructor, assignedCourses, currentUser }: Ins
                 </div>
             </CardContent>
             <CardFooter className="flex justify-end gap-2">
-                <Button variant="outline" size="sm" disabled>
-                    <BarChart2 className="mr-2 h-4 w-4" />
-                    Ver Analíticas
+                <Button variant="outline" size="sm" asChild>
+                    <Link href={`/dashboard/instructors/${instructor.id}/analytics`}>
+                        <BarChart2 className="mr-2 h-4 w-4" />
+                        Ver Analíticas
+                    </Link>
                 </Button>
                 <Button size="sm" onClick={handleSendMessage} disabled={isCreatingChat}>
                     {isCreatingChat ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MessageSquare className="mr-2 h-4 w-4" />}

@@ -9,7 +9,7 @@ import { format } from 'date-fns';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { CheckCircle, Clock, Bot, Loader2, Sparkles, Send, PlusCircle, CheckCircle2, XCircle, MessageSquare, Book, File, Video, Link as LinkIcon, FilePenLine, AlertTriangle, Pencil, Rocket, EyeOff, Archive, Users, FileText } from 'lucide-react';
+import { CheckCircle, Clock, Bot, Loader2, Sparkles, Send, PlusCircle, CheckCircle2, XCircle, MessageSquare, Book, File, Video, Link as LinkIcon, FilePenLine, AlertTriangle, Pencil, Rocket, EyeOff, Archive, Users, FileText, Star } from 'lucide-react';
 import QRCode from 'qrcode';
 import { cn } from '@/lib/utils';
 import { summarizeModuleContent } from '@/ai/flows/summarize-module-content';
@@ -31,6 +31,7 @@ import { CourseChat } from '@/components/course-detail/course-chat';
 import { CourseResources } from '@/components/course-detail/course-resources';
 import { CourseManagementTab } from '@/components/course-detail/course-management-tab';
 import { ScormLaunchPanel } from '@/components/course-detail/scorm-launch-panel';
+import { RatingTab } from '@/components/course-detail/RatingTab';
 
 export default function CourseDetailPage() {
   const params = useParams<{ id: string }>();
@@ -274,6 +275,7 @@ export default function CourseDetailPage() {
                 <TabsTrigger value="overview">Descripción</TabsTrigger>
                 <TabsTrigger value="modules">Módulos</TabsTrigger>
                 <TabsTrigger value="resources">Recursos</TabsTrigger>
+                <TabsTrigger value="ratings"><Star className="mr-2 h-4 w-4" />Valoraciones</TabsTrigger>
                 {aiConfig?.enabledFeatures.questionGeneration && <TabsTrigger value="test">Test IA</TabsTrigger>}
                 {aiConfig?.enabledFeatures.tutor && <TabsTrigger value="chat">Tutor IA</TabsTrigger>}
                 <TabsTrigger value="forum">Foro</TabsTrigger>
@@ -376,6 +378,9 @@ export default function CourseDetailPage() {
                      <CourseResources courseId={courseId} />
                   </CardContent>
                 </Card>
+              </TabsContent>
+              <TabsContent value="ratings" className="mt-4">
+                <RatingTab course={course} user={user!} progress={progressPercentage} />
               </TabsContent>
               {aiConfig?.enabledFeatures.questionGeneration && (
                 <TabsContent value="test" className="mt-4">

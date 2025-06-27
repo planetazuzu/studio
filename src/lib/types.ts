@@ -340,6 +340,22 @@ export type AIUsageLog = {
     isSynced?: boolean;
 };
 
+// --- Survey and Rating Types ---
+
+export type CourseRating = {
+  id?: number;
+  courseId: string;
+  userId: string;
+  userName: string;
+  userAvatar: string;
+  instructorName: string;
+  rating: number; // 1-5
+  instructorRating: number; // 1-5
+  comment: string;
+  timestamp: string; // ISO string
+};
+
+
 // --- AI Flow Schemas ---
 
 // From: src/ai/flows/announcement-email-generation.ts
