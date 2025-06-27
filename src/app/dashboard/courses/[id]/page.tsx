@@ -30,6 +30,7 @@ import { TestGenerator } from '@/components/course-detail/test-generator';
 import { CourseChat } from '@/components/course-detail/course-chat';
 import { CourseResources } from '@/components/course-detail/course-resources';
 import { CourseManagementTab } from '@/components/course-detail/course-management-tab';
+import { ScormLaunchPanel } from '@/components/course-detail/scorm-launch-panel';
 
 export default function CourseDetailPage() {
   const params = useParams<{ id: string }>();
@@ -74,7 +75,7 @@ export default function CourseDetailPage() {
   
   const completedModules = useMemo(() => new Set(userProgress?.completedModules || []), [userProgress]);
   const progressPercentage = useMemo(() => {
-    if (!course || course.modules.length === 0) return 0;
+    if (!course || !course.modules || course.modules.length === 0) return 0;
     return Math.round((completedModules.size / course.modules.length) * 100);
   }, [course, completedModules]);
   
@@ -265,153 +266,157 @@ export default function CourseDetailPage() {
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <Tabs defaultValue="overview">
-            <TabsList>
-              <TabsTrigger value="overview">Descripción</TabsTrigger>
-              <TabsTrigger value="modules">Módulos</TabsTrigger>
-              <TabsTrigger value="resources">Recursos</TabsTrigger>
-              {aiConfig?.enabledFeatures.questionGeneration && <TabsTrigger value="test">Test IA</TabsTrigger>}
-              {aiConfig?.enabledFeatures.tutor && <TabsTrigger value="chat">Tutor IA</TabsTrigger>}
-              <TabsTrigger value="forum">Foro</TabsTrigger>
-              {canManageCourse && <TabsTrigger value="manage"><Users className="mr-2 h-4 w-4"/>Gestión</TabsTrigger>}
-            </TabsList>
-            <TabsContent value="overview" className="mt-4">
-              <Card className="shadow-lg">
-                <CardHeader>
-                  <CardTitle>Sobre este curso</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">{course.longDescription}</p>
-                </CardContent>
-              </Card>
-            </TabsContent>
-            <TabsContent value="modules" className="mt-4">
-              <Card className="shadow-lg">
-                <CardHeader>
-                  <CardTitle>Contenido del Curso</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {course.modules.length > 0 ? (
-                    <Accordion type="single" collapsible className="w-full space-y-2">
-                      {course.modules.map((module) => {
-                        const isCompleted = completedModules.has(module.id);
-                        const isLoadingSummary = summaryLoading[module.id];
-                        const summaryText = summaries[module.id];
-                        return (
-                          <AccordionItem value={module.id} key={module.id} className={cn("border rounded-lg", isCompleted && "bg-green-50 border-green-200")}>
-                            <AccordionTrigger className="hover:no-underline p-4 w-full text-left">
-                              <div className="flex items-center gap-4 flex-grow">
-                                <CheckCircle className={cn("h-6 w-6 text-muted-foreground transition-colors", isCompleted && "text-green-500")} />
-                                <div>
-                                  <h3 className={cn("font-semibold", isCompleted && "line-through text-muted-foreground")}>{module.title}</h3>
-                                  <p className="text-sm text-muted-foreground flex items-center gap-1.5"><Clock className="h-4 w-4" />{module.duration}</p>
-                                </div>
-                              </div>
-                            </AccordionTrigger>
-                            <AccordionContent className="space-y-4 px-4 pb-4">
-                              <div className="pl-10"> {/* Aligns with title */}
-                                <p className="text-muted-foreground whitespace-pre-wrap mb-4">{module.content}</p>
-
-                                {summaryText ? (
-                                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg space-y-2">
-                                    <h4 className="font-semibold text-primary flex items-center gap-2"><Bot /> Resumen IA</h4>
-                                    <p className="text-sm text-blue-900 whitespace-pre-wrap">{summaryText}</p>
+          {course.isScorm ? (
+            <ScormLaunchPanel course={course} />
+          ) : (
+            <Tabs defaultValue="overview">
+              <TabsList>
+                <TabsTrigger value="overview">Descripción</TabsTrigger>
+                <TabsTrigger value="modules">Módulos</TabsTrigger>
+                <TabsTrigger value="resources">Recursos</TabsTrigger>
+                {aiConfig?.enabledFeatures.questionGeneration && <TabsTrigger value="test">Test IA</TabsTrigger>}
+                {aiConfig?.enabledFeatures.tutor && <TabsTrigger value="chat">Tutor IA</TabsTrigger>}
+                <TabsTrigger value="forum">Foro</TabsTrigger>
+                {canManageCourse && <TabsTrigger value="manage"><Users className="mr-2 h-4 w-4"/>Gestión</TabsTrigger>}
+              </TabsList>
+              <TabsContent value="overview" className="mt-4">
+                <Card className="shadow-lg">
+                  <CardHeader>
+                    <CardTitle>Sobre este curso</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground">{course.longDescription}</p>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              <TabsContent value="modules" className="mt-4">
+                <Card className="shadow-lg">
+                  <CardHeader>
+                    <CardTitle>Contenido del Curso</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {course.modules && course.modules.length > 0 ? (
+                      <Accordion type="single" collapsible className="w-full space-y-2">
+                        {course.modules.map((module) => {
+                          const isCompleted = completedModules.has(module.id);
+                          const isLoadingSummary = summaryLoading[module.id];
+                          const summaryText = summaries[module.id];
+                          return (
+                            <AccordionItem value={module.id} key={module.id} className={cn("border rounded-lg", isCompleted && "bg-green-50 border-green-200")}>
+                              <AccordionTrigger className="hover:no-underline p-4 w-full text-left">
+                                <div className="flex items-center gap-4 flex-grow">
+                                  <CheckCircle className={cn("h-6 w-6 text-muted-foreground transition-colors", isCompleted && "text-green-500")} />
+                                  <div>
+                                    <h3 className={cn("font-semibold", isCompleted && "line-through text-muted-foreground")}>{module.title}</h3>
+                                    <p className="text-sm text-muted-foreground flex items-center gap-1.5"><Clock className="h-4 w-4" />{module.duration}</p>
                                   </div>
-                                ) : aiConfig?.enabledFeatures.summarization ? (
-                                  <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => handleGenerateSummary(module.id, module.content)}
-                                      disabled={isLoadingSummary || !isEnrolled}
-                                      title={!isEnrolled ? "Debes estar inscrito para usar la IA" : ""}
-                                  >
-                                      {isLoadingSummary ? (
-                                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                      ) : (
-                                          <Sparkles className="mr-2 h-4 w-4" />
-                                      )}
-                                      Generar Resumen
-                                  </Button>
-                                ) : null}
-                                
-                                <div className="flex justify-end mt-4">
-                                  <Button 
-                                      variant={isCompleted ? "link" : "default"}
-                                      size="sm"
-                                      className={cn(isCompleted && "text-green-600 font-semibold")}
-                                      onClick={() => handleMarkModuleAsCompleted(module.id)}
-                                      disabled={isCompleted || !isEnrolled}
-                                  >
-                                      {isCompleted ? "✓ Completado" : "Marcar como completado"}
-                                  </Button>
                                 </div>
-                              </div>
-                            </AccordionContent>
-                          </AccordionItem>
-                        );
-                      })}
-                    </Accordion>
-                  ) : (
-                    <p className="text-center text-muted-foreground py-4">Este curso todavía no tiene módulos definidos.</p>
-                  )}
-                  {!isEnrolled && user && course.modules.length > 0 && (
-                      <div className="text-center text-sm text-amber-600 bg-amber-50 p-3 rounded-lg mt-4">
-                          Debes estar inscrito para marcar tu progreso y usar las funciones de IA.
-                      </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-             <TabsContent value="resources" className="mt-4">
-              <Card className="shadow-lg">
-                <CardHeader>
-                  <CardTitle>Recursos de Apoyo</CardTitle>
-                  <CardDescription>Materiales de estudio y enlaces de interés para el curso.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                   <CourseResources courseId={courseId} />
-                </CardContent>
-              </Card>
-            </TabsContent>
-            {aiConfig?.enabledFeatures.questionGeneration && (
-              <TabsContent value="test" className="mt-4">
-                <TestGenerator courseTitle={course.title} courseContent={course.longDescription} studentName={user?.name || 'Estudiante'} aiConfig={aiConfig} />
+                              </AccordionTrigger>
+                              <AccordionContent className="space-y-4 px-4 pb-4">
+                                <div className="pl-10"> {/* Aligns with title */}
+                                  <p className="text-muted-foreground whitespace-pre-wrap mb-4">{module.content}</p>
+
+                                  {summaryText ? (
+                                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg space-y-2">
+                                      <h4 className="font-semibold text-primary flex items-center gap-2"><Bot /> Resumen IA</h4>
+                                      <p className="text-sm text-blue-900 whitespace-pre-wrap">{summaryText}</p>
+                                    </div>
+                                  ) : aiConfig?.enabledFeatures.summarization ? (
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleGenerateSummary(module.id, module.content)}
+                                        disabled={isLoadingSummary || !isEnrolled}
+                                        title={!isEnrolled ? "Debes estar inscrito para usar la IA" : ""}
+                                    >
+                                        {isLoadingSummary ? (
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        ) : (
+                                            <Sparkles className="mr-2 h-4 w-4" />
+                                        )}
+                                        Generar Resumen
+                                    </Button>
+                                  ) : null}
+                                  
+                                  <div className="flex justify-end mt-4">
+                                    <Button 
+                                        variant={isCompleted ? "link" : "default"}
+                                        size="sm"
+                                        className={cn(isCompleted && "text-green-600 font-semibold")}
+                                        onClick={() => handleMarkModuleAsCompleted(module.id)}
+                                        disabled={isCompleted || !isEnrolled}
+                                    >
+                                        {isCompleted ? "✓ Completado" : "Marcar como completado"}
+                                    </Button>
+                                  </div>
+                                </div>
+                              </AccordionContent>
+                            </AccordionItem>
+                          );
+                        })}
+                      </Accordion>
+                    ) : (
+                      <p className="text-center text-muted-foreground py-4">Este curso todavía no tiene módulos definidos.</p>
+                    )}
+                    {!isEnrolled && user && course.modules && course.modules.length > 0 && (
+                        <div className="text-center text-sm text-amber-600 bg-amber-50 p-3 rounded-lg mt-4">
+                            Debes estar inscrito para marcar tu progreso y usar las funciones de IA.
+                        </div>
+                    )}
+                  </CardContent>
+                </Card>
               </TabsContent>
-            )}
-            {aiConfig?.enabledFeatures.tutor && (
-              <TabsContent value="chat" className="mt-4">
-                <CourseChat courseTitle={course.title} courseContent={course.longDescription} />
+               <TabsContent value="resources" className="mt-4">
+                <Card className="shadow-lg">
+                  <CardHeader>
+                    <CardTitle>Recursos de Apoyo</CardTitle>
+                    <CardDescription>Materiales de estudio y enlaces de interés para el curso.</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                     <CourseResources courseId={courseId} />
+                  </CardContent>
+                </Card>
               </TabsContent>
-            )}
-            <TabsContent value="forum" className="mt-4">
-              {isCheckingEnrollment ? (
-                  <div className="flex justify-center items-center h-64">
-                      <Loader2 className="h-8 w-8 animate-spin" />
-                  </div>
-              ) : canAccessForum && user ? (
-                  <Forum courseId={course.id} user={user} canManage={!!canManageCourse} />
-              ) : (
-                  <Card className="shadow-lg">
-                      <CardContent className="p-8 text-center">
-                          <MessageSquare className="mx-auto h-12 w-12 text-muted-foreground" />
-                          <h3 className="mt-4 text-lg font-semibold">Acceso al Foro</h3>
-                          <p className="mt-1 text-muted-foreground">Debes estar inscrito en este curso para ver y participar en las discusiones.</p>
-                          {!isEnrolled && (
-                            <Button className="mt-6" onClick={handleEnrollmentRequest}>
-                                <PlusCircle className="mr-2 h-4 w-4" />
-                                Solicitar Inscripción
-                            </Button>
-                          )}
-                      </CardContent>
-                  </Card>
+              {aiConfig?.enabledFeatures.questionGeneration && (
+                <TabsContent value="test" className="mt-4">
+                  <TestGenerator courseTitle={course.title} courseContent={course.longDescription} studentName={user?.name || 'Estudiante'} aiConfig={aiConfig} />
+                </TabsContent>
               )}
-          </TabsContent>
-           {canManageCourse && (
-            <TabsContent value="manage" className="mt-4">
-              <CourseManagementTab course={course} />
+              {aiConfig?.enabledFeatures.tutor && (
+                <TabsContent value="chat" className="mt-4">
+                  <CourseChat courseTitle={course.title} courseContent={course.longDescription} />
+                </TabsContent>
+              )}
+              <TabsContent value="forum" className="mt-4">
+                {isCheckingEnrollment ? (
+                    <div className="flex justify-center items-center h-64">
+                        <Loader2 className="h-8 w-8 animate-spin" />
+                    </div>
+                ) : canAccessForum && user ? (
+                    <Forum courseId={course.id} user={user} canManage={!!canManageCourse} />
+                ) : (
+                    <Card className="shadow-lg">
+                        <CardContent className="p-8 text-center">
+                            <MessageSquare className="mx-auto h-12 w-12 text-muted-foreground" />
+                            <h3 className="mt-4 text-lg font-semibold">Acceso al Foro</h3>
+                            <p className="mt-1 text-muted-foreground">Debes estar inscrito en este curso para ver y participar en las discusiones.</p>
+                            {!isEnrolled && (
+                              <Button className="mt-6" onClick={handleEnrollmentRequest}>
+                                  <PlusCircle className="mr-2 h-4 w-4" />
+                                  Solicitar Inscripción
+                              </Button>
+                            )}
+                        </CardContent>
+                    </Card>
+                )}
             </TabsContent>
-           )}
-          </Tabs>
+             {canManageCourse && (
+              <TabsContent value="manage" className="mt-4">
+                <CourseManagementTab course={course} />
+              </TabsContent>
+             )}
+            </Tabs>
+          )}
         </div>
         <div className="space-y-8 lg:col-span-1">
            {!isEnrolled && (

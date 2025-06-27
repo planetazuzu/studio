@@ -77,6 +77,7 @@ export default function ScormImportPage() {
             modality: 'Online' as const,
             image: 'https://placehold.co/600x400.png',
             aiHint: 'scorm elearning',
+            isScorm: true,
             modules: preview.modules.map((title, i) => ({
                 id: `scorm_mod_${Date.now()}_${i}`,
                 title,

@@ -102,6 +102,9 @@ export class AcademiaAIDB extends Dexie {
     this.version(21).stores({
         users: 'id, &email, status, points, isSynced',
     });
+    this.version(22).stores({
+      courses: 'id, instructor, status, isScorm, isSynced, *mandatoryForRoles'
+    });
   }
 }
 
@@ -260,6 +263,7 @@ export async function addCourse(course: Partial<Omit<Course, 'id' | 'isSynced' |
     modules: course.modules || [],
     status: course.status || 'draft',
     mandatoryForRoles: course.mandatoryForRoles || [],
+    isScorm: course.isScorm || false,
     isSynced: false,
     updatedAt: new Date().toISOString(),
     ...(course.startDate && { startDate: course.startDate }),
@@ -459,7 +463,7 @@ export async function markModuleAsCompleted(userId: string, courseId: string, mo
 
     const course = await db.courses.get(courseId);
     const updatedProgress = await db.userProgress.where({ userId, courseId }).first();
-    if(course && updatedProgress && updatedProgress.completedModules.length === course.modules.length) {
+    if(course && updatedProgress && course.modules && updatedProgress.completedModules.length === course.modules.length) {
         await checkAndAwardCourseCompletionBadges(userId);
     }
 }
@@ -523,7 +527,24 @@ export async function addNotification(notification: Omit<Notification, 'id' | 'i
         isSynced: false,
         updatedAt: new Date().toISOString(),
     }
-    return await db.notifications.add(newNotification);
+    const newId = await db.notifications.add(newNotification);
+
+    // --- External Notification Simulation ---
+    const user = await db.users.get(notification.userId);
+    if (user && user.notificationSettings?.consent) {
+        const settings = user.notificationSettings;
+        const subject = `Notificación de EmergenciaAI`; // Generic subject
+        
+        if (settings.channels.includes('email')) {
+            console.log(`[EMAIL SIMULATION] To: ${user.email}, Subject: "${subject}", Body: "${notification.message}"`);
+        }
+        if (settings.channels.includes('whatsapp')) {
+             console.log(`[WHATSAPP SIMULATION] To: ${user.name}, Message: "${notification.message}"`);
+        }
+    }
+    // --- END ---
+    
+    return newId;
 }
 
 export async function getNotificationsForUser(userId: string): Promise<Notification[]> {
@@ -757,7 +778,7 @@ export async function getComplianceReportData(departmentFilter: string = 'all', 
         let completedCount = 0;
         for (const course of mandatoryCourses) {
             const progress = progressMap.get(`${user.id}-${course.id}`);
-            if (progress && course.modules.length > 0 && progress.completedModules.length === course.modules.length) {
+            if (progress && course.modules && course.modules.length > 0 && progress.completedModules.length === course.modules.length) {
                 completedCount++;
             }
         }

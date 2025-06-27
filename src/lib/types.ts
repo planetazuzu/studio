@@ -50,6 +50,7 @@ export type Course = {
   aiHint: string;
   modules: Module[];
   status: 'draft' | 'published';
+  isScorm?: boolean;
   mandatoryForRoles?: Role[];
   startDate?: string; // ISO date string
   endDate?: string; // ISO date string
