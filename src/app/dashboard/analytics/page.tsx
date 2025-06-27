@@ -1,7 +1,7 @@
 
 'use client';
 import { useRouter } from 'next/navigation';
-import { useMemo, useState, useRef } from 'react';
+import { useMemo, useState, useRef, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -12,7 +12,7 @@ import {
   ChartConfig,
 } from '@/components/ui/chart';
 import * as db from '@/lib/db';
-import { departments as allDepartmentsList, roles as allRolesList, costCategories } from '@/lib/data';
+import { departments as allDepartmentsList, roles as allRolesList } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -42,9 +42,7 @@ export default function AnalyticsPage() {
   const [roleFilter, setRoleFilter] = useState('all');
   const [costInstructorFilter, setCostInstructorFilter] = useState('all');
   const [costModalityFilter, setCostModalityFilter] = useState('all');
-  const [costCategoryFilters, setCostCategoryFilters] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(costCategories.map((cat) => [cat, true]))
-  );
+  const [costCategoryFilters, setCostCategoryFilters] = useState<Record<string, boolean>>({});
 
   // --- Data Fetching ---
   const allCourses = useLiveQuery(() => db.getAllCourses(), []);
@@ -53,11 +51,25 @@ export default function AnalyticsPage() {
   const allEnrollments = useLiveQuery(() => db.db.enrollments.toArray(), []);
   const costs = useLiveQuery(() => db.getAllCosts(), []);
   const complianceData = useLiveQuery(() => db.getComplianceReportData(departmentFilter, roleFilter), [departmentFilter, roleFilter]);
+  const costCategories = useLiveQuery(() => db.getAllCostCategories(), []);
+
+  // Sync cost category filters when categories are loaded from DB
+  useEffect(() => {
+    if (costCategories && costCategories.length > 0) {
+      setCostCategoryFilters(
+        costCategories.reduce((acc, cat) => {
+          acc[cat.name] = true; // Set all to true by default
+          return acc;
+        }, {} as Record<string, boolean>)
+      );
+    }
+  }, [costCategories]);
+
 
   // --- Memoized Filter Options ---
   const allInstructors = useMemo(() => ['all', ...new Set(allCourses?.map(c => c.instructor) || [])], [allCourses]);
   const allModalities = useMemo(() => ['all', ...new Set(allCourses?.map(c => c.modality) || [])], [allCourses]);
-  const allCostCategories = costCategories;
+  const allCostCategories = useMemo(() => costCategories?.map(c => c.name) || [], [costCategories]);
 
 
   // --- Cost Data Calculations ---

@@ -1,6 +1,4 @@
 
-
-
 import { z } from 'zod';
 
 export type Role =
@@ -92,13 +90,15 @@ export type Module = {
   content: string;
 }
 
-export const costCategories = ['Honorarios Formador', 'Licencias de Plataforma', 'Equipamiento', 'Logística y Dietas', 'Otro'] as const;
-export type CostCategory = typeof costCategories[number];
+export type CustomCostCategory = {
+  id?: number;
+  name: string;
+};
 
 export type Cost = {
   id?: number;
   item: string;
-  category: CostCategory;
+  category: string;
   amount: number;
   date: string; // ISO date string
   courseId?: string;

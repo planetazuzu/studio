@@ -1,10 +1,7 @@
 
-
-
-
 import Dexie, { type Table } from 'dexie';
-import type { Course, User, Enrollment, UserProgress, PendingEnrollmentDetails, ForumMessage, ForumMessageWithReplies, Notification, Resource, CourseResource, Announcement, ChatChannel, ChatMessage, Role, ComplianceReportData, DirectMessageThread, CalendarEvent, ExternalTraining, EnrollmentStatus, EnrollmentWithDetails, Cost, StudentForManagement, AIConfig, AIUsageLog, Badge, UserBadge, UserStatus } from './types';
-import { courses as initialCourses, users as initialUsers, initialChatChannels, initialCosts, defaultAIConfig, roles, departments, initialBadges } from './data';
+import type { Course, User, Enrollment, UserProgress, PendingEnrollmentDetails, ForumMessage, ForumMessageWithReplies, Notification, Resource, CourseResource, Announcement, ChatChannel, ChatMessage, Role, ComplianceReportData, DirectMessageThread, CalendarEvent, ExternalTraining, EnrollmentStatus, EnrollmentWithDetails, Cost, StudentForManagement, AIConfig, AIUsageLog, Badge, UserBadge, UserStatus, CustomCostCategory } from './types';
+import { courses as initialCourses, users as initialUsers, initialChatChannels, initialCosts, defaultAIConfig, roles, departments, initialBadges, initialCostCategories } from './data';
 import { sendEmailNotification, sendWhatsAppNotification } from './notification-service';
 
 const LOGGED_IN_USER_KEY = 'loggedInUserId';
@@ -28,6 +25,7 @@ export class AcademiaAIDB extends Dexie {
   aiUsageLog!: Table<AIUsageLog>;
   badges!: Table<Badge>;
   userBadges!: Table<UserBadge>;
+  costCategories!: Table<CustomCostCategory>;
 
 
   constructor() {
@@ -119,6 +117,9 @@ export class AcademiaAIDB extends Dexie {
         // Bumping version ensures schema is re-evaluated if needed.
         courses: 'id, instructor, status, isScorm, isSynced, *mandatoryForRoles'
     });
+    this.version(25).stores({
+        costCategories: '++id, &name'
+    });
   }
 }
 
@@ -154,6 +155,7 @@ export async function populateDatabase() {
       db.aiUsageLog.clear(),
       db.badges.clear(),
       db.userBadges.clear(),
+      db.costCategories.clear(),
     ]);
 
     console.log("Tables cleared. Repopulating with initial data...");
@@ -165,6 +167,8 @@ export async function populateDatabase() {
     await db.costs.bulkAdd(initialCosts.map(c => ({...c, isSynced: true})));
     await db.aiConfig.add(defaultAIConfig);
     await db.badges.bulkAdd(initialBadges);
+    await db.costCategories.bulkAdd(initialCostCategories.map(name => ({ name })));
+
 
     console.log("Database population complete.");
   }
@@ -901,6 +905,19 @@ export async function updateCost(id: number, data: Partial<Omit<Cost, 'id'>>): P
 export async function deleteCost(id: number): Promise<void> {
     await db.costs.delete(id);
 }
+
+export async function getAllCostCategories(): Promise<CustomCostCategory[]> {
+    return await db.costCategories.toArray();
+}
+
+export async function addCostCategory(category: { name: string }): Promise<number> {
+    return await db.costCategories.add(category);
+}
+
+export async function deleteCostCategory(id: number): Promise<void> {
+    await db.costCategories.delete(id);
+}
+
 
 // --- Instructor Functions ---
 

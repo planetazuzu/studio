@@ -1,5 +1,5 @@
 
-import { User, Course, Role, Department, ChatChannel, CostCategory, AIConfig, Badge } from './types';
+import { User, Course, Role, Department, ChatChannel, AIConfig, Badge } from './types';
 
 export const roles: Role[] = [
   'Trabajador',
@@ -18,7 +18,7 @@ export const departments: Department[] = [
     'Logística',
 ];
 
-export const costCategories: CostCategory[] = ['Honorarios Formador', 'Licencias de Plataforma', 'Equipamiento', 'Logística y Dietas', 'Otro'];
+export const initialCostCategories: string[] = ['Honorarios Formador', 'Licencias de Plataforma', 'Equipamiento', 'Logística y Dietas', 'Otro'];
 
 export const announcementChannels: string[] = ['Todos', ...roles, ...departments];
 
