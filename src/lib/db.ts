@@ -1,7 +1,7 @@
 
 import Dexie, { type Table } from 'dexie';
-import type { Course, User, Enrollment, UserProgress, PendingEnrollmentDetails, ForumMessage, ForumMessageWithReplies, Notification, Resource, CourseResource, Announcement, ChatChannel, ChatMessage, Role, ComplianceReportData, DirectMessageThread, CalendarEvent, ExternalTraining, EnrollmentStatus, EnrollmentWithDetails, Cost, StudentForManagement, AIConfig, AIUsageLog, UserStatus } from './types';
-import { courses as initialCourses, users as initialUsers, initialChatChannels, initialCosts, defaultAIConfig, roles, departments } from './data';
+import type { Course, User, Enrollment, UserProgress, PendingEnrollmentDetails, ForumMessage, ForumMessageWithReplies, Notification, Resource, CourseResource, Announcement, ChatChannel, ChatMessage, Role, ComplianceReportData, DirectMessageThread, CalendarEvent, ExternalTraining, EnrollmentStatus, EnrollmentWithDetails, Cost, StudentForManagement, AIConfig, AIUsageLog, UserStatus, Badge, UserBadge } from './types';
+import { courses as initialCourses, users as initialUsers, initialChatChannels, initialCosts, defaultAIConfig, roles, departments, initialBadges } from './data';
 
 const LOGGED_IN_USER_KEY = 'loggedInUserId';
 
@@ -22,6 +22,8 @@ export class AcademiaAIDB extends Dexie {
   costs!: Table<Cost>;
   aiConfig!: Table<AIConfig>;
   aiUsageLog!: Table<AIUsageLog>;
+  badges!: Table<Badge>;
+  userBadges!: Table<UserBadge>;
 
 
   constructor() {
@@ -87,6 +89,11 @@ export class AcademiaAIDB extends Dexie {
     this.version(18).stores({
         users: 'id, &email, status, isSynced',
     });
+    this.version(19).stores({
+        users: 'id, &email, status, points, isSynced',
+        badges: 'id',
+        userBadges: '++id, [userId+badgeId]'
+    });
   }
 }
 
@@ -122,6 +129,12 @@ export async function populateDatabase() {
   if (aiConfigCount === 0) {
       console.log("Populating default AI config...");
       await db.aiConfig.add(defaultAIConfig);
+  }
+  
+  const badgeCount = await db.badges.count();
+  if (badgeCount === 0) {
+      console.log("Populating badges...");
+      await db.badges.bulkAdd(initialBadges);
   }
 }
 
@@ -160,6 +173,7 @@ export async function register(email: string, password?: string): Promise<string
         avatar: `https://i.pravatar.cc/150?u=${email}`,
         role: 'Trabajador', // Default role
         department: 'Técnicos de Emergencias', // Default department
+        points: 0,
         status: 'pending',
         createdAt: new Date().toISOString(),
         isSynced: false,
@@ -185,7 +199,7 @@ export async function getLoggedInUser(): Promise<User | null> {
 
 
 // --- User Management Functions ---
-export async function addUser(user: Omit<User, 'id' | 'avatar' | 'isSynced' | 'updatedAt' | 'notificationSettings' | 'status' | 'createdAt'>): Promise<string> {
+export async function addUser(user: Omit<User, 'id' | 'avatar' | 'isSynced' | 'updatedAt' | 'notificationSettings' | 'status' | 'createdAt' | 'points'>): Promise<string> {
     const newUser: User = {
         ...user,
         id: `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
@@ -193,6 +207,7 @@ export async function addUser(user: Omit<User, 'id' | 'avatar' | 'isSynced' | 'u
         status: 'approved', // Directly approved
         createdAt: new Date().toISOString(),
         isSynced: false,
+        points: 0,
         updatedAt: new Date().toISOString(),
         notificationSettings: {
             consent: false,
@@ -202,7 +217,7 @@ export async function addUser(user: Omit<User, 'id' | 'avatar' | 'isSynced' | 'u
     return await db.users.add(newUser);
 }
 
-export async function bulkAddUsers(users: Omit<User, 'id' | 'avatar' | 'isSynced' | 'updatedAt' | 'notificationSettings' | 'status' | 'createdAt'>[]): Promise<string[]> {
+export async function bulkAddUsers(users: Omit<User, 'id' | 'avatar' | 'isSynced' | 'updatedAt' | 'notificationSettings' | 'status' | 'createdAt' | 'points'>[]): Promise<string[]> {
     const newUsers: User[] = users.map(user => ({
         ...user,
         id: `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
@@ -210,6 +225,7 @@ export async function bulkAddUsers(users: Omit<User, 'id' | 'avatar' | 'isSynced
         status: 'approved',
         createdAt: new Date().toISOString(),
         isSynced: false,
+        points: 0,
         updatedAt: new Date().toISOString(),
         notificationSettings: {
             consent: false,
@@ -438,10 +454,15 @@ export async function getUserProgressForUser(userId: string): Promise<UserProgre
 
 export async function markModuleAsCompleted(userId: string, courseId: string, moduleId: string): Promise<void> {
     const existingProgress = await db.userProgress.where({ userId, courseId }).first();
+    const user = await db.users.get(userId);
+
+    if (!user) return;
 
     if (existingProgress) {
         // Add moduleId to the set to avoid duplicates
         const completed = new Set(existingProgress.completedModules);
+        if (completed.has(moduleId)) return; // Already completed, do nothing.
+
         completed.add(moduleId);
         
         await db.userProgress.update(existingProgress.id!, { 
@@ -457,6 +478,18 @@ export async function markModuleAsCompleted(userId: string, courseId: string, mo
             updatedAt: new Date().toISOString(),
             isSynced: false,
         });
+    }
+
+    // Award points
+    await db.users.update(userId, { points: (user.points || 0) + 10 });
+    
+    // Check for badges
+    await checkAndAwardModuleBadges(userId);
+
+    const course = await db.courses.get(courseId);
+    const updatedProgress = await db.userProgress.where({ userId, courseId }).first();
+    if(course && updatedProgress && updatedProgress.completedModules.length === course.modules.length) {
+        await checkAndAwardCourseCompletionBadges(userId);
     }
 }
 
@@ -882,6 +915,65 @@ export async function getStudentsForCourseManagement(courseId: string): Promise<
         };
     }).sort((a, b) => a.name.localeCompare(b.name));
 }
+
+// --- Gamification Functions ---
+
+export async function getAllBadges(): Promise<Badge[]> {
+    return await db.badges.toArray();
+}
+
+export async function getBadgesForUser(userId: string): Promise<UserBadge[]> {
+    return await db.userBadges.where('userId').equals(userId).toArray();
+}
+
+export async function awardBadge(userId: string, badgeId: string): Promise<void> {
+    // Check if user already has the badge
+    const existing = await db.userBadges.where({ userId, badgeId }).first();
+    if (existing) {
+        return;
+    }
+
+    await db.userBadges.add({
+        userId,
+        badgeId,
+        earnedAt: new Date().toISOString(),
+        isSynced: false,
+        updatedAt: new Date().toISOString()
+    });
+
+    const badge = await db.badges.get(badgeId);
+    if(badge) {
+        await addNotification({
+            userId: userId,
+            message: `¡Insignia desbloqueada: ${badge.name}!`,
+            type: 'badge_unlocked',
+            relatedUrl: '/dashboard/settings',
+            isRead: false,
+            timestamp: new Date().toISOString(),
+        });
+    }
+}
+
+async function checkAndAwardModuleBadges(userId: string) {
+    const allProgress = await db.userProgress.where('userId').equals(userId).toArray();
+    const totalModulesCompleted = allProgress.reduce((sum, p) => sum + p.completedModules.length, 0);
+
+    if (totalModulesCompleted >= 1) await awardBadge(userId, 'first_module');
+    if (totalModulesCompleted >= 5) await awardBadge(userId, '5_modules');
+    if (totalModulesCompleted >= 15) await awardBadge(userId, '15_modules');
+}
+
+async function checkAndAwardCourseCompletionBadges(userId: string) {
+    const completedCoursesCount = await db.enrollments.where({ studentId: userId, status: 'completed' }).count();
+
+    // Note: The status is updated *after* progress hits 100%. So we check for count + 1.
+    if (completedCoursesCount + 1 >= 1) await awardBadge(userId, 'first_course');
+    if (completedCoursesCount + 1 >= 3) await awardBadge(userId, '3_courses');
+
+    // Here we would also update the enrollment status to 'completed'
+    // This logic needs to be called from a place that knows the courseId.
+}
+
 
 // --- AI Configuration Functions ---
 

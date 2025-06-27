@@ -43,6 +43,10 @@ export function ProfileSettings({ profile, setProfile }: { profile: any, setProf
                         </SelectContent>
                     </Select>
                 </div>
+                <div className="space-y-2">
+                    <Label>Puntos de Experiencia</Label>
+                    <Input value={profile.points} disabled />
+                </div>
             </CardContent>
         </Card>
     );

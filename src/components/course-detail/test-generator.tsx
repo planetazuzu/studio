@@ -10,9 +10,12 @@ import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import type { AIConfig } from '@/lib/types';
+import type { AIConfig, User } from '@/lib/types';
+import * as db from '@/lib/db';
+import { useAuth } from '@/contexts/auth';
 
 export function TestGenerator({ courseTitle, courseContent, studentName, aiConfig }: { courseTitle: string; courseContent: string; studentName: string, aiConfig: AIConfig | undefined }) {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [testData, setTestData] = useState<GenerateTestQuestionsOutput | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -47,15 +50,20 @@ export function TestGenerator({ courseTitle, courseContent, studentName, aiConfi
     setAnswers(prev => ({ ...prev, [qIndex]: value }));
   };
 
-  const handleSubmitTest = () => {
-    if (!testData) return;
+  const handleSubmitTest = async () => {
+    if (!testData || !user) return;
 
     const correctCount = testData.questions.reduce((acc, question, index) => {
       return answers[index] === question.correctAnswer ? acc + 1 : acc;
     }, 0);
 
-    setScore((correctCount / testData.questions.length) * 100);
+    const finalScore = (correctCount / testData.questions.length) * 100;
+    setScore(finalScore);
     setIsSubmitted(true);
+
+    if (finalScore === 100) {
+        await db.awardBadge(user.id, 'perfect_score');
+    }
   };
 
   const handleGetFeedback = async () => {

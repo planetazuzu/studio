@@ -18,6 +18,7 @@ import { ApiSettings } from '@/components/settings/api-settings';
 import { SyncManager } from '@/components/settings/sync-manager';
 import { PermissionSettings } from '@/components/settings/permission-settings';
 import { AISettings } from '@/components/settings/ai-settings';
+import { AchievementsSettings } from '@/components/settings/achievements-settings';
 
 
 // Helper function to convert HEX to HSL components (string "H S% L%")
@@ -88,6 +89,7 @@ export default function SettingsPage() {
                 email: user.email,
                 avatar: user.avatar,
                 role: user.role,
+                points: user.points,
             });
             setPreferences(user.notificationSettings || {
                 consent: false,
@@ -172,6 +174,7 @@ export default function SettingsPage() {
     
     const userTabs = [
         { value: 'profile', label: 'Información Personal' },
+        { value: 'achievements', label: 'Logros' },
         { value: 'training-history', label: 'Historial Formativo' },
         { value: 'preferences', label: 'Preferencias' },
     ];
@@ -195,13 +198,16 @@ export default function SettingsPage() {
             </div>
             <div className="grid grid-cols-1 gap-8">
                  <Tabs defaultValue="profile" className="w-full">
-                    <TabsList className={`grid w-full max-w-5xl`} style={{ gridTemplateColumns: `repeat(${visibleTabs.length}, 1fr)` }}>
+                    <TabsList className={`grid w-full max-w-5xl`} style={{ gridTemplateColumns: `repeat(${visibleTabs.length}, minmax(0, 1fr))` }}>
                         {visibleTabs.map(tab => (
                              <TabsTrigger key={tab.value} value={tab.value}>{tab.label}</TabsTrigger>
                         ))}
                     </TabsList>
                     <TabsContent value="profile" className="mt-4">
                         <ProfileSettings profile={profile} setProfile={setProfile} />
+                    </TabsContent>
+                    <TabsContent value="achievements" className="mt-4">
+                        <AchievementsSettings user={user} />
                     </TabsContent>
                     <TabsContent value="training-history" className="mt-4">
                         <TrainingHistory user={user} />

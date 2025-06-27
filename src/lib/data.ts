@@ -1,5 +1,5 @@
 
-import { User, Course, Role, Department, ChatChannel, CostCategory, AIConfig } from './types';
+import { User, Course, Role, Department, ChatChannel, CostCategory, AIConfig, Badge } from './types';
 
 export const roles: Role[] = [
   'Trabajador',
@@ -31,6 +31,7 @@ export const users: User[] = [
         avatar: 'https://i.pravatar.cc/150?u=user1',
         role: 'Administrador General',
         department: 'Administración',
+        points: 120,
         notificationSettings: { consent: true, channels: ['email', 'app'] },
         status: 'approved',
         createdAt: new Date().toISOString(),
@@ -43,6 +44,7 @@ export const users: User[] = [
         avatar: 'https://i.pravatar.cc/150?u=user2',
         role: 'Trabajador',
         department: 'Técnicos de Emergencias',
+        points: 50,
         notificationSettings: { consent: true, channels: ['app'] },
         status: 'approved',
         createdAt: new Date().toISOString(),
@@ -55,6 +57,7 @@ export const users: User[] = [
         avatar: 'https://i.pravatar.cc/150?u=user3',
         role: 'Trabajador',
         department: 'Teleoperadores',
+        points: 210,
         notificationSettings: { consent: false, channels: [] },
         status: 'approved',
         createdAt: new Date().toISOString(),
@@ -67,6 +70,7 @@ export const users: User[] = [
         avatar: 'https://i.pravatar.cc/150?u=user4',
         role: 'Formador',
         department: 'Formación',
+        points: 0,
         notificationSettings: { consent: true, channels: ['email'] },
         status: 'approved',
         createdAt: new Date().toISOString(),
@@ -79,6 +83,7 @@ export const users: User[] = [
         avatar: 'https://i.pravatar.cc/150?u=user5',
         role: 'Jefe de Formación',
         department: 'Formación',
+        points: 300,
         notificationSettings: { consent: true, channels: ['email', 'whatsapp', 'app'] },
         status: 'approved',
         createdAt: new Date().toISOString(),
@@ -91,6 +96,7 @@ export const users: User[] = [
         avatar: 'https://i.pravatar.cc/150?u=user6',
         role: 'Gestor de RRHH',
         department: 'Administración',
+        points: 15,
         notificationSettings: { consent: true, channels: ['email'] },
         status: 'approved',
         createdAt: new Date().toISOString(),
@@ -326,6 +332,15 @@ export const initialChatChannels: ChatChannel[] = [
         description: 'Para conversaciones distendidas y temas no relacionados con el trabajo.',
         type: 'public',
     }
+];
+
+export const initialBadges: Badge[] = [
+    { id: 'first_module', name: 'Primeros Pasos', description: 'Completa tu primer módulo.', icon: 'StepForward' },
+    { id: '5_modules', name: 'Alumno Constante', description: 'Completa 5 módulos en total.', icon: 'BookMarked' },
+    { id: '15_modules', name: 'Maestro del Saber', description: 'Completa 15 módulos en total.', icon: 'Library' },
+    { id: 'first_course', name: 'Pionero', description: 'Completa tu primer curso.', icon: 'Rocket' },
+    { id: '3_courses', name: 'Especialista', description: 'Completa 3 cursos.', icon: 'GraduationCap' },
+    { id: 'perfect_score', name: 'Perfeccionista', description: 'Obtén un 100% en un test de IA.', icon: 'Target' },
 ];
 
 export const defaultAIConfig: AIConfig = {

@@ -1,4 +1,5 @@
-import { AreaChart, BookOpen, Home, Settings, Users, Calendar, Library, Megaphone, MessagesSquare, ClipboardCheck, UserRoundCog, Wallet, type LucideIcon } from 'lucide-react';
+
+import { AreaChart, BookOpen, Home, Settings, Users, Calendar, Library, Megaphone, MessagesSquare, ClipboardCheck, UserRoundCog, Wallet, Trophy, type LucideIcon } from 'lucide-react';
 import type { Role } from './types';
 
 export type NavItem = {
@@ -23,6 +24,7 @@ export const navItems: NavItem[] = [
   { href: '/dashboard', icon: Home, label: 'Dashboard', roles: allRoles },
   { href: '/dashboard/courses', icon: BookOpen, label: 'Cursos', roles: allRoles },
   { href: '/dashboard/enrollments', icon: ClipboardCheck, label: 'Inscripciones', roles: allRoles },
+  { href: '/dashboard/leaderboard', icon: Trophy, label: 'Clasificación', roles: allRoles },
   {
     href: '/dashboard/calendar',
     icon: Calendar,

@@ -24,6 +24,7 @@ export type User = {
   avatar: string;
   role: Role;
   department: Department;
+  points: number;
   
   // New approval-flow fields
   status: UserStatus;
@@ -141,7 +142,7 @@ export type Notification = {
   id?: number;
   userId: string;
   message: string;
-  type: 'enrollment_approved' | 'new_course' | 'forum_reply' | 'course_announcement';
+  type: 'enrollment_approved' | 'new_course' | 'forum_reply' | 'course_announcement' | 'badge_unlocked';
   relatedUrl?: string;
   isRead: boolean;
   timestamp: string; // ISO date string
@@ -266,6 +267,25 @@ export type StudentForManagement = {
   progress: number;
   status: EnrollmentStatus;
 };
+
+// --- Gamification Types ---
+
+export type Badge = {
+    id: string;
+    name: string;
+    description: string;
+    icon: string; // Lucide icon name
+};
+
+export type UserBadge = {
+    id?: number;
+    userId: string;
+    badgeId: string;
+    earnedAt: string; // ISO date string
+    isSynced?: boolean;
+    updatedAt?: string;
+};
+
 
 // --- AI Management Types ---
 
