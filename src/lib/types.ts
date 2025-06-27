@@ -14,22 +14,30 @@ export type Department = 'Técnicos de Emergencias' | 'Teleoperadores' | 'Admini
 export type NotificationChannel = 'email' | 'whatsapp' | 'app';
 export const notificationChannels: NotificationChannel[] = ['email', 'whatsapp', 'app'];
 
+export type UserStatus = 'pending' | 'approved' | 'rejected';
+
 export type User = {
   id: string;
   name: string;
   email: string;
-  password?: string; // Added for authentication
+  password?: string;
   avatar: string;
   role: Role;
   department: Department;
-  employeeId?: string;
-  registrationDate?: string; // ISO date string
-  isSynced?: boolean;
-  updatedAt?: string; // ISO date string
+  
+  // New approval-flow fields
+  status: UserStatus;
+  authorizedBy?: string; // email of admin
+  createdAt: string; // ISO date string
+
   notificationSettings?: {
     consent: boolean;
     channels: NotificationChannel[];
   };
+
+  // Sync fields
+  isSynced?: boolean;
+  updatedAt?: string; // ISO date string
 };
 
 export type Course = {

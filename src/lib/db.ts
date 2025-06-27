@@ -1,7 +1,7 @@
 
 import Dexie, { type Table } from 'dexie';
-import type { Course, User, Enrollment, UserProgress, PendingEnrollmentDetails, ForumMessage, ForumMessageWithReplies, Notification, Resource, CourseResource, Announcement, ChatChannel, ChatMessage, Role, ComplianceReportData, DirectMessageThread, CalendarEvent, ExternalTraining, EnrollmentStatus, EnrollmentWithDetails, Cost, StudentForManagement, AIConfig, AIUsageLog } from './types';
-import { courses as initialCourses, users as initialUsers, initialChatChannels, initialCosts, defaultAIConfig } from './data';
+import type { Course, User, Enrollment, UserProgress, PendingEnrollmentDetails, ForumMessage, ForumMessageWithReplies, Notification, Resource, CourseResource, Announcement, ChatChannel, ChatMessage, Role, ComplianceReportData, DirectMessageThread, CalendarEvent, ExternalTraining, EnrollmentStatus, EnrollmentWithDetails, Cost, StudentForManagement, AIConfig, AIUsageLog, UserStatus } from './types';
+import { courses as initialCourses, users as initialUsers, initialChatChannels, initialCosts, defaultAIConfig, roles, departments } from './data';
 
 const LOGGED_IN_USER_KEY = 'loggedInUserId';
 
@@ -84,6 +84,9 @@ export class AcademiaAIDB extends Dexie {
         aiConfig: 'id',
         aiUsageLog: '++id, timestamp'
     });
+    this.version(18).stores({
+        users: 'id, &email, status, isSynced',
+    });
   }
 }
 
@@ -126,11 +129,47 @@ export async function populateDatabase() {
 
 export async function login(email: string, password?: string): Promise<User | null> {
     const user = await db.users.where('email').equalsIgnoreCase(email).first();
-    if (user && user.password === password) {
-        localStorage.setItem(LOGGED_IN_USER_KEY, user.id);
-        return user;
+    if (!user) {
+        throw new Error('El usuario no existe.');
     }
-    return null;
+    if (user.status === 'pending') {
+        throw new Error('Tu cuenta está pendiente de aprobación por un administrador.');
+    }
+    if (user.status === 'rejected') {
+        throw new Error('Tu solicitud de registro ha sido rechazada.');
+    }
+    if (user.password !== password) {
+        throw new Error('La contraseña es incorrecta.');
+    }
+    
+    localStorage.setItem(LOGGED_IN_USER_KEY, user.id);
+    return user;
+}
+
+export async function register(email: string, password?: string): Promise<string> {
+    const existingUser = await db.users.where('email').equalsIgnoreCase(email).first();
+    if (existingUser) {
+        throw new Error('Este correo electrónico ya está registrado.');
+    }
+
+    const newUser: User = {
+        id: `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+        email,
+        password,
+        name: email.split('@')[0], // Default name
+        avatar: `https://i.pravatar.cc/150?u=${email}`,
+        role: 'Trabajador', // Default role
+        department: 'Técnicos de Emergencias', // Default department
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+        isSynced: false,
+        updatedAt: new Date().toISOString(),
+        notificationSettings: {
+            consent: true,
+            channels: ['app'],
+        },
+    };
+    return await db.users.add(newUser);
 }
 
 export function logout(): void {
@@ -146,11 +185,13 @@ export async function getLoggedInUser(): Promise<User | null> {
 
 
 // --- User Management Functions ---
-export async function addUser(user: Omit<User, 'id' | 'avatar' | 'isSynced' | 'updatedAt' | 'notificationSettings'>): Promise<string> {
+export async function addUser(user: Omit<User, 'id' | 'avatar' | 'isSynced' | 'updatedAt' | 'notificationSettings' | 'status' | 'createdAt'>): Promise<string> {
     const newUser: User = {
         ...user,
         id: `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
         avatar: `https://i.pravatar.cc/150?u=user${Date.now()}`,
+        status: 'approved', // Directly approved
+        createdAt: new Date().toISOString(),
         isSynced: false,
         updatedAt: new Date().toISOString(),
         notificationSettings: {
@@ -161,11 +202,13 @@ export async function addUser(user: Omit<User, 'id' | 'avatar' | 'isSynced' | 'u
     return await db.users.add(newUser);
 }
 
-export async function bulkAddUsers(users: Omit<User, 'id' | 'avatar' | 'isSynced' | 'updatedAt' | 'notificationSettings'>[]): Promise<string[]> {
+export async function bulkAddUsers(users: Omit<User, 'id' | 'avatar' | 'isSynced' | 'updatedAt' | 'notificationSettings' | 'status' | 'createdAt'>[]): Promise<string[]> {
     const newUsers: User[] = users.map(user => ({
         ...user,
         id: `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
         avatar: `https://i.pravatar.cc/150?u=user${Date.now()}${Math.random()}`,
+        status: 'approved',
+        createdAt: new Date().toISOString(),
         isSynced: false,
         updatedAt: new Date().toISOString(),
         notificationSettings: {
@@ -173,9 +216,28 @@ export async function bulkAddUsers(users: Omit<User, 'id' | 'avatar' | 'isSynced
             channels: [],
         },
     }));
-    // The 'allKeys' option returns the primary keys of all added objects.
-    // Dexie's bulkAdd is atomic, so if one fails (e.g., duplicate email), all will be rolled back.
     return await db.users.bulkAdd(newUsers, { allKeys: true });
+}
+
+export async function getPendingUsers(): Promise<User[]> {
+    return await db.users.where('status').equals('pending').toArray();
+}
+
+export async function approveUser(userId: string, adminEmail: string): Promise<number> {
+    return await db.users.update(userId, { 
+        status: 'approved',
+        authorizedBy: adminEmail,
+        updatedAt: new Date().toISOString(),
+        isSynced: false 
+    });
+}
+
+export async function rejectUser(userId: string): Promise<number> {
+    return await db.users.update(userId, { 
+        status: 'rejected',
+        updatedAt: new Date().toISOString(),
+        isSynced: false 
+    });
 }
 
 export async function getAllUsers(): Promise<User[]> {
@@ -192,8 +254,6 @@ export async function updateUser(id: string, data: Partial<Omit<User, 'id' | 'is
 
 export async function deleteUser(id: string): Promise<void> {
     await db.users.delete(id);
-    // In a real-world app, you might want to delete related data here as well,
-    // such as enrollments and progress, within a transaction.
 }
 
 

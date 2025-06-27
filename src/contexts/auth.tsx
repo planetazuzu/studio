@@ -2,7 +2,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { User } from '@/lib/types';
 import * as db from '@/lib/db';
 import { Loader2 } from 'lucide-react';
@@ -20,13 +20,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        // First, ensure the database is populated. This is fast if already populated.
         await db.populateDatabase();
-        // Then, check for a logged-in user.
         const loggedInUser = await db.getLoggedInUser();
         setUser(loggedInUser);
       } catch (error) {
@@ -41,10 +40,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password?: string) => {
     setIsLoading(true);
-    const loggedInUser = await db.login(email, password);
-    setUser(loggedInUser);
-    setIsLoading(false);
-    return loggedInUser;
+    try {
+        const loggedInUser = await db.login(email, password);
+        setUser(loggedInUser);
+        return loggedInUser;
+    } catch(error) {
+        // Propagate error to be caught in the form
+        throw error;
+    } finally {
+        setIsLoading(false);
+    }
   };
 
   const logout = () => {
@@ -55,7 +60,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value = { user, isLoading, login, logout };
 
-  if (isLoading) {
+  // If loading, show a spinner, unless we're on a public page
+  const isPublicPage = ['/login', '/register', '/pending-approval'].includes(pathname);
+  if (isLoading && !isPublicPage) {
       return (
           <div className="flex h-screen w-full items-center justify-center">
               <Loader2 className="h-12 w-12 animate-spin text-primary" />

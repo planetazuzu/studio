@@ -22,8 +22,6 @@ export const costCategories: CostCategory[] = ['Honorarios Formador', 'Licencias
 
 export const announcementChannels: string[] = ['Todos', ...roles, ...departments];
 
-// NOTE: The `currentUser` constant is removed. User state is now managed through AuthContext.
-
 export const users: User[] = [
     {
         id: 'user_1',
@@ -34,6 +32,8 @@ export const users: User[] = [
         role: 'Administrador General',
         department: 'Administración',
         notificationSettings: { consent: true, channels: ['email', 'app'] },
+        status: 'approved',
+        createdAt: new Date().toISOString(),
     },
     {
         id: 'user_2',
@@ -44,6 +44,8 @@ export const users: User[] = [
         role: 'Trabajador',
         department: 'Técnicos de Emergencias',
         notificationSettings: { consent: true, channels: ['app'] },
+        status: 'approved',
+        createdAt: new Date().toISOString(),
     },
     {
         id: 'user_3',
@@ -54,6 +56,8 @@ export const users: User[] = [
         role: 'Trabajador',
         department: 'Teleoperadores',
         notificationSettings: { consent: false, channels: [] },
+        status: 'approved',
+        createdAt: new Date().toISOString(),
     },
     {
         id: 'user_4',
@@ -64,6 +68,8 @@ export const users: User[] = [
         role: 'Formador',
         department: 'Formación',
         notificationSettings: { consent: true, channels: ['email'] },
+        status: 'approved',
+        createdAt: new Date().toISOString(),
     },
     {
         id: 'user_5',
@@ -74,6 +80,8 @@ export const users: User[] = [
         role: 'Jefe de Formación',
         department: 'Formación',
         notificationSettings: { consent: true, channels: ['email', 'whatsapp', 'app'] },
+        status: 'approved',
+        createdAt: new Date().toISOString(),
     },
     {
         id: 'user_6',
@@ -84,6 +92,8 @@ export const users: User[] = [
         role: 'Gestor de RRHH',
         department: 'Administración',
         notificationSettings: { consent: true, channels: ['email'] },
+        status: 'approved',
+        createdAt: new Date().toISOString(),
     },
 ];
 
