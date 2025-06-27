@@ -1,0 +1,156 @@
+
+'use client';
+
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { AppLogo } from '@/components/icons';
+import { useAuth } from '@/contexts/auth';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Terminal, Loader2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { users as testUsers } from '@/lib/data';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useTranslations } from 'next-intl';
+import { useRouter, Link } from '@/navigation';
+
+export default function LoginPage() {
+  const t = useTranslations('LoginPage');
+  const router = useRouter();
+  const { login, user, isLoading: isAuthLoading } = useAuth();
+  const { toast } = useToast();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      router.push('/dashboard');
+    }
+  }, [user, router]);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setIsSubmitting(true);
+    try {
+      const loggedInUser = await login(email, password);
+      if (loggedInUser) {
+        toast({
+            title: t('welcomeToast', {name: loggedInUser.name.split(' ')[0]}),
+            description: t('loginSuccessToast'),
+        });
+        router.push('/dashboard');
+      } else {
+        setError(t('credentialsIncorrect'));
+      }
+    } catch (err: any) {
+      if (err.message.includes('desactivada')) {
+        setError(t('accountDisabled'));
+      } else {
+        setError(t('userNotFound'));
+      }
+      console.error(err);
+    } finally {
+        setIsSubmitting(false);
+    }
+  };
+  
+  const formIsDisabled = isAuthLoading || isSubmitting;
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+      <Card className="w-full max-w-md shadow-2xl">
+        <CardHeader className="text-center">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <AppLogo className="h-8 w-8" />
+          </div>
+          <CardTitle className="text-3xl font-bold">{t('title')}</CardTitle>
+          <CardDescription>{t('description')}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleLogin} className="space-y-6">
+             {error && (
+                <Alert variant="destructive">
+                    <Terminal className="h-4 w-4" />
+                    <AlertTitle>{t('authErrorTitle')}</AlertTitle>
+                    <AlertDescription>{error}</AlertDescription>
+                </Alert>
+            )}
+            <div className="space-y-2">
+              <Label htmlFor="email">{t('emailLabel')}</Label>
+              <Input 
+                id="email" 
+                type="email" 
+                placeholder={t('emailPlaceholder')} 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                disabled={formIsDisabled}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">{t('passwordLabel')}</Label>
+              <Input 
+                id="password" 
+                type="password" 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                disabled={formIsDisabled}
+                />
+            </div>
+            <Button type="submit" className="w-full text-lg h-12" disabled={formIsDisabled}>
+              {formIsDisabled ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/> {isAuthLoading ? t('submittingButton') : t('submittingButton')}</> : t('loginButton')}
+            </Button>
+            <div className="text-center text-sm space-x-1">
+                <span>{t('noAccount')}</span>
+                <Link href="/register" className={`text-primary hover:underline font-semibold ${formIsDisabled ? 'pointer-events-none opacity-50' : ''}`}>
+                    {t('registerLink')}
+                </Link>
+            </div>
+          </form>
+
+           <div className="mt-6">
+              <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-background px-2 text-muted-foreground">
+                          {t('testAccountPrompt')}
+                      </span>
+                  </div>
+              </div>
+              <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {testUsers.map((testUser) => (
+                      <Button
+                          key={testUser.id}
+                          variant="outline"
+                          className="h-auto justify-start gap-3 p-3 text-left"
+                          onClick={() => {
+                              setEmail(testUser.email);
+                              setPassword(testUser.password || '');
+                          }}
+                          disabled={formIsDisabled}
+                      >
+                          <Avatar className="h-10 w-10">
+                              <AvatarImage src={testUser.avatar} />
+                              <AvatarFallback>{testUser.name.slice(0, 2)}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                              <p className="font-semibold">{testUser.name}</p>
+                              <p className="text-xs text-muted-foreground">{testUser.role}</p>
+                          </div>
+                      </Button>
+                  ))}
+              </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

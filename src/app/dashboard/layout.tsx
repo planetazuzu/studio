@@ -1,58 +1,19 @@
 'use client';
+// This layout is no longer used directly.
+// The logic has been moved to `src/app/[locale]/dashboard/layout.tsx` to support i18n.
+// This file can be deleted if your platform supports it.
 
-import { usePathname, useRouter } from 'next/navigation';
-import { useEffect } from 'react';
-import { Loader2 } from 'lucide-react';
-import { useAuth } from '@/contexts/auth';
-import {
-  SidebarProvider,
-  Sidebar,
-  SidebarInset,
-} from '@/components/ui/sidebar';
-import { DashboardHeader } from '@/components/dashboard-header';
-import { SidebarContents } from '@/components/sidebar-contents';
-import { navItems } from '@/lib/nav';
+import { Loader2 } from "lucide-react";
 
-export default function DashboardLayout({
+export default function DeprecatedDashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { user, isLoading } = useAuth();
-  const router = useRouter();
-  const pathname = usePathname();
-
-  useEffect(() => {
-    if (!isLoading && !user) {
-      router.push('/login');
-    }
-  }, [user, isLoading, router]);
-
-  if (isLoading || !user) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <Loader2 className="h-16 w-16 animate-spin text-primary" />
-      </div>
-    );
-  }
-  
-  const pageTitle =
-    navItems
-      .filter((item) => pathname.startsWith(item.href))
-      .sort((a, b) => b.href.length - a.href.length)[0]?.label || 'Dashboard';
-
-
   return (
-    <SidebarProvider>
-      <div className="min-h-screen">
-        <Sidebar>
-          <SidebarContents />
-        </Sidebar>
-        <SidebarInset>
-          <DashboardHeader title={pageTitle} />
-          <main className="flex-1 p-4 md:p-6 lg:p-8">{children}</main>
-        </SidebarInset>
-      </div>
-    </SidebarProvider>
-  );
+    <div className="flex h-screen items-center justify-center">
+        <Loader2 className="h-16 w-16 animate-spin text-primary" />
+        <p className="ml-4">Redirecting...</p>
+    </div>
+  )
 }

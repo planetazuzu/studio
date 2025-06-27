@@ -20,59 +20,59 @@ const allRoles: Role[] = [
 
 const managerRoles: Role[] = ['Gestor de RRHH', 'Jefe de Formación', 'Administrador General'];
 
-export const navItems: NavItem[] = [
-  { href: '/dashboard', icon: Home, label: 'Dashboard', roles: allRoles },
-  { href: '/dashboard/courses', icon: BookOpen, label: 'Cursos', roles: allRoles },
-  { href: '/dashboard/enrollments', icon: ClipboardCheck, label: 'Inscripciones', roles: allRoles },
-  { href: '/dashboard/leaderboard', icon: Trophy, label: 'Clasificación', roles: allRoles },
+export const getNavItems = (t: (key: string) => string): NavItem[] => [
+  { href: '/dashboard', icon: Home, label: t('Dashboard'), roles: allRoles },
+  { href: '/dashboard/courses', icon: BookOpen, label: t('Courses'), roles: allRoles },
+  { href: '/dashboard/enrollments', icon: ClipboardCheck, label: t('Enrollments'), roles: allRoles },
+  { href: '/dashboard/leaderboard', icon: Trophy, label: t('Leaderboard'), roles: allRoles },
   {
     href: '/dashboard/learning-paths',
     icon: Route,
-    label: 'Planes de Carrera',
+    label: t('LearningPaths'),
     roles: managerRoles,
   },
   {
     href: '/dashboard/calendar',
     icon: Calendar,
-    label: 'Calendario',
+    label: t('Calendar'),
     roles: managerRoles,
   },
   {
     href: '/dashboard/library',
     icon: Library,
-    label: 'Biblioteca',
+    label: t('Library'),
     roles: managerRoles,
   },
   {
     href: '/dashboard/users',
     icon: Users,
-    label: 'Usuarios',
+    label: t('Users'),
     roles: managerRoles,
   },
    {
     href: '/dashboard/instructors',
     icon: UserRoundCog,
-    label: 'Formadores',
+    label: t('Instructors'),
     roles: managerRoles,
   },
   {
     href: '/dashboard/communications',
     icon: Megaphone,
-    label: 'Avisos',
+    label: t('Communications'),
     roles: managerRoles,
   },
   {
     href: '/dashboard/costs',
     icon: Wallet,
-    label: 'Gestión de Costes',
+    label: t('Costs'),
     roles: managerRoles,
   },
   {
     href: '/dashboard/analytics',
     icon: AreaChart,
-    label: 'Análisis',
+    label: t('Analytics'),
     roles: managerRoles,
   },
-  { href: '/dashboard/chat', icon: MessagesSquare, label: 'Chat', roles: allRoles },
-  { href: '/dashboard/settings', icon: Settings, label: 'Ajustes', roles: allRoles },
+  { href: '/dashboard/chat', icon: MessagesSquare, label: t('Chat'), roles: allRoles },
+  { href: '/dashboard/settings', icon: Settings, label: t('Settings'), roles: allRoles },
 ];
