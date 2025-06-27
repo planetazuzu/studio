@@ -13,6 +13,8 @@ import { useAuth } from '@/contexts/auth';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { users as testUsers } from '@/lib/data';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -45,7 +47,11 @@ export default function LoginPage() {
         setError('Credenciales incorrectas.');
       }
     } catch (err: any) {
-      setError(err.message || 'Ha ocurrido un error inesperado.');
+      if (err.message.includes('desactivada')) {
+        setError(err.message);
+      } else {
+        setError('Credenciales incorrectas o usuario no encontrado.');
+      }
       console.error(err);
     } finally {
         setIsSubmitting(false);
@@ -106,6 +112,42 @@ export default function LoginPage() {
                 </Link>
             </div>
           </form>
+
+           <div className="mt-6">
+              <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-background px-2 text-muted-foreground">
+                          O inicia sesión con una cuenta de prueba
+                      </span>
+                  </div>
+              </div>
+              <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {testUsers.map((testUser) => (
+                      <Button
+                          key={testUser.id}
+                          variant="outline"
+                          className="h-auto justify-start gap-3 p-3 text-left"
+                          onClick={() => {
+                              setEmail(testUser.email);
+                              setPassword(testUser.password || '');
+                          }}
+                          disabled={formIsDisabled}
+                      >
+                          <Avatar className="h-10 w-10">
+                              <AvatarImage src={testUser.avatar} />
+                              <AvatarFallback>{testUser.name.slice(0, 2)}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                              <p className="font-semibold">{testUser.name}</p>
+                              <p className="text-xs text-muted-foreground">{testUser.role}</p>
+                          </div>
+                      </Button>
+                  ))}
+              </div>
+          </div>
         </CardContent>
       </Card>
     </div>
