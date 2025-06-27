@@ -1,9 +1,11 @@
 
 
 
+
 import Dexie, { type Table } from 'dexie';
 import type { Course, User, Enrollment, UserProgress, PendingEnrollmentDetails, ForumMessage, ForumMessageWithReplies, Notification, Resource, CourseResource, Announcement, ChatChannel, ChatMessage, Role, ComplianceReportData, DirectMessageThread, CalendarEvent, ExternalTraining, EnrollmentStatus, EnrollmentWithDetails, Cost, StudentForManagement, AIConfig, AIUsageLog, Badge, UserBadge, UserStatus } from './types';
 import { courses as initialCourses, users as initialUsers, initialChatChannels, initialCosts, defaultAIConfig, roles, departments, initialBadges } from './data';
+import { sendEmailNotification, sendWhatsAppNotification } from './notification-service';
 
 const LOGGED_IN_USER_KEY = 'loggedInUserId';
 
@@ -574,20 +576,19 @@ export async function addNotification(notification: Omit<Notification, 'id' | 'i
     }
     const newId = await db.notifications.add(newNotification);
 
-    // --- External Notification Simulation ---
     const user = await db.users.get(notification.userId);
     if (user && user.notificationSettings?.consent) {
         const settings = user.notificationSettings;
-        const subject = `Notificación de EmergenciaAI`; // Generic subject
+        const subject = `Notificación de EmergenciaAI`;
+        const body = notification.message;
         
         if (settings.channels.includes('email')) {
-            console.log(`[EMAIL SIMULATION] To: ${user.email}, Subject: "${subject}", Body: "${notification.message}"`);
+            await sendEmailNotification(user, subject, body);
         }
         if (settings.channels.includes('whatsapp')) {
-             console.log(`[WHATSAPP SIMULATION] To: ${user.name}, Message: "${notification.message}"`);
+             await sendWhatsAppNotification(user, body);
         }
     }
-    // --- END ---
     
     return newId;
 }

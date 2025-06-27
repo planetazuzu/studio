@@ -12,7 +12,7 @@ import { PlusCircle, Trash2, Loader2, Megaphone, AlertTriangle, Info, Wrench, Ch
 import { useAuth } from '@/contexts/auth';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { generateAnnouncementEmail } from '@/ai/flows/announcement-email-generation';
+import { createAndNotifyAnnouncement } from './actions';
 
 import * as db from '@/lib/db';
 import type { Announcement, AnnouncementType } from '@/lib/types';
@@ -110,53 +110,14 @@ function AddAnnouncementDialog({ open, onOpenChange }: { open: boolean, onOpenCh
     };
 
     const onSubmit = async (data: AnnouncementFormValues) => {
-        try {
-            await db.addAnnouncement({
-                ...data,
-                timestamp: new Date().toISOString(),
-            });
-            toast({ title: 'Éxito', description: 'El aviso ha sido creado.' });
-            
-            // --- AI Email Generation ---
-            // In a real app, this would be a background job. For this demo, we do it client-side.
-            (async () => {
-                try {
-                    const allUsers = await db.getAllUsers();
-                    const targetUsers = allUsers.filter(user => 
-                        data.channels.includes('Todos') ||
-                        data.channels.includes(user.role) ||
-                        data.channels.includes(user.department)
-                    );
-                    
-                    if (targetUsers.length > 0) {
-                        toast({ title: 'IA en progreso', description: `Generando ${targetUsers.length} emails. Revisa la consola.` });
-                        console.log(`[AI] Generating emails for ${targetUsers.length} users based on announcement...`);
+        const result = await createAndNotifyAnnouncement(data);
 
-                        for (const user of targetUsers) {
-                            generateAnnouncementEmail({
-                                recipientName: user.name,
-                                announcementTitle: data.title,
-                                announcementContent: data.content,
-                            }).then(emailContent => {
-                                console.log(`--- Email for ${user.email} ---`);
-                                console.log(`Subject: ${emailContent.subject}`);
-                                console.log(`Body:\n${emailContent.body}`);
-                                console.log(`---------------------------------`);
-                            }).catch(e => console.error(`Failed to generate email for ${user.name}`, e));
-                        }
-                    }
-                } catch (e) {
-                     console.error("Error during email generation process:", e);
-                     toast({ title: 'Error de IA', description: 'No se pudieron generar los emails.', variant: 'destructive' });
-                }
-            })();
-            // --- End AI Email Generation ---
-
+        if (result.success) {
+            toast({ title: 'Éxito', description: result.message });
             form.reset();
             onOpenChange(false);
-        } catch (err) {
-            console.error(err);
-            toast({ title: 'Error', description: 'No se pudo crear el aviso.', variant: 'destructive' });
+        } else {
+            toast({ title: 'Error', description: result.message, variant: 'destructive' });
         }
     };
     
