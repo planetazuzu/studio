@@ -9,7 +9,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format, parseISO, isAfter } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Loader2, PlusCircle, Trash2, X } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, X, Video } from 'lucide-react';
 import { localizer } from '@/lib/calendar-localizer';
 import * as db from '@/lib/db';
 import type { CalendarEvent, Course, CalendarEventType } from '@/lib/types';
@@ -35,6 +35,7 @@ const eventSchema = z.object({
     allDay: z.boolean(),
     start: z.string(),
     end: z.string(),
+    videoCallLink: z.string().url("Debe ser una URL válida.").optional().or(z.literal('')),
 }).refine(data => {
     // If not an all-day event, end must be after start
     if (!data.allDay) {
@@ -66,7 +67,7 @@ function EventDialog({
 }: {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  event: Partial<EventFormValues> | null;
+  event: Partial<CalendarEvent> | null;
   courses: Course[];
   onSave: (data: CalendarEvent, isNew: boolean) => Promise<boolean>;
   onDelete: (id: number) => void;
@@ -84,6 +85,7 @@ function EventDialog({
             allDay: false,
             start: new Date().toISOString(),
             end: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+            videoCallLink: '',
         }
     });
 
@@ -106,6 +108,7 @@ function EventDialog({
             ...(event as CalendarEvent), // Keeps original ID for updates
             title: data.title,
             description: data.description,
+            videoCallLink: data.videoCallLink,
             courseId: data.courseId,
             type: data.type as CalendarEventType,
             allDay: data.allDay,
@@ -133,7 +136,7 @@ function EventDialog({
 
     return (
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>{event && 'id' in event ? 'Editar Evento' : 'Nuevo Evento'}</DialogTitle>
           </DialogHeader>
@@ -141,6 +144,7 @@ function EventDialog({
             <form id="event-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField control={form.control} name="title" render={({ field }) => (<FormItem><FormLabel>Título</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
               <FormField control={form.control} name="description" render={({ field }) => (<FormItem><FormLabel>Descripción</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="videoCallLink" render={({ field }) => (<FormItem><FormLabel>Enlace de Videollamada (Zoom, Meet, etc.)</FormLabel><FormControl><Input type="url" placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem>)} />
               <div className="grid grid-cols-2 gap-4">
                 <FormField control={form.control} name="courseId" render={({ field }) => (<FormItem><FormLabel>Curso</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccionar..." /></SelectTrigger></FormControl><SelectContent>{courses.map(c => <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
                 <FormField control={form.control} name="type" render={({ field }) => (<FormItem><FormLabel>Tipo</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccionar..." /></SelectTrigger></FormControl><SelectContent>{calendarEventTypes.map(t => <SelectItem key={t} value={t} className="capitalize">{t}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
@@ -229,10 +233,9 @@ export default function CalendarPage() {
       }
   }, [toast]);
   
-  const handleSaveEvent = async (data: CalendarEvent, isNew: boolean): Promise<boolean> => {
-      // --- Smart Feature: Conflict Detection ---
+  const handleSaveEvent = useCallback(async (data: CalendarEvent, isNew: boolean): Promise<boolean> => {
       const hasConflict = (allEvents || []).some(existingEvent => {
-          if (!isNew && existingEvent.id === data.id) return false; // Skip self-check
+          if (!isNew && existingEvent.id === data.id) return false;
           const existingStart = parseISO(existingEvent.start);
           const existingEnd = parseISO(existingEvent.end);
           const newStart = parseISO(data.start);
@@ -257,13 +260,35 @@ export default function CalendarPage() {
               await db.updateCalendarEvent(data.id, data);
               toast({ title: 'Evento Actualizado', description: 'Los cambios en el evento han sido guardados.' });
           }
-           return true;
+
+          const originalEvent = selectedEvent;
+          if (data.videoCallLink && (!originalEvent?.videoCallLink || originalEvent.videoCallLink !== data.videoCallLink)) {
+              const course = await db.getCourseById(data.courseId);
+              const enrollments = await db.db.enrollments.where({ courseId: data.courseId, status: 'approved' }).toArray();
+              const studentIds = enrollments.map(e => e.studentId);
+
+              for (const studentId of studentIds) {
+                  await db.addNotification({
+                      userId: studentId,
+                      message: `Enlace de videollamada para "${data.title}" del curso "${course?.title || ''}" disponible.`,
+                      type: 'course_announcement',
+                      relatedUrl: `/dashboard/courses/${data.courseId}`,
+                      isRead: false,
+                      timestamp: new Date().toISOString(),
+                  });
+              }
+              if (studentIds.length > 0) {
+                   toast({ title: 'Alumnos Notificados', description: `Se ha notificado a ${studentIds.length} alumnos sobre el enlace.` });
+              }
+          }
+
+          return true;
       } catch (error) {
           console.error("Error saving event:", error);
           toast({ title: "Error", description: "No se pudo guardar el evento.", variant: "destructive" });
           return false;
       }
-  };
+  }, [allEvents, toast, selectedEvent]);
   
   const handleDeleteEvent = async (id: number) => {
       try {

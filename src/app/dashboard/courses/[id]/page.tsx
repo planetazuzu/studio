@@ -6,10 +6,11 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { notFound, useParams } from 'next/navigation';
 import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { CheckCircle, Clock, Bot, Loader2, Sparkles, Send, PlusCircle, CheckCircle2, XCircle, MessageSquare, Book, File, Video, Link as LinkIcon, FilePenLine, AlertTriangle, Pencil, Rocket, EyeOff, Archive, Users, FileText, Star } from 'lucide-react';
+import { CheckCircle, Clock, Bot, Loader2, Sparkles, Send, PlusCircle, CheckCircle2, XCircle, MessageSquare, Book, File, Video, Link as LinkIcon, FilePenLine, AlertTriangle, Pencil, Rocket, EyeOff, Archive, Users, FileText, Star, CalendarDays } from 'lucide-react';
 import QRCode from 'qrcode';
 import { cn } from '@/lib/utils';
 import { summarizeModuleContent } from '@/ai/flows/summarize-module-content';
@@ -32,6 +33,60 @@ import { CourseResources } from '@/components/course-detail/course-resources';
 import { CourseManagementTab } from '@/components/course-detail/course-management-tab';
 import { ScormLaunchPanel } from '@/components/course-detail/scorm-launch-panel';
 import { RatingTab } from '@/components/course-detail/RatingTab';
+
+function LiveSessionsPanel({ courseId }: { courseId: string }) {
+    const events = useLiveQuery(() => db.getCalendarEvents([courseId]), [courseId]);
+
+    const upcomingEvents = events
+        ?.filter(e => new Date(e.end) > new Date())
+        .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
+
+    if (upcomingEvents === undefined) {
+        return (
+            <Card>
+                <CardContent className="flex justify-center items-center h-24">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                </CardContent>
+            </Card>
+        );
+    }
+
+    if (upcomingEvents.length === 0) {
+        return null;
+    }
+
+    return (
+        <Card className="shadow-lg">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><CalendarDays /> Próximas Sesiones en Directo</CardTitle>
+                <CardDescription>Enlaces para unirte a las clases y talleres programados.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                {upcomingEvents.map(event => (
+                    <div key={event.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 p-3 border rounded-lg bg-muted/50">
+                        <div>
+                            <p className="font-semibold">{event.title}</p>
+                            <p className="text-sm text-muted-foreground">
+                                {format(new Date(event.start), "eeee, d 'de' MMMM 'de' HH:mm", { locale: es })}h
+                            </p>
+                        </div>
+                        {event.videoCallLink ? (
+                            <Button asChild>
+                                <a href={event.videoCallLink} target="_blank" rel="noopener noreferrer">
+                                    <Video className="mr-2 h-4 w-4" />
+                                    Unirse a la Videollamada
+                                </a>
+                            </Button>
+                        ) : (
+                            <Button variant="outline" disabled>Enlace pendiente</Button>
+                        )}
+                    </div>
+                ))}
+            </CardContent>
+        </Card>
+    );
+}
+
 
 export default function CourseDetailPage() {
   const params = useParams<{ id: string }>();
@@ -264,6 +319,8 @@ export default function CourseDetailPage() {
           <p className="text-lg text-white/90">Impartido por {course.instructor}</p>
         </div>
       </header>
+
+      <LiveSessionsPanel courseId={course.id} />
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         <div className="lg:col-span-2">

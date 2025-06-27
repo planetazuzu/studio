@@ -32,7 +32,6 @@ export type User = {
     channels: NotificationChannel[];
   };
 
-  // Sync fields
   isSynced?: boolean;
   updatedAt?: string; // ISO date string
 };
@@ -246,19 +245,20 @@ export type CalendarEventType = 'clase' | 'examen' | 'entrega' | 'taller' | 'otr
 export const calendarEventTypes: CalendarEventType[] = ['clase', 'examen', 'entrega', 'taller', 'otro'];
 
 export type CalendarEvent = {
-  id?: number; // auto-incremented primary key
+  id?: number;
   title: string;
   description?: string;
-  start: string; // ISO date string
-  end: string; // ISO date string
+  start: string;
+  end: string;
   allDay: boolean;
-  courseId: string; // Link to the course
+  courseId: string;
   type: CalendarEventType;
-  createdBy: string; // User ID
-  modifiedBy: string; // User ID
+  videoCallLink?: string;
+  createdBy: string;
+  modifiedBy: string;
   isCompleted: boolean;
   isSynced?: boolean;
-  updatedAt?: string; // ISO date string
+  updatedAt?: string;
 };
 
 export const externalTrainingTypes = ['Curso', 'Certificación', 'Máster', 'Taller', 'Conferencia', 'Otro'] as const;

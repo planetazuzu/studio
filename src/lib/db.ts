@@ -33,102 +33,29 @@ export class AcademiaAIDB extends Dexie {
 
   constructor() {
     super('AcademiaAIDB');
-    this.version(1).stores({
-      courses: 'id, isSynced',
-      users: 'id, email, isSynced',
-      enrollments: '++id, studentId, courseId, status, isSynced',
-      userProgress: '++id, [userId+courseId], progress, isSynced',
-    });
-    this.version(2).stores({
-      users: 'id, &email, isSynced', // Email is now a unique index
-    });
-     this.version(3).stores({
-      // Remove old progress table definition if structure changes
-      userProgress: '++id, [userId+courseId], userId, courseId',
-    });
-    this.version(4).stores({
-      forumMessages: '++id, courseId, parentId, timestamp',
-    });
-    this.version(5).stores({
-        notifications: '++id, userId, isRead, timestamp',
-    });
-    this.version(6).stores({
-        resources: '++id, name',
-        courseResources: '++id, [courseId+resourceId]',
-    });
-    this.version(7).stores({
-        announcements: '++id, timestamp',
-    });
-    this.version(8).stores({
-        chatChannels: 'id, name',
-        chatMessages: '++id, channelId, timestamp'
-    });
-    this.version(9).stores({
-        courses: 'id, isSynced, *mandatoryForRoles'
-    });
-    this.version(10).stores({
-        courses: 'id, status, isSynced, *mandatoryForRoles'
-    });
-    this.version(11).stores({
-        chatChannels: 'id, name, type, *participantIds'
-    });
-    this.version(12).stores({
-        calendarEvents: '++id, courseId, start, end, isSynced',
-    });
-    this.version(13).stores({
-        externalTrainings: '++id, userId'
-    });
-    this.version(14).stores({
-        enrollments: '++id, studentId, courseId, status'
-    });
-    this.version(15).stores({
-        costs: '++id, category, courseId, date'
-    });
-    this.version(16).stores({
-      courses: 'id, instructor, status, isSynced, *mandatoryForRoles'
-    });
-    this.version(17).stores({
-        aiConfig: 'id',
-        aiUsageLog: '++id, timestamp'
-    });
-    this.version(18).stores({
-        users: 'id, &email, status, isSynced',
-    });
-    this.version(19).stores({
-        users: 'id, &email, points, isSynced',
-        badges: 'id',
-        userBadges: '++id, [userId+badgeId]'
-    });
-    // Remove the status-related fields from the users table definition
-    this.version(20).stores({
-        users: 'id, &email, points, isSynced',
-    });
-    this.version(21).stores({
-        users: 'id, &email, status, points, isSynced',
-    });
-    this.version(22).stores({
-      courses: 'id, instructor, status, isScorm, isSynced, *mandatoryForRoles'
-    });
-    this.version(23).stores({
-      // Optimization: Add compound indexes for faster queries
+    this.version(28).stores({
+      courses: 'id, instructor, status, isScorm, isSynced, *mandatoryForRoles',
+      users: 'id, &email, status, points, isSynced',
       enrollments: '++id, studentId, courseId, status, [studentId+status]',
-      chatMessages: '++id, channelId, timestamp, [channelId+timestamp]',
+      userProgress: '++id, [userId+courseId], userId, courseId',
+      forumMessages: '++id, courseId, parentId, timestamp',
       notifications: '++id, userId, isRead, timestamp, [userId+timestamp]',
-    });
-    this.version(24).stores({
-        // Dexie supports blobs out of the box, no explicit schema change needed for `scormPackage`
-        // Bumping version ensures schema is re-evaluated if needed.
-        courses: 'id, instructor, status, isScorm, isSynced, *mandatoryForRoles'
-    });
-    this.version(25).stores({
-        costCategories: '++id, &name'
-    });
-    this.version(26).stores({
+      resources: '++id, name',
+      courseResources: '++id, [courseId+resourceId]',
+      announcements: '++id, timestamp',
+      chatChannels: 'id, name, type, *participantIds',
+      chatMessages: '++id, channelId, timestamp, [channelId+timestamp]',
+      calendarEvents: '++id, courseId, start, end, isSynced',
+      externalTrainings: '++id, userId',
+      costs: '++id, category, courseId, date',
+      aiConfig: 'id',
+      aiUsageLog: '++id, timestamp',
+      badges: 'id',
+      userBadges: '++id, [userId+badgeId]',
+      costCategories: '++id, &name',
       learningPaths: '++id, targetRole',
-      userLearningPathProgress: '++id, [userId+learningPathId]'
-    });
-    this.version(27).stores({
-        courseRatings: '++id, [courseId+userId], courseId, instructorName',
+      userLearningPathProgress: '++id, [userId+learningPathId]',
+      courseRatings: '++id, [courseId+userId], courseId, instructorName',
     });
   }
 }
@@ -140,12 +67,9 @@ export const db = new AcademiaAIDB();
 export async function populateDatabase() {
   const adminUser = await db.users.get('user_1');
 
-  // If the main admin user doesn't exist, or their status is incorrect, we assume the DB is stale.
-  // We'll reset it to a known good state to ensure test accounts are always available.
   if (!adminUser || adminUser.status !== 'approved') {
     console.warn("Main admin user not found or has incorrect status. Resetting and populating database with initial data...");
     
-    // Clear all tables to ensure a clean slate
     await Promise.all([
       db.courses.clear(),
       db.users.clear(),
@@ -173,7 +97,6 @@ export async function populateDatabase() {
 
     console.log("Tables cleared. Repopulating with initial data...");
 
-    // Repopulate with initial data
     await db.courses.bulkAdd(initialCourses.map(c => ({...c, isSynced: true})));
     await db.users.bulkAdd(initialUsers.map(u => ({...u, isSynced: true})));
     await db.chatChannels.bulkAdd(initialChatChannels);
@@ -449,7 +372,6 @@ export async function getEnrolledCoursesForUser(userId: string): Promise<Course[
 }
 
 export async function getIncompleteMandatoryCoursesForUser(user: User): Promise<Course[]> {
-    // Find all courses that are mandatory for the user's role and are published.
     const allCourses = await db.courses.toArray();
     const mandatoryCourses = allCourses.filter(c => 
         c.status === 'published' && c.mandatoryForRoles?.includes(user.role)
@@ -459,15 +381,12 @@ export async function getIncompleteMandatoryCoursesForUser(user: User): Promise<
         return [];
     }
 
-    // Get all progress records for the user.
     const userProgressRecords = await db.userProgress.where('userId').equals(user.id).toArray();
     const progressMap = new Map(userProgressRecords.map(p => [p.courseId, p]));
 
-    // Filter to find which mandatory courses are not yet completed.
     const incompleteCourses = mandatoryCourses.filter(course => {
         const progress = progressMap.get(course.id);
         
-        // A course is considered complete if it has modules and all are marked as complete.
         const isCompleted = 
             progress && 
             course.modules && 
@@ -519,8 +438,7 @@ export async function markModuleAsCompleted(userId: string, courseId: string, mo
 
         await db.users.update(userId, { points: (user.points || 0) + 10 });
         
-        // --- Gamification ---
-        const dayOfWeek = new Date().getDay(); // 0 = Sunday, 6 = Saturday
+        const dayOfWeek = new Date().getDay();
         if (dayOfWeek === 0 || dayOfWeek === 6) {
             await awardBadge(userId, 'weekend_warrior');
         }
@@ -544,12 +462,11 @@ export async function addForumMessage(message: Omit<ForumMessage, 'id' | 'isSync
     }
     const newId = await db.forumMessages.add(newMessage);
 
-    // --- Gamification ---
     await db.transaction('rw', db.users, db.forumMessages, db.userBadges, db.notifications, async () => {
         const user = await db.users.get(message.userId);
         if (!user) return;
 
-        const pointsToAdd = message.parentId ? 2 : 5; // 2 for reply, 5 for new thread
+        const pointsToAdd = message.parentId ? 2 : 5;
         await db.users.update(user.id, { points: (user.points || 0) + pointsToAdd });
 
         const userMessageCount = await db.forumMessages.where('userId').equals(user.id).count();
@@ -560,7 +477,6 @@ export async function addForumMessage(message: Omit<ForumMessage, 'id' | 'isSync
             await awardBadge(user.id, 'forum_collaborator');
         }
     });
-    // --- End Gamification ---
     
     return newId;
 }
@@ -618,7 +534,7 @@ export async function addNotification(notification: Omit<Notification, 'id' | 'i
     const user = await db.users.get(notification.userId);
     if (user && user.notificationSettings?.consent) {
         const settings = user.notificationSettings;
-        const subject = `Notificación de EmergenciaAI`;
+        const subject = `Notificación de AcademiaAI`;
         const body = notification.message;
         
         if (settings.channels.includes('email')) {
@@ -712,12 +628,10 @@ export async function deleteAnnouncement(id: number): Promise<void> {
     await db.announcements.delete(id);
 }
 
-// Gets all announcements for management view
 export async function getAllAnnouncements(): Promise<Announcement[]> {
     return await db.announcements.reverse().sortBy('timestamp');
 }
 
-// Gets announcements relevant to a specific user
 export async function getVisibleAnnouncementsForUser(user: User): Promise<Announcement[]> {
     const all = await db.announcements.reverse().sortBy('timestamp');
     return all.filter(a => 
@@ -735,7 +649,6 @@ export async function addChatMessage(message: Omit<ChatMessage, 'id' | 'isSynced
         isSynced: false,
         updatedAt: new Date().toISOString(),
     }
-    // Update channel's updatedAt timestamp to sort DMs by recent activity
     await db.chatChannels.update(message.channelId, { updatedAt: new Date().toISOString() });
     return await db.chatMessages.add(newChatMessage);
 }
@@ -772,7 +685,7 @@ export async function getDirectMessageThreadsForUserWithDetails(userId: string):
                 avatar: ''
             }
         };
-    }).sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || '')); // Sort by most recent activity
+    }).sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''));
 }
 
 export async function getOrCreateDirectMessageThread(currentUserId: string, otherUserId: string): Promise<ChatChannel> {
@@ -806,7 +719,6 @@ export async function getOrCreateDirectMessageThread(currentUserId: string, othe
 
 // --- Compliance and Mandatory Courses ---
 
-// Optimization: This function is now more efficient.
 export async function getComplianceReportData(departmentFilter: string = 'all', roleFilter: string = 'all'): Promise<ComplianceReportData[]> {
     let query = db.users.toCollection();
 
@@ -840,7 +752,7 @@ export async function getComplianceReportData(departmentFilter: string = 'all', 
                 userRole: user.role,
                 mandatoryCoursesCount: 0,
                 completedCoursesCount: 0,
-                complianceRate: 100, // No mandatory courses means 100% compliant
+                complianceRate: 100,
             });
             continue;
         }
@@ -1044,30 +956,25 @@ async function handleCourseCompletion(userId: string, courseId: string) {
         const course = await db.courses.get(courseId);
         if (!course) return;
 
-        // Mark enrollment as completed
         const enrollment = await db.enrollments.where({ studentId: userId, courseId }).first();
         if (enrollment && enrollment.status !== 'completed') {
             await db.enrollments.update(enrollment.id!, { status: 'completed', updatedAt: new Date().toISOString() });
         }
         
-        // Award points for course completion
         const user = await db.users.get(userId);
         if(user) {
             let pointsToAdd = 50;
-            // Check for on-time completion bonus
             if (course.endDate && new Date() < new Date(course.endDate)) {
-                pointsToAdd += 25; // Bonus points
+                pointsToAdd += 25;
                 await awardBadge(userId, 'on_time_completion');
             }
             await db.users.update(userId, { points: (user.points || 0) + pointsToAdd });
         }
         
-        // Check for course-related badges
         const allCompletedEnrollments = await db.enrollments.where({ studentId: userId, status: 'completed' }).toArray();
         if (allCompletedEnrollments.length >= 1) await awardBadge(userId, 'first_course');
         if (allCompletedEnrollments.length >= 3) await awardBadge(userId, '3_courses');
         
-        // Update learning path progress
         const allLearningPaths = await db.learningPaths.toArray();
         const relevantPaths = allLearningPaths.filter(p => p.courseIds.includes(courseId));
         
