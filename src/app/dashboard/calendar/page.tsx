@@ -38,7 +38,7 @@ const eventSchema = z.object({
     videoCallLink: z.string().url("Debe ser una URL válida.").optional().or(z.literal('')),
 }).refine(data => {
     // If not an all-day event, end must be after start
-    if (!data.allDay) {
+    if (!data.allDay && data.start && data.end) {
         return isAfter(parseISO(data.end), parseISO(data.start));
     }
     return true;
@@ -46,6 +46,7 @@ const eventSchema = z.object({
     message: 'La fecha de fin debe ser posterior a la fecha de inicio.',
     path: ['end'],
 });
+
 
 type EventFormValues = z.infer<typeof eventSchema>;
 
@@ -83,8 +84,8 @@ function EventDialog({
             courseId: undefined,
             type: undefined,
             allDay: false,
-            start: new Date().toISOString(),
-            end: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+            start: '',
+            end: '',
             videoCallLink: '',
         }
     });
@@ -92,9 +93,14 @@ function EventDialog({
     useEffect(() => {
         if (event) {
             form.reset({
-                ...event,
+                title: event.title || '',
+                description: event.description || '',
+                courseId: event.courseId,
+                type: event.type,
+                allDay: !!event.allDay,
                 start: event.start ? format(parseISO(event.start), "yyyy-MM-dd'T'HH:mm") : '',
                 end: event.end ? format(parseISO(event.end), "yyyy-MM-dd'T'HH:mm") : '',
+                videoCallLink: event.videoCallLink || '',
             });
         }
     }, [event, form]);
@@ -126,13 +132,13 @@ function EventDialog({
         }
     };
     
-    const handleDelete = () => {
+    const handleDelete = useCallback(() => {
         if (event && 'id' in event && event.id) {
             setIsDeleting(true);
             onDelete(event.id);
             onOpenChange(false);
         }
-    }
+    }, [event, onDelete, onOpenChange]);
 
     return (
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -290,7 +296,7 @@ export default function CalendarPage() {
       }
   }, [allEvents, toast, selectedEvent]);
   
-  const handleDeleteEvent = async (id: number) => {
+  const handleDeleteEvent = useCallback(async (id: number) => {
       try {
           await db.deleteCalendarEvent(id);
           toast({ title: 'Evento Eliminado' });
@@ -298,7 +304,7 @@ export default function CalendarPage() {
           console.error("Error deleting event:", error);
           toast({ title: 'Error', description: 'No se pudo eliminar el evento.', variant: 'destructive' });
       }
-  }
+  }, [toast]);
   
   const calendarEvents = useMemo(() => {
     return (allEvents || []).map(event => ({
@@ -320,7 +326,7 @@ export default function CalendarPage() {
     <div className="space-y-8 h-[calc(100vh-12rem)] flex flex-col">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Calendario de Formación</h1>
-        <Button onClick={() => handleSelectSlot({ start: new Date(), end: new Date() })}>
+        <Button onClick={() => handleSelectSlot({ start: new Date(), end: new Date(Date.now() + 60*60*1000) })}>
             <PlusCircle className="mr-2 h-4 w-4" />
             Crear Evento
         </Button>

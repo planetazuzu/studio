@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useForm, Controller } from 'react-hook-form';
 import { format } from 'date-fns';
@@ -61,9 +61,13 @@ function ExternalTrainingDialog({
     useEffect(() => {
         if (training) {
             form.reset({
-                ...training,
+                title: training.title || '',
+                type: training.type,
+                institution: training.institution || '',
                 startDate: training.startDate ? format(new Date(training.startDate), "yyyy-MM-dd") : '',
                 endDate: training.endDate ? format(new Date(training.endDate), "yyyy-MM-dd") : '',
+                fileUrl: training.fileUrl || '',
+                comments: training.comments || '',
             });
         } else {
             form.reset({
@@ -139,12 +143,12 @@ export function ExternalTrainingSettings({ user }: { user: User }) {
     const [selectedTraining, setSelectedTraining] = useState<ExternalTraining | null>(null);
     const [trainingToDelete, setTrainingToDelete] = useState<ExternalTraining | null>(null);
 
-    const handleEdit = (training: ExternalTraining) => {
+    const handleEdit = useCallback((training: ExternalTraining) => {
         setSelectedTraining(training);
         setIsDialogOpen(true);
-    };
+    }, []);
 
-    const handleDelete = async () => {
+    const handleDelete = useCallback(async () => {
         if (!trainingToDelete?.id) return;
         try {
             await db.deleteExternalTraining(trainingToDelete.id);
@@ -155,7 +159,7 @@ export function ExternalTrainingSettings({ user }: { user: User }) {
         } finally {
             setTrainingToDelete(null);
         }
-    };
+    }, [trainingToDelete, toast]);
 
     return (
         <div className="space-y-4">

@@ -94,7 +94,7 @@ export default function NewUserPage() {
                                     <FormItem>
                                         <FormLabel>Nombre Completo</FormLabel>
                                         <FormControl>
-                                            <Input placeholder="Ej: Juan Pérez" {...field} value={field.value || ''} />
+                                            <Input placeholder="Ej: Juan Pérez" {...field} />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -107,7 +107,7 @@ export default function NewUserPage() {
                                     <FormItem>
                                         <FormLabel>Correo Electrónico</FormLabel>
                                         <FormControl>
-                                            <Input type="email" placeholder="juan.perez@example.com" {...field} value={field.value || ''} />
+                                            <Input type="email" placeholder="juan.perez@example.com" {...field} />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -121,7 +121,7 @@ export default function NewUserPage() {
                                 <FormItem>
                                     <FormLabel>Contraseña</FormLabel>
                                     <FormControl>
-                                        <Input type="password" placeholder="Establece una contraseña segura" {...field} value={field.value || ''} />
+                                        <Input type="password" placeholder="Establece una contraseña segura" {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
