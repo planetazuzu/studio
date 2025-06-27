@@ -8,8 +8,8 @@ import { Inter } from 'next/font/google';
 const inter = Inter({ subsets: ['latin'] });
  
 export const metadata = {
-  title: 'EmergenciaAI',
-  description: 'Plataforma de formación para técnicos y teleoperadores de emergencias sanitarias.',
+  title: 'AcademiaAI',
+  description: 'La plataforma de formación impulsada por IA para tu equipo.',
 };
  
 export default async function LocaleLayout({

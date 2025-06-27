@@ -47,7 +47,7 @@ export function SidebarContents() {
       <SidebarHeader>
         <div className="flex items-center gap-2 p-2">
           <AppLogo className="h-8 w-8 text-primary" />
-          {isOpen && <span className="text-xl font-semibold">EmergenciaAI</span>}
+          {isOpen && <span className="text-xl font-semibold">AcademiaAI</span>}
         </div>
       </SidebarHeader>
       <SidebarContent>
@@ -58,6 +58,7 @@ export function SidebarContents() {
                 <SidebarMenuButton
                   isActive={item.href === activeItem?.href}
                   tooltip={item.label}
+                  className="h-12 w-full justify-start"
                 >
                   <item.icon />
                   <span>{item.label}</span>

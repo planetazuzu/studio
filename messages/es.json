@@ -1,8 +1,8 @@
 
 {
   "LoginPage": {
-    "title": "EmergenciaAI",
-    "description": "Plataforma de formación para emergencias sanitarias",
+    "title": "AcademiaAI",
+    "description": "La plataforma de formación impulsada por IA para tu equipo.",
     "authErrorTitle": "Error de Autenticación",
     "emailLabel": "Correo electrónico",
     "emailPlaceholder": "nombre@empresa.com",

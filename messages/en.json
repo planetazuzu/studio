@@ -1,8 +1,8 @@
 
 {
   "LoginPage": {
-    "title": "EmergenciaAI",
-    "description": "Training platform for health emergency professionals",
+    "title": "AcademiaAI",
+    "description": "The AI-powered training platform for your team.",
     "authErrorTitle": "Authentication Error",
     "emailLabel": "Email address",
     "emailPlaceholder": "name@company.com",
