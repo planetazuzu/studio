@@ -534,7 +534,7 @@ export async function addNotification(notification: Omit<Notification, 'id' | 'i
     const user = await db.users.get(notification.userId);
     if (user && user.notificationSettings?.consent) {
         const settings = user.notificationSettings;
-        const subject = `Notificación de AcademiaAI`;
+        const subject = `Notificación de TalentOS`;
         const body = notification.message;
         
         if (settings.channels.includes('email')) {

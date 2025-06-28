@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Loader2, Star } from 'lucide-react';
 import * as db from '@/lib/db';
@@ -225,4 +225,3 @@ export function RatingTab({ course, user, progress }: { course: Course, user: Us
         </div>
     );
 }
-
