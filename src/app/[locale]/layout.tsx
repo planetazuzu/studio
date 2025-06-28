@@ -1,8 +1,8 @@
-import {NextIntlClientProvider} from 'next-intl';
-import {getMessages} from 'next-intl/server';
+import { NextIntlClientProvider } from 'next-intl';
+import { getMessages } from 'next-intl/server';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/contexts/auth';
-
+ 
 export default async function LocaleLayout({
   children,
   params: { locale }
