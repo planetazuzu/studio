@@ -1,7 +1,7 @@
+
 'use client';
 
-import { usePathname, useRouter } from '@/navigation';
-import { useLocale } from 'next-intl';
+import { usePathname, useRouter } from 'next/navigation';
 import { Languages } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,10 +14,13 @@ import {
 export function LanguageSwitcher() {
   const router = useRouter();
   const pathname = usePathname();
-  const locale = useLocale();
+  // Since i18n is removed, locale is hardcoded or can be removed.
+  const locale = 'es';
 
   const handleLocaleChange = (nextLocale: 'en' | 'es') => {
-    router.replace(pathname, {locale: nextLocale});
+    // This functionality is disabled as i18n is removed.
+    // In a real i18n app, you would use the router to change locale.
+    // router.replace(pathname, {locale: nextLocale});
   };
 
   return (

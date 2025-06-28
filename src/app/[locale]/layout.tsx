@@ -1,34 +1,14 @@
-import { Inter } from 'next/font/google';
-import { Toaster } from "@/components/ui/toaster";
-import { AuthProvider } from '@/contexts/auth';
-import '../globals.css';
 
-const inter = Inter({ subsets: ['latin'] });
+import { ReactNode } from 'react';
 
-export const metadata = {
-  title: 'AcademiaAI',
-  description: 'La plataforma de formación impulsada por IA para tu equipo.',
-};
- 
-export default function RootLayout({
-  children,
+// This layout is now obsolete after removing i18n.
+// The main layout in `src/app/layout.tsx` handles everything.
+// This file is kept to prevent "not found" errors on existing builds
+// but it just passes children through.
+export default function LocaleLayout({
+  children
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
- 
-  return (
-    <html lang="es" suppressHydrationWarning className={inter.className}>
-       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-      </head>
-      <body className="font-body bg-background">
-        <AuthProvider>
-            {children}
-        </AuthProvider>
-        <Toaster />
-      </body>
-    </html>
-  );
+  return children;
 }

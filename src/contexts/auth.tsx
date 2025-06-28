@@ -2,7 +2,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { usePathname, useRouter } from '@/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { User } from '@/lib/types';
 import * as db from '@/lib/db';
 import { Loader2 } from 'lucide-react';
