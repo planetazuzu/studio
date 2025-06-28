@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useActionState, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useToast } from '@/hooks/use-toast';
 import * as db from '@/lib/db';
@@ -15,13 +15,13 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, Server, BrainCircuit } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Skeleton } from '../ui/skeleton';
 
 export function AISettings() {
     const { toast } = useToast();
     const formRef = useRef<HTMLFormElement>(null);
-    const [state, formAction] = useActionState(saveAIConfigAction, { success: false, message: '' });
+    const [isPending, setIsPending] = useState(false);
 
     const currentConfig = useLiveQuery(() => db.getAIConfig());
     const [localConfig, setLocalConfig] = useState<AIConfig | null>(null);
@@ -31,16 +31,6 @@ export function AISettings() {
             setLocalConfig(currentConfig);
         }
     }, [currentConfig]);
-
-    useEffect(() => {
-        if (state.message) {
-            toast({
-                title: state.success ? 'Éxito' : 'Error',
-                description: state.message,
-                variant: state.success ? 'default' : 'destructive',
-            });
-        }
-    }, [state, toast]);
 
     const handleFeatureToggle = (feature: AIFeature, checked: boolean) => {
         if (!localConfig) return;
@@ -53,26 +43,38 @@ export function AISettings() {
         }));
     };
     
-    const handleSaveChanges = async (formData: FormData) => {
-        if (!localConfig) return;
+    const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        if (!localConfig || !formRef.current) return;
         
-        // First, trigger the server action to save API keys
-        formAction(formData);
+        setIsPending(true);
+        const formData = new FormData(formRef.current);
+        formData.append('activeModel', localConfig.activeModel);
 
-        // Then, save the rest of the config to Dexie
-        try {
-            await db.saveAIConfig(localConfig);
-            toast({
-                title: 'Configuración guardada',
-                description: 'La configuración local de la IA ha sido actualizada.'
-            });
-        } catch (error) {
-             toast({
-                title: 'Error',
-                description: 'No se pudo guardar la configuración local.',
-                variant: 'destructive',
-            });
+        const result = await saveAIConfigAction(null, formData);
+
+        toast({
+            title: result.success ? 'Configuración del Servidor Guardada' : 'Error del Servidor',
+            description: result.message,
+            variant: result.success ? 'default' : 'destructive',
+        });
+
+        if (result.success) {
+            try {
+                await db.saveAIConfig(localConfig);
+                toast({
+                    title: 'Configuración Local Guardada',
+                    description: 'La configuración de la IA se ha guardado en tu navegador.'
+                });
+            } catch (error) {
+                 toast({
+                    title: 'Error local',
+                    description: 'No se pudo guardar la configuración en el navegador.',
+                    variant: 'destructive',
+                });
+            }
         }
+        setIsPending(false);
     }
     
     if (!localConfig) {
@@ -80,7 +82,7 @@ export function AISettings() {
     }
 
     return (
-        <form ref={formRef} action={handleSaveChanges} className="space-y-6">
+        <form ref={formRef} onSubmit={handleFormSubmit} className="space-y-6">
             <Card>
                 <CardHeader>
                     <CardTitle>Proveedor de IA Activo</CardTitle>
@@ -172,7 +174,10 @@ export function AISettings() {
             </Card>
 
             <div className="flex justify-end">
-                <Button type="submit">Guardar Configuración de IA</Button>
+                <Button type="submit" disabled={isPending}>
+                    {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Guardar Configuración de IA
+                </Button>
             </div>
         </form>
     );

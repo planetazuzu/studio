@@ -4,7 +4,7 @@
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import { getNocoDBConfig } from '@/lib/config';
-import type { User, Course, AIConfig } from '@/lib/types';
+import type { User, Course, AIConfig, AIModel } from '@/lib/types';
 import { createNocoUser, createNocoCourse } from '@/lib/noco';
 
 const cookieOptions = {
@@ -15,26 +15,25 @@ const cookieOptions = {
 };
 
 export async function saveApiKeysAction(prevState: any, formData: FormData) {
-  const nocodbApiUrl = formData.get('nocodbApiUrl') as string;
-  const nocodbAuthToken = formData.get('nocodbAuthToken') as string;
-
   try {
     // Handle NocoDB URL
-    if (nocodbApiUrl) {
-      cookies().set('nocodb_api_url', nocodbApiUrl, cookieOptions);
-    } else {
-       if (formData.has('nocodbApiUrl')) {
+    if (formData.has('nocodbApiUrl')) {
+      const nocodbApiUrl = formData.get('nocodbApiUrl') as string;
+      if (nocodbApiUrl) {
+        cookies().set('nocodb_api_url', nocodbApiUrl, cookieOptions);
+      } else {
         cookies().delete('nocodb_api_url');
       }
     }
 
     // Handle NocoDB Auth Token
-    if (nocodbAuthToken) {
-      cookies().set('nocodb_auth_token', nocodbAuthToken, cookieOptions);
-    } else {
-       if (formData.has('nocodbAuthToken')) {
-        cookies().delete('nocodb_auth_token');
-      }
+     if (formData.has('nocodbAuthToken')) {
+        const nocodbAuthToken = formData.get('nocodbAuthToken') as string;
+        if (nocodbAuthToken) {
+            cookies().set('nocodb_auth_token', nocodbAuthToken, cookieOptions);
+        } else {
+            cookies().delete('nocodb_auth_token');
+        }
     }
 
     revalidatePath('/dashboard/settings');
@@ -47,18 +46,29 @@ export async function saveApiKeysAction(prevState: any, formData: FormData) {
 
 export async function saveAIConfigAction(prevState: any, formData: FormData) {
   try {
-    const openaiApiKey = formData.get('openai_api_key') as string;
-    if (openaiApiKey) {
-      cookies().set('openai_api_key', openaiApiKey, cookieOptions);
-    } else if (formData.has('openai_api_key')) {
-      cookies().delete('openai_api_key');
+    if (formData.has('openai_api_key')) {
+        const openaiApiKey = formData.get('openai_api_key') as string;
+        if (openaiApiKey) {
+            cookies().set('openai_api_key', openaiApiKey, cookieOptions);
+        } else {
+            cookies().delete('openai_api_key');
+        }
     }
 
-    const geminiApiKey = formData.get('gemini_api_key') as string;
-    if (geminiApiKey) {
-      cookies().set('gemini_api_key', geminiApiKey, cookieOptions);
-    } else if (formData.has('gemini_api_key')) {
-      cookies().delete('gemini_api_key');
+    if (formData.has('gemini_api_key')) {
+        const geminiApiKey = formData.get('gemini_api_key') as string;
+        if (geminiApiKey) {
+            cookies().set('gemini_api_key', geminiApiKey, cookieOptions);
+        } else {
+            cookies().delete('gemini_api_key');
+        }
+    }
+    
+    if (formData.has('activeModel')) {
+        const activeModel = formData.get('activeModel') as AIModel;
+        if (activeModel) {
+            cookies().set('ai_active_model', activeModel, cookieOptions);
+        }
     }
 
     revalidatePath('/dashboard/settings');

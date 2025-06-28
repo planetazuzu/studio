@@ -2,7 +2,6 @@
 'use server';
 
 import { cookies } from 'next/headers';
-import { getAIConfig } from '@/lib/db';
 import { googleAI } from '@genkit-ai/googleai';
 import { genkitPlugin, ModelReference } from 'genkit';
 // In a real app, you would uncomment this when adding OpenAI support
@@ -10,7 +9,7 @@ import { genkitPlugin, ModelReference } from 'genkit';
 
 /**
  * Gets the active AI model and its corresponding Genkit plugin based on the
- * administrator's configuration.
+ * administrator's configuration, which is read from cookies.
  *
  * @returns An object containing the Genkit model reference and the configured plugin.
  * @throws An error if the active model's API key is not configured.
@@ -19,14 +18,14 @@ export async function getActiveAIProvider(): Promise<{
   llm: ModelReference<any>;
   plugins: genkitPlugin[];
 }> {
-  const config = await getAIConfig();
   const cookieStore = cookies();
+  const activeModel = cookieStore.get('ai_active_model')?.value || 'Gemini';
   
   let llm: ModelReference<any>;
   let plugins: genkitPlugin[] = [];
   let apiKey: string | undefined;
 
-  switch (config.activeModel) {
+  switch (activeModel) {
     case 'OpenAI':
       apiKey = cookieStore.get('openai_api_key')?.value;
       if (!apiKey) throw new Error("La clave API para OpenAI no está configurada.");
@@ -39,7 +38,7 @@ export async function getActiveAIProvider(): Promise<{
     case 'Claude':
     case 'HuggingFace':
     case 'Whisper':
-       throw new Error(`El proveedor ${config.activeModel} aún no está implementado.`);
+       throw new Error(`El proveedor ${activeModel} aún no está implementado.`);
 
     case 'Gemini':
     default:
