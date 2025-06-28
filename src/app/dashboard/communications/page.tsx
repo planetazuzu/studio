@@ -3,19 +3,20 @@
 
 import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { PlusCircle, Trash2, Loader2, Megaphone, AlertTriangle, Info, Wrench, ChevronDown, Check as CheckIcon, FileText } from 'lucide-react';
+import { PlusCircle, Trash2, Loader2, Megaphone, AlertTriangle, Info, Wrench, ChevronDown, Check as CheckIcon, FileText, Mail, Sparkles, Copy } from 'lucide-react';
 import { useAuth } from '@/contexts/auth';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { createAndNotifyAnnouncement } from './actions';
+import { generateAnnouncementEmail } from '@/ai/flows/announcement-email-generation';
 
 import * as db from '@/lib/db';
-import type { Announcement, AnnouncementType } from '@/lib/types';
+import type { Announcement, AnnouncementType, AIConfig } from '@/lib/types';
 import { announcementTypes } from '@/lib/types';
 import { announcementChannels } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
@@ -57,6 +58,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Separator } from '@/components/ui/separator';
 
 
 const announcementSchema = z.object({
@@ -101,6 +103,10 @@ function AddAnnouncementDialog({ open, onOpenChange }: { open: boolean, onOpenCh
         }
     });
 
+    const [generatedEmail, setGeneratedEmail] = useState<{ subject: string; body: string } | null>(null);
+    const [isGenerating, setIsGenerating] = useState(false);
+    const aiConfig = useLiveQuery<AIConfig | undefined>(() => db.getAIConfig());
+
     const { isSubmitting } = form.formState;
 
     const handleSelectTemplate = (template: typeof announcementTemplates[0]) => {
@@ -121,9 +127,39 @@ function AddAnnouncementDialog({ open, onOpenChange }: { open: boolean, onOpenCh
         }
     };
     
+    const handleGenerateEmail = async () => {
+        const isValid = await form.trigger(['title', 'content']);
+        if (!isValid) {
+            toast({ title: "Faltan datos", description: "Por favor, completa el título y el contenido del aviso antes de generar el email.", variant: "destructive" });
+            return;
+        }
+        setIsGenerating(true);
+        setGeneratedEmail(null);
+        try {
+            const { title, content } = form.getValues();
+            const result = await generateAnnouncementEmail({
+                recipientName: 'Miembro del Equipo',
+                announcementTitle: title,
+                announcementContent: content,
+            });
+            setGeneratedEmail(result);
+            toast({ title: "Borrador de email generado" });
+        } catch (e: any) {
+            console.error(e);
+            toast({ title: "Error de IA", description: e.message || "No se pudo generar el borrador del email.", variant: "destructive" });
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
+    const copyToClipboard = (text: string, fieldName: string) => {
+        navigator.clipboard.writeText(text);
+        toast({ title: `Copiado`, description: `El ${fieldName} se ha copiado al portapapeles.` });
+    };
+
     return (
-        <Dialog open={open} onOpenChange={(isOpen) => { onOpenChange(isOpen); if (!isOpen) form.reset(); }}>
-            <DialogContent className="sm:max-w-[600px]">
+        <Dialog open={open} onOpenChange={(isOpen) => { onOpenChange(isOpen); if (!isOpen) { form.reset(); setGeneratedEmail(null); } }}>
+            <DialogContent className="sm:max-w-3xl">
                 <DialogHeader>
                     <div className="flex justify-between items-center">
                         <DialogTitle>Crear Nuevo Aviso</DialogTitle>
@@ -145,58 +181,107 @@ function AddAnnouncementDialog({ open, onOpenChange }: { open: boolean, onOpenCh
                         </DropdownMenu>
                     </div>
                 </DialogHeader>
-                <Form {...form}>
-                    <form id="announcement-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-                        <FormField control={form.control} name="title" render={({ field }) => (<FormItem><FormLabel>Título</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={form.control} name="content" render={({ field }) => (<FormItem><FormLabel>Contenido</FormLabel><FormControl><Textarea rows={4} {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        <div className="grid grid-cols-2 gap-4">
-                             <FormField control={form.control} name="type" render={({ field }) => (<FormItem><FormLabel>Tipo</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>{announcementTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
-                            <FormField
-                                control={form.control}
-                                name="channels"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Canales de Distribución</FormLabel>
-                                        <Popover>
-                                            <PopoverTrigger asChild>
-                                                <FormControl>
-                                                    <Button variant="outline" role="combobox" className={cn("w-full justify-between", !field.value?.length && "text-muted-foreground")}>
-                                                        {field.value?.length ? `${field.value.length} seleccionado(s)` : "Seleccionar canales"}
-                                                        <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                                    </Button>
-                                                </FormControl>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                               <ScrollArea className="h-64">
-                                                <div className="p-2 space-y-1">
-                                                {announcementChannels.map((channel) => (
-                                                    <div key={channel} className="flex items-center space-x-2 p-2 hover:bg-muted/50 rounded-md">
-                                                        <Checkbox
-                                                            id={channel}
-                                                            checked={field.value?.includes(channel)}
-                                                            onCheckedChange={(checked) => {
-                                                                return checked
-                                                                    ? field.onChange([...(field.value || []), channel])
-                                                                    : field.onChange(field.value?.filter((value) => value !== channel))
-                                                            }}
-                                                        />
-                                                        <label htmlFor={channel} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                                            {channel}
-                                                        </label>
+                <div className="max-h-[70vh] overflow-y-auto p-1 pr-4 space-y-4">
+                    <Form {...form}>
+                        <form id="announcement-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                            <FormField control={form.control} name="title" render={({ field }) => (<FormItem><FormLabel>Título</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField control={form.control} name="content" render={({ field }) => (<FormItem><FormLabel>Contenido</FormLabel><FormControl><Textarea rows={4} {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            <div className="grid grid-cols-2 gap-4">
+                                 <FormField control={form.control} name="type" render={({ field }) => (<FormItem><FormLabel>Tipo</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent>{announcementTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
+                                <FormField
+                                    control={form.control}
+                                    name="channels"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Canales de Distribución</FormLabel>
+                                            <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <FormControl>
+                                                        <Button variant="outline" role="combobox" className={cn("w-full justify-between", !field.value?.length && "text-muted-foreground")}>
+                                                            {field.value?.length ? `${field.value.length} seleccionado(s)` : "Seleccionar canales"}
+                                                            <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                        </Button>
+                                                    </FormControl>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                                   <ScrollArea className="h-64">
+                                                    <div className="p-2 space-y-1">
+                                                    {announcementChannels.map((channel) => (
+                                                        <div key={channel} className="flex items-center space-x-2 p-2 hover:bg-muted/50 rounded-md">
+                                                            <Checkbox
+                                                                id={channel}
+                                                                checked={field.value?.includes(channel)}
+                                                                onCheckedChange={(checked) => {
+                                                                    return checked
+                                                                        ? field.onChange([...(field.value || []), channel])
+                                                                        : field.onChange(field.value?.filter((value) => value !== channel))
+                                                                }}
+                                                            />
+                                                            <label htmlFor={channel} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                                                {channel}
+                                                            </label>
+                                                        </div>
+                                                    ))}
                                                     </div>
-                                                ))}
+                                                   </ScrollArea>
+                                                </PopoverContent>
+                                            </Popover>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+                        </form>
+                    </Form>
+
+                    {aiConfig?.enabledFeatures.emailGeneration && (
+                        <>
+                            <Separator />
+                            <div className="space-y-4">
+                                <div>
+                                    <h4 className="font-semibold text-lg flex items-center gap-2"><Mail /> Borrador de Email (IA)</h4>
+                                    <p className="text-sm text-muted-foreground">Genera un borrador de email para este anuncio, ideal para enviar por canales externos.</p>
+                                </div>
+                                <Button type="button" variant="outline" onClick={handleGenerateEmail} disabled={isGenerating}>
+                                    {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                                    {generatedEmail ? 'Volver a Generar Borrador' : 'Generar Borrador con IA'}
+                                </Button>
+                                
+                                {(isGenerating || generatedEmail) && (
+                                    <div className="p-4 border rounded-lg bg-muted/50 space-y-4">
+                                        {isGenerating ? (
+                                            <div className="flex items-center justify-center p-8">
+                                                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                            </div>
+                                        ) : generatedEmail ? (
+                                            <>
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="email-subject">Asunto del Email</Label>
+                                                    <div className="relative">
+                                                        <Input id="email-subject" readOnly value={generatedEmail.subject} className="pr-10 bg-background" />
+                                                        <Button type="button" variant="ghost" size="icon" className="absolute top-1/2 right-1 -translate-y-1/2 h-8 w-8" onClick={() => copyToClipboard(generatedEmail.subject, 'asunto')}>
+                                                            <Copy className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
                                                 </div>
-                                               </ScrollArea>
-                                            </PopoverContent>
-                                        </Popover>
-                                        <FormMessage />
-                                    </FormItem>
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="email-body">Cuerpo del Email</Label>
+                                                    <div className="relative">
+                                                        <Textarea id="email-body" readOnly value={generatedEmail.body} rows={8} className="pr-10 bg-background" />
+                                                         <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-1 h-8 w-8" onClick={() => copyToClipboard(generatedEmail.body, 'cuerpo del email')}>
+                                                            <Copy className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            </>
+                                        ) : null}
+                                    </div>
                                 )}
-                            />
-                        </div>
-                    </form>
-                </Form>
-                <DialogFooter>
+                            </div>
+                        </>
+                    )}
+                </div>
+                <DialogFooter className="pt-4 border-t">
                     <DialogClose asChild><Button type="button" variant="outline">Cancelar</Button></DialogClose>
                     <Button type="submit" form="announcement-form" disabled={isSubmitting}>
                         {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
