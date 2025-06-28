@@ -262,16 +262,16 @@ export default function UsersPage() {
                                     {filteredUsers.map(u => (
                                         <TableRow key={u.id}>
                                             <TableCell className="font-medium">
-                                                <div className="flex items-center gap-3">
+                                                <Link href={`/dashboard/users/${u.id}`} className="flex items-center gap-3 group">
                                                     <Avatar className="h-9 w-9">
                                                         <AvatarImage src={u.avatar} alt={u.name} />
                                                         <AvatarFallback>{u.name?.slice(0, 2) ?? '?'}</AvatarFallback>
                                                     </Avatar>
                                                     <div className="grid gap-0.5">
-                                                        <p className="font-semibold">{u.name || u.email}</p>
+                                                        <p className="font-semibold group-hover:underline">{u.name || u.email}</p>
                                                         <p className="text-xs text-muted-foreground">{u.email}</p>
                                                     </div>
-                                                </div>
+                                                </Link>
                                             </TableCell>
                                             <TableCell>
                                                 {u.role ? <Badge variant={roleBadgeVariant[u.role]}>{u.role}</Badge> : '-'}
