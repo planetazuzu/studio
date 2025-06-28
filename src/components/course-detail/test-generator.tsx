@@ -13,9 +13,11 @@ import { cn } from '@/lib/utils';
 import type { AIConfig, User } from '@/lib/types';
 import * as db from '@/lib/db';
 import { useAuth } from '@/contexts/auth';
+import { useToast } from '@/hooks/use-toast';
 
 export function TestGenerator({ courseTitle, courseContent, studentName, aiConfig }: { courseTitle: string; courseContent: string; studentName: string, aiConfig: AIConfig | undefined }) {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [testData, setTestData] = useState<GenerateTestQuestionsOutput | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -38,8 +40,11 @@ export function TestGenerator({ courseTitle, courseContent, studentName, aiConfi
     try {
       const result = await generateTestQuestions({ courseContent, numberOfQuestions: 3 });
       setTestData(result);
-    } catch (e) {
-      setError('No se pudo generar el test. Inténtelo de nuevo.');
+    } catch (e: any) {
+      const errorMessage = e.message?.includes('API no está configurada')
+          ? e.message
+          : 'No se pudo generar el test. Inténtelo de nuevo.';
+      setError(errorMessage);
       console.error(e);
     } finally {
       setLoading(false);
@@ -84,7 +89,12 @@ export function TestGenerator({ courseTitle, courseContent, studentName, aiConfi
         questions: questionsForFeedback,
       });
       setFeedback(result.feedback);
-    } catch (e) {
+    } catch (e: any) {
+      toast({
+        title: "Error de IA",
+        description: e.message?.includes('API no está configurada') ? e.message : 'No se pudo obtener el feedback.',
+        variant: "destructive"
+      });
       console.error(e);
     } finally {
       setFeedbackLoading(false);

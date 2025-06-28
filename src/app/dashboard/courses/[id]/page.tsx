@@ -269,11 +269,14 @@ export default function CourseDetailPage() {
     try {
       const result = await summarizeModuleContent(content);
       setSummaries(prev => ({ ...prev, [moduleId]: result.summary }));
-    } catch (e) {
+    } catch (e: any) {
       console.error("Failed to generate summary", e);
+      const description = e.message?.includes('API no está configurada')
+          ? e.message
+          : "No se pudo generar el resumen del módulo.";
       toast({
         title: "Error de IA",
-        description: "No se pudo generar el resumen del módulo.",
+        description,
         variant: "destructive"
       });
     } finally {

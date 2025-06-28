@@ -128,11 +128,14 @@ export default function UsersPage() {
             const result = await predictAbandonment(simulatedData);
             setPredictionResult(prev => ({...prev, [user.id]: result}));
 
-        } catch (error) {
+        } catch (error: any) {
             console.error("Failed to get prediction", error);
+            const description = error.message?.includes('API no está configurada')
+                ? error.message
+                : "No se pudo obtener la predicción.";
             toast({
                 title: "Error de IA",
-                description: "No se pudo obtener la predicción.",
+                description,
                 variant: "destructive",
             });
         } finally {

@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
@@ -257,8 +258,11 @@ function AiSuggestions({ user }: { user: User }) {
 
         setSuggestions(suggestionsWithDetails);
 
-    } catch (e) {
-      setError('No se pudieron generar las sugerencias. Inténtelo de nuevo.');
+    } catch (e: any) {
+      const errorMessage = e.message?.includes('API no está configurada')
+        ? e.message
+        : 'No se pudieron generar las sugerencias. Inténtelo de nuevo.';
+      setError(errorMessage);
       console.error(e);
     } finally {
       setLoading(false);

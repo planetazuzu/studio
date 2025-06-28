@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -89,11 +90,14 @@ export default function AIGeneratorPage() {
             title: "Estructura generada",
             description: "La IA ha creado una propuesta de curso.",
         });
-    } catch (error) {
+    } catch (error: any) {
         console.error("Failed to generate course", error);
+        const description = error.message?.includes('API no está configurada')
+            ? error.message
+            : "No se pudo generar el curso. Inténtalo con un tema diferente.";
         toast({
             title: "Error de la IA",
-            description: "No se pudo generar el curso. Inténtalo con un tema diferente.",
+            description,
             variant: "destructive",
         });
     } finally {

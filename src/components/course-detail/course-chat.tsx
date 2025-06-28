@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -30,8 +31,11 @@ export function CourseChat({ courseTitle, courseContent }: { courseTitle: string
             const result = await courseTutor({ courseContent, question: input });
             const aiMessage: ChatMessage = { sender: 'ai', text: result.answer };
             setMessages(prev => [...prev, aiMessage]);
-        } catch (error) {
-            const errorMessage: ChatMessage = { sender: 'ai', text: 'Lo siento, no he podido procesar tu pregunta. Por favor, inténtalo de nuevo.' };
+        } catch (error: any) {
+            const errorText = error.message?.includes('API no está configurada')
+                ? error.message
+                : 'Lo siento, no he podido procesar tu pregunta. Por favor, inténtalo de nuevo.';
+            const errorMessage: ChatMessage = { sender: 'ai', text: errorText };
             setMessages(prev => [...prev, errorMessage]);
             console.error('Error with course tutor:', error);
         } finally {

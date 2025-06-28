@@ -146,7 +146,10 @@ function AddAnnouncementDialog({ open, onOpenChange }: { open: boolean, onOpenCh
             toast({ title: "Borrador de email generado" });
         } catch (e: any) {
             console.error(e);
-            toast({ title: "Error de IA", description: e.message || "No se pudo generar el borrador del email.", variant: "destructive" });
+            const description = e.message?.includes('API no está configurada')
+                ? e.message
+                : "No se pudo generar el borrador del email.";
+            toast({ title: "Error de IA", description, variant: "destructive" });
         } finally {
             setIsGenerating(false);
         }
@@ -270,7 +273,7 @@ function AddAnnouncementDialog({ open, onOpenChange }: { open: boolean, onOpenCh
                                                         <Textarea id="email-body" readOnly value={generatedEmail.body} rows={8} className="pr-10 bg-background" />
                                                          <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-1 h-8 w-8" onClick={() => copyToClipboard(generatedEmail.body, 'cuerpo del email')}>
                                                             <Copy className="h-4 w-4" />
-                                                        </Button>
+                                                         </Button>
                                                     </div>
                                                 </div>
                                             </>
