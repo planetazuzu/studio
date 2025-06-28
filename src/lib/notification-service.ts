@@ -73,7 +73,7 @@ export async function sendWhatsAppNotification(user: User, message: string): Pro
     await client.messages.create({
       from: `whatsapp:${TWILIO_WHATSAPP_FROM}`,
       to: `whatsapp:${userPhoneNumber}`,
-      body: `Hola ${user.name}, tienes una nueva notificación de EmergenciaAI: ${message}`,
+      body: `Hola ${user.name}, tienes una nueva notificación de TalentOS: ${message}`,
     });
     console.log(`WhatsApp message sent successfully to ${user.name}`);
   } catch (error) {

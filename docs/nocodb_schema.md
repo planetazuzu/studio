@@ -1,6 +1,6 @@
 # Esquema de Tablas para NocoDB
 
-Aquí tienes la estructura de las tablas principales que necesitas configurar en tu instancia de NocoDB para la aplicación AcademiaAI.
+Aquí tienes la estructura de las tablas principales que necesitas configurar en tu instancia de NocoDB para la aplicación TalentOS.
 
 **Consejo:** Presta especial atención a los tipos de columna (`Column Type`) y a las relaciones (`Links`).
 

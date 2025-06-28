@@ -60,14 +60,14 @@ export default function LoginPage() {
   const formIsDisabled = isAuthLoading || isSubmitting;
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4 gap-6">
       <Card className="w-full max-w-md shadow-2xl">
         <CardHeader className="text-center">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
             <AppLogo className="h-8 w-8" />
           </div>
-          <CardTitle className="text-3xl font-bold">AcademiaAI</CardTitle>
-          <CardDescription>La plataforma de formación impulsada por IA para tu equipo.</CardDescription>
+          <CardTitle className="text-3xl font-bold">TalentOS</CardTitle>
+          <CardDescription>La plataforma de talento impulsada por IA para tu equipo.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-6">
@@ -149,6 +149,7 @@ export default function LoginPage() {
           </div>
         </CardContent>
       </Card>
+      <p className="text-xs text-muted-foreground">Copyright © 2025 TalentOS v1.0</p>
     </div>
   );
 }
