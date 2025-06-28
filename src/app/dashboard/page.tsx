@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
@@ -18,6 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { LearningPathPanel } from '@/components/dashboard/learning-path-panel';
+import { InstructorDashboardView } from '@/components/dashboard/instructor-view';
 
 
 function AnnouncementsPanel({ user }: { user: User }) {
@@ -215,7 +217,7 @@ function MyCourses({ user }: { user: User }) {
 
 
 function AiSuggestions({ user }: { user: User }) {
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Start loading immediately
   const [suggestions, setSuggestions] = useState<PersonalizedCourseRecommendationsOutput['suggestions']>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -224,9 +226,16 @@ function AiSuggestions({ user }: { user: User }) {
   const enrolledCourses = useLiveQuery(() => db.getEnrolledCoursesForUser(user.id), [user.id]);
   const externalTrainings = useLiveQuery(() => db.getExternalTrainingsForUser(user.id), [user.id]);
 
-  const handleGetSuggestions = async () => {
+  const handleGetSuggestions = async (force = false) => {
     if (!allCourses || !enrolledCourses || !externalTrainings) {
         setError('No se pudieron cargar los datos necesarios para las sugerencias.');
+        setLoading(false);
+        return;
+    }
+    
+    // If not forcing, don't re-fetch if we already have suggestions
+    if (suggestions.length > 0 && !force) {
+        setLoading(false);
         return;
     }
 
@@ -242,14 +251,10 @@ function AiSuggestions({ user }: { user: User }) {
             allAvailableCourseTitles: allCourses.filter(c => c.status !== 'draft').map(c => c.title),
         });
         
-        // Find the full course object for the suggested titles to create links
         const suggestionsWithDetails = result.suggestions.map(suggestion => {
             const course = allCourses.find(c => c.title === suggestion.courseTitle);
-            return {
-                ...suggestion,
-                courseId: course?.id,
-            }
-        }).filter(s => s.courseId); // Filter out any suggestions where the course wasn't found
+            return { ...suggestion, courseId: course?.id };
+        }).filter(s => s.courseId);
 
         setSuggestions(suggestionsWithDetails);
 
@@ -260,6 +265,15 @@ function AiSuggestions({ user }: { user: User }) {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    // Fetch suggestions when data dependencies are met
+    if (allCourses && enrolledCourses && externalTrainings) {
+        handleGetSuggestions();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allCourses, enrolledCourses, externalTrainings]);
+
 
   return (
     <Card className="shadow-lg col-span-1 lg:col-span-1">
@@ -273,6 +287,8 @@ function AiSuggestions({ user }: { user: User }) {
       <CardContent className="flex flex-col items-center justify-center text-center space-y-4 min-h-[200px]">
         {loading ? (
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        ) : error ? (
+           <p className="text-sm text-destructive mt-2">{error}</p>
         ) : suggestions.length > 0 ? (
           <ul className="space-y-3 text-left w-full">
             {suggestions.map((rec, i) => (
@@ -283,16 +299,12 @@ function AiSuggestions({ user }: { user: User }) {
             ))}
           </ul>
         ) : (
-           <Button onClick={handleGetSuggestions} disabled={loading || !allCourses || !enrolledCourses || !externalTrainings}>
-              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Lightbulb className="mr-2 h-4 w-4" />}
-              Generar Sugerencias
-           </Button>
+          <p className="text-sm text-muted-foreground">No hay nuevas sugerencias para ti en este momento.</p>
         )}
-        {error && <p className="text-sm text-destructive mt-2">{error}</p>}
       </CardContent>
-       {(suggestions.length > 0 && !loading) && (
+       {!loading && (
           <CardFooter className="justify-center">
-              <Button variant="outline" onClick={handleGetSuggestions} disabled={loading}>
+              <Button variant="outline" onClick={() => handleGetSuggestions(true)} disabled={loading}>
                  <Lightbulb className="mr-2 h-4 w-4" />
                  Volver a generar
               </Button>
@@ -302,13 +314,32 @@ function AiSuggestions({ user }: { user: User }) {
   );
 }
 
-export default function DashboardPage() {
-  const { user } = useAuth();
-  if (!user) return null;
+function StudentDashboardView({ user }: { user: User }) {
+  // --- Data Fetching for Stats ---
+  const enrolledCourses = useLiveQuery(() => user ? db.getEnrolledCoursesForUser(user.id) : [], [user?.id]);
+  const allProgress = useLiveQuery(() => user ? db.getUserProgressForUser(user.id) : [], [user?.id]);
+  const allCourses = useLiveQuery(() => db.getAllCourses(), []);
+  const allCosts = useLiveQuery(() => db.getAllCosts(), []);
 
+  // --- Stat Calculations ---
+  const activeCoursesCount = enrolledCourses?.length ?? 0;
+
+  const completedCoursesCount = useMemo(() => {
+      if (!allProgress || !allCourses) return 0;
+      const courseModuleCounts = new Map(allCourses.map(c => [c.id, c.modules.length]));
+      return allProgress.filter(p => {
+          const totalModules = courseModuleCounts.get(p.courseId) || 0;
+          return totalModules > 0 && p.completedModules.length === totalModules;
+      }).length;
+  }, [allProgress, allCourses]);
+  
+  const totalCost = useMemo(() => {
+    if (!allCosts) return 0;
+    return allCosts.reduce((sum, cost) => sum + cost.amount, 0);
+  }, [allCosts]);
+  
   const isManager = ['Gestor de RRHH', 'Jefe de Formación', 'Administrador General'].includes(user.role);
   const canViewCosts = isManager;
-  
   const aiConfig = useLiveQuery<AIConfig | undefined>(() => db.getAIConfig());
 
   return (
@@ -318,10 +349,10 @@ export default function DashboardPage() {
         <p className="text-muted-foreground">Aquí tienes un resumen de tu actividad formativa.</p>
       </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StatCard title="Cursos Activos" value="4" icon={Activity} description="+2 desde el mes pasado" />
-        <StatCard title="Formaciones Completadas" value="12" icon={BookCheck} description="Año actual" />
-        <StatCard title="Certificados Obtenidos" value="8" icon={GraduationCap} description="Pendientes: 2" />
-        {canViewCosts && <StatCard title="Coste Total" value="8,950€" icon={Wallet} description="Presupuesto: 15,000€" />}
+        <StatCard title="Cursos Activos" value={activeCoursesCount.toString()} icon={Activity} />
+        <StatCard title="Formaciones Completadas" value={completedCoursesCount.toString()} icon={BookCheck} description="Año actual" />
+        <StatCard title="Certificados Obtenidos" value={completedCoursesCount.toString()} icon={GraduationCap} />
+        {canViewCosts && <StatCard title="Coste Total" value={`${totalCost.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}`} icon={Wallet} description="Presupuesto: 25,000€" />}
       </div>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <MandatoryCoursesPanel user={user} />
@@ -334,4 +365,18 @@ export default function DashboardPage() {
       </div>
     </div>
   );
+}
+
+
+export default function DashboardPage() {
+  const { user } = useAuth();
+  if (!user) return null;
+  
+  const isInstructor = user.role === 'Formador';
+
+  if (isInstructor) {
+    return <InstructorDashboardView user={user} />
+  }
+  
+  return <StudentDashboardView user={user} />
 }
