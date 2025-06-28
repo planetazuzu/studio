@@ -948,7 +948,7 @@ async function checkAndAwardModuleBadges(userId: string) {
 
     if (totalModulesCompleted >= 1) await awardBadge(userId, 'first_module');
     if (totalModulesCompleted >= 5) await awardBadge(userId, '5_modules');
-    if (totalModulesCompleted >= 15) await awardBadge(userId, '15_modules');
+    if (totalModulesCompleted >= 15) await awardBadge(userId, 'maestro_del_saber');
 }
 
 async function handleCourseCompletion(userId: string, courseId: string) {
@@ -1066,7 +1066,11 @@ export async function getLearningPathsForUser(user: User): Promise<(LearningPath
 // --- Course Rating Functions ---
 
 export async function addCourseRating(rating: Omit<CourseRating, 'id'>): Promise<number> {
-    return await db.courseRatings.add(rating);
+    const newRating: CourseRating = {
+        ...rating,
+        isPublic: false,
+    }
+    return await db.courseRatings.add(newRating);
 }
 
 export async function getRatingByUserAndCourse(userId: string, courseId: string): Promise<CourseRating | undefined> {
@@ -1079,4 +1083,8 @@ export async function getRatingsForCourse(courseId: string): Promise<CourseRatin
 
 export async function getRatingsForInstructor(instructorName: string): Promise<CourseRating[]> {
     return await db.courseRatings.where('instructorName').equals(instructorName).toArray();
+}
+
+export async function toggleCourseRatingVisibility(ratingId: number, isPublic: boolean): Promise<number> {
+    return await db.courseRatings.update(ratingId, { isPublic });
 }

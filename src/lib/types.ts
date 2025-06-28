@@ -353,6 +353,7 @@ export type CourseRating = {
   instructorRating: number; // 1-5
   comment: string;
   timestamp: string; // ISO string
+  isPublic?: boolean;
 };
 
 

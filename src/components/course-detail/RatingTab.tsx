@@ -14,6 +14,8 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 function StarRatingInput({ rating, setRating, disabled }: { rating: number, setRating: (r: number) => void, disabled: boolean }) {
     return (
@@ -115,17 +117,17 @@ function RatingForm({ course, user, onRatingSubmitted }: { course: Course, user:
     );
 }
 
-function RatingsDisplay({ ratings }: { ratings: CourseRating[] }) {
+function RatingsDisplay({ ratings, allCourseRatings, isAdmin, onVisibilityToggle }: { ratings: CourseRating[], allCourseRatings: CourseRating[], isAdmin: boolean, onVisibilityToggle: (id: number, visible: boolean) => void }) {
 
     const avgCourseRating = useMemo(() => {
-        if (ratings.length === 0) return 0;
-        return ratings.reduce((acc, r) => acc + r.rating, 0) / ratings.length;
-    }, [ratings]);
+        if (allCourseRatings.length === 0) return 0;
+        return allCourseRatings.reduce((acc, r) => acc + r.rating, 0) / allCourseRatings.length;
+    }, [allCourseRatings]);
 
     const avgInstructorRating = useMemo(() => {
-        if (ratings.length === 0) return 0;
-        return ratings.reduce((acc, r) => acc + r.instructorRating, 0) / ratings.length;
-    }, [ratings]);
+        if (allCourseRatings.length === 0) return 0;
+        return allCourseRatings.reduce((acc, r) => acc + r.instructorRating, 0) / allCourseRatings.length;
+    }, [allCourseRatings]);
 
     return (
         <div className="space-y-8">
@@ -136,6 +138,7 @@ function RatingsDisplay({ ratings }: { ratings: CourseRating[] }) {
                         <div className="text-4xl font-bold flex items-center justify-center gap-2 mt-2">
                             {avgCourseRating.toFixed(1)} <Star className="h-8 w-8 text-amber-400" />
                         </div>
+                        <CardDescription>{allCourseRatings.length} valoraciones</CardDescription>
                     </CardHeader>
                 </Card>
                  <Card>
@@ -144,6 +147,7 @@ function RatingsDisplay({ ratings }: { ratings: CourseRating[] }) {
                          <div className="text-4xl font-bold flex items-center justify-center gap-2 mt-2">
                             {avgInstructorRating.toFixed(1)} <Star className="h-8 w-8 text-amber-400" />
                         </div>
+                        <CardDescription>{allCourseRatings.length} valoraciones</CardDescription>
                     </CardHeader>
                 </Card>
             </div>
@@ -165,8 +169,23 @@ function RatingsDisplay({ ratings }: { ratings: CourseRating[] }) {
                                     <p className="text-sm text-muted-foreground italic mt-2">"{rating.comment}"</p>
                                 </div>
                              </div>
+                             {isAdmin && (
+                                <div className="flex items-center justify-end space-x-2 border-t mt-4 pt-3">
+                                    <Label htmlFor={`visibility-switch-${rating.id}`} className="text-xs text-muted-foreground">
+                                        {rating.isPublic ? 'Público' : 'Privado'}
+                                    </Label>
+                                    <Switch
+                                        id={`visibility-switch-${rating.id}`}
+                                        checked={!!rating.isPublic}
+                                        onCheckedChange={(checked) => onVisibilityToggle(rating.id!, checked)}
+                                    />
+                                </div>
+                            )}
                         </Card>
                     ))}
+                     {ratings.length === 0 && (
+                        <p className="text-center text-muted-foreground py-10">No hay valoraciones públicas para mostrar.</p>
+                    )}
                 </div>
             </div>
         </div>
@@ -175,20 +194,31 @@ function RatingsDisplay({ ratings }: { ratings: CourseRating[] }) {
 
 
 export function RatingTab({ course, user, progress }: { course: Course, user: User, progress: number }) {
-    const [hasRated, setHasRated] = useState(false);
+    const { toast } = useToast();
     
-    // Check if the user has already submitted a rating for this course
-    const userRating = useLiveQuery(
-        () => db.getRatingByUserAndCourse(user.id, course.id),
-        [user.id, course.id]
-    );
+    const userRating = useLiveQuery(() => db.getRatingByUserAndCourse(user.id, course.id), [user.id, course.id]);
+    const allRatings = useLiveQuery(() => db.getRatingsForCourse(course.id), [course.id], []);
 
-    // Fetch all ratings for this course to display them
-    const allRatings = useLiveQuery(
-        () => db.getRatingsForCourse(course.id),
-        [course.id],
-        []
-    );
+    const isManagerOrInstructor = useMemo(() => {
+        return ['Formador', 'Jefe de Formación', 'Administrador General'].includes(user.role);
+    }, [user.role]);
+
+    const isAdmin = user.role === 'Administrador General';
+
+    const ratingsForDisplay = useMemo(() => {
+        if (!allRatings) return [];
+        if (isManagerOrInstructor) return allRatings;
+        return allRatings.filter(r => r.isPublic);
+    }, [allRatings, isManagerOrInstructor]);
+
+    const handleVisibilityToggle = async (ratingId: number, isPublic: boolean) => {
+        try {
+            await db.toggleCourseRatingVisibility(ratingId, isPublic);
+            toast({ title: 'Visibilidad actualizada' });
+        } catch (error) {
+            toast({ title: 'Error', description: 'No se pudo cambiar la visibilidad.', variant: 'destructive' });
+        }
+    };
 
     if (userRating === undefined || allRatings === undefined) {
         return <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>;
@@ -205,7 +235,7 @@ export function RatingTab({ course, user, progress }: { course: Course, user: Us
 
             {alreadyRated && (
                  <div className="p-4 text-center bg-green-50 border-green-200 text-green-800 rounded-lg mb-6">
-                    <p>¡Gracias por enviar tu valoración!</p>
+                    <p>¡Gracias por enviar tu valoración! Un administrador la revisará.</p>
                 </div>
             )}
             
@@ -217,7 +247,12 @@ export function RatingTab({ course, user, progress }: { course: Course, user: Us
             
             <div className="mt-8">
                 {allRatings.length > 0 ? (
-                    <RatingsDisplay ratings={allRatings} />
+                    <RatingsDisplay
+                        ratings={ratingsForDisplay}
+                        allCourseRatings={allRatings}
+                        isAdmin={isAdmin}
+                        onVisibilityToggle={handleVisibilityToggle}
+                    />
                 ) : (
                     <p className="text-center text-muted-foreground py-10">Aún no hay valoraciones para este curso. ¡Sé el primero!</p>
                 )}
