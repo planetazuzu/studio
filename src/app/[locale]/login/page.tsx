@@ -13,11 +13,10 @@ import { Terminal, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { users as testUsers } from '@/lib/data';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useTranslations } from 'next-intl';
-import { useRouter, Link } from '@/navigation';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function LoginPage() {
-  const t = useTranslations('LoginPage');
   const router = useRouter();
   const { login, user, isLoading: isAuthLoading } = useAuth();
   const { toast } = useToast();
@@ -40,18 +39,18 @@ export default function LoginPage() {
       const loggedInUser = await login(email, password);
       if (loggedInUser) {
         toast({
-            title: t('welcomeToast', {name: loggedInUser.name.split(' ')[0]}),
-            description: t('loginSuccessToast'),
+            title: `Bienvenido, ${loggedInUser.name.split(' ')[0]}`,
+            description: "Has iniciado sesión correctamente.",
         });
         router.push('/dashboard');
       } else {
-        setError(t('credentialsIncorrect'));
+        setError("Credenciales incorrectas.");
       }
     } catch (err: any) {
       if (err.message.includes('desactivada')) {
-        setError(t('accountDisabled'));
+        setError("Esta cuenta ha sido desactivada. Contacta con un administrador.");
       } else {
-        setError(t('userNotFound'));
+        setError("Credenciales incorrectas o usuario no encontrado.");
       }
       console.error(err);
     } finally {
@@ -68,24 +67,24 @@ export default function LoginPage() {
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
             <AppLogo className="h-8 w-8" />
           </div>
-          <CardTitle className="text-3xl font-bold">{t('title')}</CardTitle>
-          <CardDescription>{t('description')}</CardDescription>
+          <CardTitle className="text-3xl font-bold">AcademiaAI</CardTitle>
+          <CardDescription>La plataforma de formación impulsada por IA para tu equipo.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-6">
              {error && (
                 <Alert variant="destructive">
                     <Terminal className="h-4 w-4" />
-                    <AlertTitle>{t('authErrorTitle')}</AlertTitle>
+                    <AlertTitle>Error de Autenticación</AlertTitle>
                     <AlertDescription>{error}</AlertDescription>
                 </Alert>
             )}
             <div className="space-y-2">
-              <Label htmlFor="email">{t('emailLabel')}</Label>
+              <Label htmlFor="email">Correo electrónico</Label>
               <Input 
                 id="email" 
                 type="email" 
-                placeholder={t('emailPlaceholder')} 
+                placeholder="nombre@empresa.com" 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -93,7 +92,7 @@ export default function LoginPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">{t('passwordLabel')}</Label>
+              <Label htmlFor="password">Contraseña</Label>
               <Input 
                 id="password" 
                 type="password" 
@@ -104,12 +103,12 @@ export default function LoginPage() {
                 />
             </div>
             <Button type="submit" className="w-full text-lg h-12" disabled={formIsDisabled}>
-              {formIsDisabled ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/> {isAuthLoading ? t('submittingButton') : t('submittingButton')}</> : t('loginButton')}
+              {formIsDisabled ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/> {isAuthLoading ? "Iniciando..." : "Iniciando..."}</> : "Iniciar Sesión"}
             </Button>
             <div className="text-center text-sm space-x-1">
-                <span>{t('noAccount')}</span>
+                <span>¿No tienes cuenta?</span>
                 <Link href="/register" className={`text-primary hover:underline font-semibold ${formIsDisabled ? 'pointer-events-none opacity-50' : ''}`}>
-                    {t('registerLink')}
+                    Regístrate
                 </Link>
             </div>
           </form>
@@ -121,7 +120,7 @@ export default function LoginPage() {
                   </div>
                   <div className="relative flex justify-center text-xs uppercase">
                       <span className="bg-background px-2 text-muted-foreground">
-                          {t('testAccountPrompt')}
+                          O inicia sesión con una cuenta de prueba
                       </span>
                   </div>
               </div>

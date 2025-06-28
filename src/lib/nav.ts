@@ -1,4 +1,3 @@
-
 import { AreaChart, BookOpen, Home, Settings, Users, Calendar, Library, Megaphone, MessagesSquare, ClipboardCheck, UserRoundCog, Wallet, Trophy, Route, type LucideIcon } from 'lucide-react';
 import type { Role } from './types';
 
@@ -20,59 +19,59 @@ const allRoles: Role[] = [
 
 const managerRoles: Role[] = ['Gestor de RRHH', 'Jefe de Formación', 'Administrador General'];
 
-export const getNavItems = (t: (key: string) => string): NavItem[] => [
-  { href: '/dashboard', icon: Home, label: t('Dashboard'), roles: allRoles },
-  { href: '/dashboard/courses', icon: BookOpen, label: t('Courses'), roles: allRoles },
-  { href: '/dashboard/enrollments', icon: ClipboardCheck, label: t('Enrollments'), roles: allRoles },
-  { href: '/dashboard/leaderboard', icon: Trophy, label: t('Leaderboard'), roles: allRoles },
+export const getNavItems = (): NavItem[] => [
+  { href: '/dashboard', icon: Home, label: 'Dashboard', roles: allRoles },
+  { href: '/dashboard/courses', icon: BookOpen, label: 'Cursos', roles: allRoles },
+  { href: '/dashboard/enrollments', icon: ClipboardCheck, label: 'Inscripciones', roles: allRoles },
+  { href: '/dashboard/leaderboard', icon: Trophy, label: 'Clasificación', roles: allRoles },
   {
     href: '/dashboard/learning-paths',
     icon: Route,
-    label: t('LearningPaths'),
+    label: 'Planes de Carrera',
     roles: managerRoles,
   },
   {
     href: '/dashboard/calendar',
     icon: Calendar,
-    label: t('Calendar'),
+    label: 'Calendario',
     roles: managerRoles,
   },
   {
     href: '/dashboard/library',
     icon: Library,
-    label: t('Library'),
+    label: 'Biblioteca',
     roles: managerRoles,
   },
   {
     href: '/dashboard/users',
     icon: Users,
-    label: t('Users'),
+    label: 'Usuarios',
     roles: managerRoles,
   },
    {
     href: '/dashboard/instructors',
     icon: UserRoundCog,
-    label: t('Instructors'),
+    label: 'Formadores',
     roles: managerRoles,
   },
   {
     href: '/dashboard/communications',
     icon: Megaphone,
-    label: t('Communications'),
+    label: 'Avisos',
     roles: managerRoles,
   },
   {
     href: '/dashboard/costs',
     icon: Wallet,
-    label: t('Costs'),
+    label: 'Gestión de Costes',
     roles: managerRoles,
   },
   {
     href: '/dashboard/analytics',
     icon: AreaChart,
-    label: t('Analytics'),
+    label: 'Análisis',
     roles: managerRoles,
   },
-  { href: '/dashboard/chat', icon: MessagesSquare, label: t('Chat'), roles: allRoles },
-  { href: '/dashboard/settings', icon: Settings, label: t('Settings'), roles: allRoles },
+  { href: '/dashboard/chat', icon: MessagesSquare, label: 'Chat', roles: allRoles },
+  { href: '/dashboard/settings', icon: Settings, label: 'Ajustes', roles: allRoles },
 ];

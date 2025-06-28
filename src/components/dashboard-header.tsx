@@ -1,11 +1,11 @@
 
 'use client';
 
-import { Bell, Search, LogOut, Circle, CheckCheck, Languages } from 'lucide-react';
+import { Bell, Search, LogOut, Circle, CheckCheck } from 'lucide-react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useState } from 'react';
-import { useTranslations } from 'next-intl';
-import { Link, useRouter, usePathname } from '@/navigation';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -24,14 +24,12 @@ import * as db from '@/lib/db';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { LanguageSwitcher } from './language-switcher';
 
 interface DashboardHeaderProps {
     title: string;
 }
 
 export function DashboardHeader({ title }: DashboardHeaderProps) {
-  const t = useTranslations('DashboardHeader');
   const { user, logout } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
@@ -56,7 +54,7 @@ export function DashboardHeader({ title }: DashboardHeaderProps) {
       if(user) {
           db.markAllNotificationsAsRead(user.id);
           toast({
-              title: t('allNotificationsRead'),
+              title: "Todas las notificaciones han sido marcadas como leídas.",
           })
       }
   }
@@ -82,14 +80,13 @@ export function DashboardHeader({ title }: DashboardHeaderProps) {
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
-              placeholder={t('searchPlaceholder')}
+              placeholder="Buscar cursos..."
               className="pl-8 sm:w-[300px] md:w-[200px] lg:w-[300px]"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
         </form>
-        <LanguageSwitcher />
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="rounded-full relative">
@@ -100,11 +97,11 @@ export function DashboardHeader({ title }: DashboardHeaderProps) {
                             <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-destructive"></span>
                         </span>
                     )}
-                    <span className="sr-only">{t('toggleNotifications')}</span>
+                    <span className="sr-only">Toggle notifications</span>
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-96">
-                <DropdownMenuLabel>{t('notifications')}</DropdownMenuLabel>
+                <DropdownMenuLabel>Notificaciones</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <ScrollArea className="h-[300px]">
                     {notifications && notifications.length > 0 ? (
@@ -122,13 +119,13 @@ export function DashboardHeader({ title }: DashboardHeaderProps) {
                             </DropdownMenuItem>
                         ))
                     ) : (
-                        <p className="text-center text-sm text-muted-foreground py-4">{t('noNotifications')}</p>
+                        <p className="text-center text-sm text-muted-foreground py-4">No tienes notificaciones.</p>
                     )}
                 </ScrollArea>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleMarkAllAsRead} disabled={unreadCount === 0}>
                     <CheckCheck className="mr-2 h-4 w-4" />
-                    <span>{t('markAllAsRead')}</span>
+                    <span>Marcar todas como leídas</span>
                 </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>
@@ -142,20 +139,20 @@ export function DashboardHeader({ title }: DashboardHeaderProps) {
                         <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
                     </Avatar>
                 )}
-              <span className="sr-only">{t('toggleUserMenu')}</span>
+              <span className="sr-only">Toggle user menu</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>{t('myAccount')}</DropdownMenuLabel>
+            <DropdownMenuLabel>Mi Cuenta</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link href="/dashboard/settings">{t('settings')}</Link>
+              <Link href="/dashboard/settings">Ajustes</Link>
             </DropdownMenuItem>
-            <DropdownMenuItem>{t('support')}</DropdownMenuItem>
+            <DropdownMenuItem>Soporte</DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={logout}>
                 <LogOut className="mr-2 h-4 w-4" />
-                <span>{t('logout')}</span>
+                <span>Cerrar Sesión</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

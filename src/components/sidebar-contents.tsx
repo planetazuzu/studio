@@ -14,15 +14,14 @@ import { useAuth } from '@/contexts/auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getNavItems } from '@/lib/nav';
 import { Skeleton } from './ui/skeleton';
-import { useTranslations } from 'next-intl';
-import { usePathname, Link } from '@/navigation';
+import { usePathname } from 'next/navigation';
+import Link from 'next/link';
 
 export function SidebarContents() {
   const { isOpen } = useSidebar();
   const pathname = usePathname();
   const { user } = useAuth();
-  const t = useTranslations('Nav');
-  const navItems = getNavItems(t);
+  const navItems = getNavItems();
 
   if (!user) {
     return (

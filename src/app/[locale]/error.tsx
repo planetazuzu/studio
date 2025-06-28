@@ -1,11 +1,11 @@
+
 'use client' // Error components must be Client Components
 
 import { useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { AlertTriangle } from 'lucide-react'
-import { useRouter } from '@/navigation'
-import { useTranslations } from 'next-intl'
+import { useRouter } from 'next/navigation'
 
 export default function Error({
   error,
@@ -15,7 +15,6 @@ export default function Error({
   reset: () => void
 }) {
   const router = useRouter();
-  const t = useTranslations('ErrorPage');
 
   useEffect(() => {
     // Log the error to an error reporting service
@@ -29,12 +28,12 @@ export default function Error({
                 <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10 text-destructive">
                     <AlertTriangle className="h-8 w-8" />
                 </div>
-                <CardTitle className="mt-4 text-3xl font-bold">{t('title')}</CardTitle>
-                <CardDescription>{t('description')}</CardDescription>
+                <CardTitle className="mt-4 text-3xl font-bold">¡Ups! Algo salió mal</CardTitle>
+                <CardDescription>Hemos encontrado un error inesperado. Por favor, intenta recargar la página.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
                 <div className="rounded-md bg-muted p-4 text-left text-xs text-muted-foreground">
-                    <p className="font-mono"><strong>{t('errorMessage')}</strong> {error.message}</p>
+                    <p className="font-mono"><strong>Error:</strong> {error.message}</p>
                 </div>
                  <div className="flex w-full gap-4">
                      <Button
@@ -42,13 +41,13 @@ export default function Error({
                         className="w-full"
                         variant="outline"
                     >
-                        {t('retryButton')}
+                        Intentar de Nuevo
                     </Button>
                     <Button
                         onClick={() => router.push('/dashboard')}
                         className="w-full"
                     >
-                        {t('backToDashboard')}
+                        Volver al Dashboard
                     </Button>
                  </div>
             </CardContent>

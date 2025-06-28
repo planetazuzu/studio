@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect } from 'react';
@@ -10,8 +11,7 @@ import {
 } from '@/components/ui/sidebar';
 import { DashboardHeader } from '@/components/dashboard-header';
 import { SidebarContents } from '@/components/sidebar-contents';
-import { usePathname, useRouter } from '@/navigation';
-import { useTranslations } from 'next-intl';
+import { usePathname, useRouter } from 'next/navigation';
 import { getNavItems } from '@/lib/nav';
 
 export default function DashboardLayout({
@@ -22,9 +22,8 @@ export default function DashboardLayout({
   const { user, isLoading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
-  const t = useTranslations('Nav');
 
-  const navItems = getNavItems(t);
+  const navItems = getNavItems();
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -43,7 +42,7 @@ export default function DashboardLayout({
   const pageTitle =
     navItems
       .filter((item) => pathname.startsWith(item.href))
-      .sort((a, b) => b.href.length - a.href.length)[0]?.label || t('Dashboard');
+      .sort((a, b) => b.href.length - a.href.length)[0]?.label || 'Dashboard';
 
 
   return (
