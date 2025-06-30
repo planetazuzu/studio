@@ -7,7 +7,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
-import { PlusCircle, Trash2, FilePenLine, Loader2, List } from 'lucide-react';
+import { PlusCircle, Trash2, FilePenLine, Loader2, List, Download } from 'lucide-react';
 import * as db from '@/lib/db';
 import type { Cost, Course, CustomCostCategory } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -19,6 +19,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+
 
 const costSchema = z.object({
     item: z.string().min(3, "El concepto debe tener al menos 3 caracteres."),
@@ -215,17 +217,67 @@ export default function CostsPage() {
         }
     };
     
+    const downloadCsv = (data: any[], filename: string) => {
+        if (!data || data.length === 0) return;
+        const headers = Object.keys(data[0]);
+        const csvContent = [
+            headers.join(','),
+            ...data.map(row =>
+                headers.map(header => {
+                    let cell = row[header] === null || row[header] === undefined ? '' : String(row[header]);
+                    cell = cell.replace(/"/g, '""');
+                    if (cell.search(/("|,|\n)/g) >= 0) cell = `"${cell}"`;
+                    return cell;
+                }).join(',')
+            )
+        ].join('\n');
+
+        const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', filename);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    const handleExportCsv = () => {
+        if (!costs) return;
+        const dataToExport = costs.map(cost => ({
+            Concepto: cost.item,
+            Categoria: cost.category,
+            Importe: cost.amount,
+            Fecha: format(new Date(cost.date), 'dd/MM/yyyy'),
+            Curso_Asociado: cost.courseId ? courseMap.get(cost.courseId) || 'N/A' : '-',
+        }));
+        downloadCsv(dataToExport, 'historial_de_gastos.csv');
+    };
+
     return (
         <div className="space-y-8">
             <div className="flex items-center justify-between">
                 <div>
-                <h1 className="text-3xl font-bold">Gestión de Costes</h1>
-                <p className="text-muted-foreground">Registra y supervisa todos los gastos relacionados con la formación.</p>
+                    <h1 className="text-3xl font-bold">Gestión de Costes</h1>
+                    <p className="text-muted-foreground">Registra y supervisa todos los gastos relacionados con la formación.</p>
                 </div>
-                <Button onClick={() => { setItemToEdit(null); setIsDialogOpen(true); }}>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Añadir Gasto
-                </Button>
+                <div className="flex items-center gap-2">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline"><Download className="mr-2 h-4 w-4" /> Exportar</Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={handleExportCsv}>
+                                Exportar a CSV
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                    <Button onClick={() => { setItemToEdit(null); setIsDialogOpen(true); }}>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Añadir Gasto
+                    </Button>
+                </div>
             </div>
 
             <AlertDialog>
