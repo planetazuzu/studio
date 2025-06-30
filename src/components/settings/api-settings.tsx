@@ -55,6 +55,15 @@ export function ApiSettings() {
                         <Button type="submit">Guardar Configuración de NocoDB</Button>
                     </div>
                 </form>
+
+                <Alert className="mt-6 bg-blue-50 border-blue-200 text-blue-900">
+                    <Server className="h-4 w-4 !text-blue-900" />
+                    <AlertTitle>Nota sobre Despliegue en Producción</AlertTitle>
+                    <AlertDescription>
+                        Para un entorno de producción, se recomienda encarecidamente configurar estas claves como **variables de entorno** en tu plataforma de hosting (Vercel, Netlify, etc.) en lugar de guardarlas aquí. La aplicación buscará primero las variables de entorno. Consulta la documentación de despliegue para más detalles.
+                    </AlertDescription>
+                </Alert>
+                 
                  <Alert className="mt-6">
                     <Server className="h-4 w-4" />
                     <AlertTitle>¿Qué es NocoDB?</AlertTitle>

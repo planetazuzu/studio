@@ -13,16 +13,26 @@ export function getGenAIKey(): string | undefined {
 }
 
 /**
- * Retrieves the NocoDB configuration from server-side cookies.
+ * Retrieves the NocoDB configuration from server-side cookies or environment variables.
+ * Environment variables are prioritized for production deployments.
  * @returns An object containing the NocoDB API URL and Auth Token, or null if either is missing.
  */
 export function getNocoDBConfig(): { apiUrl: string; authToken: string } | null {
-  const cookieStore = cookies();
-  const apiUrl = cookieStore.get('nocodb_api_url')?.value;
-  const authToken = cookieStore.get('nocodb_auth_token')?.value;
+  // Prioritize environment variables for production deployments
+  const apiUrlFromEnv = process.env.NOCODB_API_URL;
+  const authTokenFromEnv = process.env.NOCODB_AUTH_TOKEN;
 
-  if (apiUrl && authToken) {
-    return { apiUrl, authToken };
+  if (apiUrlFromEnv && authTokenFromEnv) {
+    return { apiUrl: apiUrlFromEnv, authToken: authTokenFromEnv };
+  }
+
+  // Fallback to cookies for the in-app settings panel
+  const cookieStore = cookies();
+  const apiUrlFromCookie = cookieStore.get('nocodb_api_url')?.value;
+  const authTokenFromCookie = cookieStore.get('nocodb_auth_token')?.value;
+
+  if (apiUrlFromCookie && authTokenFromCookie) {
+    return { apiUrl: apiUrlFromCookie, authToken: authTokenFromCookie };
   }
   
   return null;
