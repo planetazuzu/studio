@@ -27,7 +27,7 @@ import { Badge } from '@/components/ui/badge';
 const pathSchema = z.object({
   title: z.string().min(3, "El título debe tener al menos 3 caracteres."),
   description: z.string().min(10, "La descripción es muy corta."),
-  targetRole: z.enum(roles as [string, ...string[]]),
+  targetRole: z.enum(roles as [string, ...string[]], { required_error: "Debes seleccionar un rol." }),
 });
 
 type PathFormValues = z.infer<typeof pathSchema>;

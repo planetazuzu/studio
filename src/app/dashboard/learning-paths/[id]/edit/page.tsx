@@ -27,7 +27,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 const pathSchema = z.object({
   title: z.string().min(3, "El título debe tener al menos 3 caracteres."),
   description: z.string().min(10, "La descripción es muy corta."),
-  targetRole: z.enum(roles as [string, ...string[]]),
+  targetRole: z.enum(roles as [string, ...string[]], { required_error: "Debes seleccionar un rol." }),
 });
 
 type PathFormValues = z.infer<typeof pathSchema>;
@@ -191,7 +191,7 @@ export default function EditLearningPathPage() {
                 </div>
 
                 <div className="flex justify-end pt-4">
-                  <Button type="submit" size="lg" disabled={form.formState.isSubmitting || !form.formState.isDirty}>
+                  <Button type="submit" size="lg" disabled={form.formState.isSubmitting}>
                     {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Guardar Cambios
                   </Button>

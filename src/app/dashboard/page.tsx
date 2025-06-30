@@ -362,9 +362,9 @@ function StudentDashboardView({ user }: { user: User }) {
         <AnnouncementsPanel user={user} />
       </div>
       <div className="grid gap-4 lg:grid-cols-3">
-        <LearningPathPanel user={user} />
         <MyCourses user={user} />
         {aiConfig?.enabledFeatures.recommendations && <AiSuggestions user={user} />}
+        <LearningPathPanel user={user} />
       </div>
     </div>
   );

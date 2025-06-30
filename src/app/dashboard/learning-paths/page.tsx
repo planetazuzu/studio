@@ -26,7 +26,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 
@@ -100,12 +99,12 @@ export default function LearningPathsPage() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem asChild>
-                                <Link href={`/dashboard/learning-paths/edit/${path.id}`}>
+                                <Link href={`/dashboard/learning-paths/${path.id}/edit`}>
                                   <FilePenLine className="mr-2 h-4 w-4" /> Editar
                                 </Link>
                               </DropdownMenuItem>
                               <AlertDialogTrigger asChild>
-                                <DropdownMenuItem onSelect={() => setPathToDelete(path)} className="text-destructive">
+                                <DropdownMenuItem onSelect={() => setPathToDelete(path)} className="text-destructive focus:text-destructive focus:bg-destructive/10">
                                   <Trash2 className="mr-2 h-4 w-4" /> Eliminar
                                 </DropdownMenuItem>
                               </AlertDialogTrigger>

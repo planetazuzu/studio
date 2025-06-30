@@ -1028,7 +1028,7 @@ export async function getLearningPathById(id: number): Promise<LearningPath | un
     return await db.learningPaths.get(id);
 }
 
-export async function addLearningPath(path: Omit<LearningPath, 'id'>): Promise<number> {
+export async function addLearningPath(path: Omit<LearningPath, 'id' | 'isSynced' | 'updatedAt'>): Promise<number> {
     return await db.learningPaths.add({
         ...path,
         isSynced: false,
@@ -1036,7 +1036,7 @@ export async function addLearningPath(path: Omit<LearningPath, 'id'>): Promise<n
     });
 }
 
-export async function updateLearningPath(id: number, data: Partial<LearningPath>): Promise<number> {
+export async function updateLearningPath(id: number, data: Partial<Omit<LearningPath, 'id'>>): Promise<number> {
     return await db.learningPaths.update(id, { ...data, isSynced: false, updatedAt: new Date().toISOString() });
 }
 
