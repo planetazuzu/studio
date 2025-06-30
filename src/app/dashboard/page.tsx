@@ -6,7 +6,7 @@ import { Activity, BookCheck, BotMessageSquare, GraduationCap, Lightbulb, Loader
 import { useLiveQuery } from 'dexie-react-hooks';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { personalizedCourseRecommendations, type PersonalizedCourseRecommendationsOutput } from '@/ai/flows/course-suggestion';
+// import { personalizedCourseRecommendations, type PersonalizedCourseRecommendationsOutput } from '@/ai/flows/course-suggestion';
 import { StatCard } from '@/components/stat-card';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -217,65 +217,23 @@ function MyCourses({ user }: { user: User }) {
 
 
 function AiSuggestions({ user }: { user: User }) {
-  const [loading, setLoading] = useState(true); // Start loading immediately
-  const [suggestions, setSuggestions] = useState<PersonalizedCourseRecommendationsOutput['suggestions']>([]);
+  const [loading, setLoading] = useState(false);
+  const [suggestions, setSuggestions] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch all necessary data for the suggestion logic
-  const allCourses = useLiveQuery(() => db.getAllCourses(), []);
-  const enrolledCourses = useLiveQuery(() => db.getEnrolledCoursesForUser(user.id), [user.id]);
-  const externalTrainings = useLiveQuery(() => db.getExternalTrainingsForUser(user.id), [user.id]);
-
   const handleGetSuggestions = async (force = false) => {
-    if (!allCourses || !enrolledCourses || !externalTrainings) {
-        setError('No se pudieron cargar los datos necesarios para las sugerencias.');
-        setLoading(false);
-        return;
-    }
-    
-    // If not forcing, don't re-fetch if we already have suggestions
-    if (suggestions.length > 0 && !force) {
-        setLoading(false);
-        return;
-    }
-
     setLoading(true);
     setError(null);
-    setSuggestions([]);
-
-    try {
-        const result = await personalizedCourseRecommendations({
-            userRole: user.role,
-            enrolledCourseTitles: enrolledCourses.map(c => c.title),
-            externalTrainingTitles: externalTrainings.map(t => t.title),
-            allAvailableCourseTitles: allCourses.filter(c => c.status !== 'draft').map(c => c.title),
-        });
-        
-        const suggestionsWithDetails = result.suggestions.map(suggestion => {
-            const course = allCourses.find(c => c.title === suggestion.courseTitle);
-            return { ...suggestion, courseId: course?.id };
-        }).filter(s => s.courseId);
-
-        setSuggestions(suggestionsWithDetails);
-
-    } catch (e: any) {
-      const errorMessage = e.message?.includes('API no está configurada')
-        ? e.message
-        : 'No se pudieron generar las sugerencias. Inténtelo de nuevo.';
-      setError(errorMessage);
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
+    // Simulate API call and disable it
+    setTimeout(() => {
+        setError('La recomendación con IA está deshabilitada temporalmente.');
+        setLoading(false);
+    }, 500);
   };
 
   useEffect(() => {
-    // Fetch suggestions when data dependencies are met
-    if (allCourses && enrolledCourses && externalTrainings) {
-        handleGetSuggestions();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allCourses, enrolledCourses, externalTrainings]);
+    // Auto-fetching disabled
+  }, []);
 
 
   return (
@@ -290,8 +248,6 @@ function AiSuggestions({ user }: { user: User }) {
       <CardContent className="flex flex-col items-center justify-center text-center space-y-4 min-h-[200px]">
         {loading ? (
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        ) : error ? (
-           <p className="text-sm text-destructive mt-2">{error}</p>
         ) : suggestions.length > 0 ? (
           <ul className="space-y-3 text-left w-full">
             {suggestions.map((rec, i) => (
@@ -302,10 +258,14 @@ function AiSuggestions({ user }: { user: User }) {
             ))}
           </ul>
         ) : (
-          <p className="text-sm text-muted-foreground">No hay nuevas sugerencias para ti en este momento.</p>
+           <Button onClick={() => handleGetSuggestions(true)} disabled={loading}>
+              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Lightbulb className="mr-2 h-4 w-4" />}
+              Generar Sugerencias
+           </Button>
         )}
+        {error && <p className="text-sm text-destructive mt-2">{error}</p>}
       </CardContent>
-       {!loading && (
+       {(suggestions.length > 0 && !loading) && (
           <CardFooter className="justify-center">
               <Button variant="outline" onClick={() => handleGetSuggestions(true)} disabled={loading}>
                  <Lightbulb className="mr-2 h-4 w-4" />

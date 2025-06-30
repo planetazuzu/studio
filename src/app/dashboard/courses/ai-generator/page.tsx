@@ -10,7 +10,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useToast } from "@/hooks/use-toast";
 import * as db from '@/lib/db';
-import { generateCourseFromTopic, type GenerateCourseFromTopicOutput } from '@/ai/flows/generate-course-from-topic';
+// import { generateCourseFromTopic, type GenerateCourseFromTopicOutput } from '@/ai/flows/generate-course-from-topic';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,7 +24,7 @@ const generatorFormSchema = z.object({
 
 type GeneratorFormValues = z.infer<typeof generatorFormSchema>;
 
-function GeneratedCoursePreview({ courseData, onSave }: { courseData: GenerateCourseFromTopicOutput, onSave: () => void }) {
+function GeneratedCoursePreview({ courseData, onSave }: { courseData: any, onSave: () => void }) {
     const [isSaving, setIsSaving] = useState(false);
 
     const handleSave = async () => {
@@ -49,7 +49,7 @@ function GeneratedCoursePreview({ courseData, onSave }: { courseData: GenerateCo
                 <div>
                     <h3 className="text-lg font-semibold mb-2">Módulos Sugeridos</h3>
                     <div className="space-y-3">
-                        {courseData.modules.map((module, index) => (
+                        {courseData.modules.map((module: any, index: number) => (
                             <div key={index} className="p-3 border rounded-lg bg-muted/50">
                                 <p className="font-semibold">{index + 1}. {module.title} <span className="text-xs text-muted-foreground">({module.duration})</span></p>
                                 <p className="text-sm text-muted-foreground mt-1">{module.content}</p>
@@ -72,7 +72,7 @@ function GeneratedCoursePreview({ courseData, onSave }: { courseData: GenerateCo
 export default function AIGeneratorPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const [generatedCourse, setGeneratedCourse] = useState<GenerateCourseFromTopicOutput | null>(null);
+  const [generatedCourse, setGeneratedCourse] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<GeneratorFormValues>({
@@ -84,11 +84,11 @@ export default function AIGeneratorPage() {
     setIsLoading(true);
     setGeneratedCourse(null);
     try {
-        const result = await generateCourseFromTopic(data.topic);
-        setGeneratedCourse(result);
+        // const result = await generateCourseFromTopic(data.topic);
+        // setGeneratedCourse(result);
         toast({
-            title: "Estructura generada",
-            description: "La IA ha creado una propuesta de curso.",
+            title: "Función Deshabilitada",
+            description: "La generación de cursos con IA está deshabilitada temporalmente.",
         });
     } catch (error: any) {
         console.error("Failed to generate course", error);
@@ -112,7 +112,7 @@ export default function AIGeneratorPage() {
             ...generatedCourse,
             image: 'https://placehold.co/600x400.png',
             aiHint: generatedCourse.title.toLowerCase().split(' ').slice(0, 2).join(' '),
-            modules: generatedCourse.modules.map((m, i) => ({...m, id: `mod_${Date.now()}_${i}`})),
+            modules: generatedCourse.modules.map((m: any, i: number) => ({...m, id: `mod_${Date.now()}_${i}`})),
         };
         const newCourseId = await db.addCourse(newCourseData);
         toast({

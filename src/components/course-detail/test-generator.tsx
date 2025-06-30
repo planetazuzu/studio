@@ -3,8 +3,8 @@
 
 import { useState } from 'react';
 import { Sparkles, Loader2, CheckCircle2, XCircle, Bot } from 'lucide-react';
-import { GenerateTestQuestionsOutput, generateTestQuestions } from '@/ai/flows/generate-test-questions';
-import { personalizedFeedback } from '@/ai/flows/feedback-personalization';
+// import { GenerateTestQuestionsOutput, generateTestQuestions } from '@/ai/flows/generate-test-questions';
+// import { personalizedFeedback } from '@/ai/flows/feedback-personalization';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -19,7 +19,7 @@ export function TestGenerator({ courseTitle, courseContent, studentName, aiConfi
   const { user } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [testData, setTestData] = useState<GenerateTestQuestionsOutput | null>(null);
+  const [testData, setTestData] = useState<any | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [feedbackLoading, setFeedbackLoading] = useState(false);
   const [feedback, setFeedback] = useState('');
@@ -38,8 +38,9 @@ export function TestGenerator({ courseTitle, courseContent, studentName, aiConfi
     setScore(null);
     setAnswers({});
     try {
-      const result = await generateTestQuestions({ courseContent, numberOfQuestions: 3 });
-      setTestData(result);
+      // const result = await generateTestQuestions({ courseContent, numberOfQuestions: 3 });
+      // setTestData(result);
+      setError("La generación de tests con IA está deshabilitada temporalmente.");
     } catch (e: any) {
       const errorMessage = e.message?.includes('API no está configurada')
           ? e.message
@@ -58,7 +59,7 @@ export function TestGenerator({ courseTitle, courseContent, studentName, aiConfi
   const handleSubmitTest = async () => {
     if (!testData || !user) return;
 
-    const correctCount = testData.questions.reduce((acc, question, index) => {
+    const correctCount = testData.questions.reduce((acc: number, question: any, index: number) => {
       return answers[index] === question.correctAnswer ? acc + 1 : acc;
     }, 0);
 
@@ -76,19 +77,24 @@ export function TestGenerator({ courseTitle, courseContent, studentName, aiConfi
     setFeedbackLoading(true);
     setFeedback('');
     try {
-      const questionsForFeedback = testData.questions.map((q, i) => ({
-        question: q.question,
-        studentAnswer: answers[i] || 'No contestada',
-        correctAnswer: q.correctAnswer,
-      }));
+      // const questionsForFeedback = testData.questions.map((q: any, i: number) => ({
+      //   question: q.question,
+      //   studentAnswer: answers[i] || 'No contestada',
+      //   correctAnswer: q.correctAnswer,
+      // }));
 
-      const result = await personalizedFeedback({
-        studentName: studentName,
-        assignmentName: `Test de ${courseTitle}`,
-        score: score,
-        questions: questionsForFeedback,
+      // const result = await personalizedFeedback({
+      //   studentName: studentName,
+      //   assignmentName: `Test de ${courseTitle}`,
+      //   score: score,
+      //   questions: questionsForFeedback,
+      // });
+      // setFeedback(result.feedback);
+      toast({
+        title: "Función Deshabilitada",
+        description: "El feedback con IA está deshabilitado temporalmente.",
+        variant: "default"
       });
-      setFeedback(result.feedback);
     } catch (e: any) {
       toast({
         title: "Error de IA",
@@ -127,7 +133,7 @@ export function TestGenerator({ courseTitle, courseContent, studentName, aiConfi
                 </CardHeader>
               </Card>
             )}
-            {testData.questions.map((q, i) => {
+            {testData.questions.map((q: any, i: number) => {
                 const isCorrect = answers[i] === q.correctAnswer;
                 return (
                     <div key={i}>
@@ -136,7 +142,7 @@ export function TestGenerator({ courseTitle, courseContent, studentName, aiConfi
                             <p>{i + 1}. {q.question}</p>
                         </div>
                         <RadioGroup onValueChange={(value) => handleAnswerChange(i, value)} disabled={isSubmitted} value={answers[i]}>
-                            {q.options.map((opt, j) => {
+                            {q.options.map((opt: string, j: number) => {
                                 const isSelected = answers[i] === opt;
                                 const isTheCorrectAnswer = opt === q.correctAnswer;
                                 return (

@@ -44,7 +44,7 @@ import * as db from '@/lib/db';
 import type { Role, Department, User, PredictAbandonmentOutput, AIConfig, UserStatus } from '@/lib/types';
 import { useAuth } from '@/contexts/auth';
 import { useToast } from '@/hooks/use-toast';
-import { predictAbandonment } from '@/ai/flows/predict-abandonment';
+// import { predictAbandonment } from '@/ai/flows/predict-abandonment';
 import { Switch } from '@/components/ui/switch';
 
 
@@ -117,16 +117,21 @@ export default function UsersPage() {
         setPredictionResult(prev => ({...prev, [user.id]: null}));
 
         try {
-            const simulatedData = {
-                userName: user.name,
-                lastLogin: "hace 2 semanas",
-                activeCoursesCount: (user.name.length % 3) + 1,
-                completedCoursesCount: (user.name.length % 5),
-                averageProgress: (user.email.length * 2) % 100,
-            };
+            // const simulatedData = {
+            //     userName: user.name,
+            //     lastLogin: "hace 2 semanas",
+            //     activeCoursesCount: (user.name.length % 3) + 1,
+            //     completedCoursesCount: (user.name.length % 5),
+            //     averageProgress: (user.email.length * 2) % 100,
+            // };
 
-            const result = await predictAbandonment(simulatedData);
-            setPredictionResult(prev => ({...prev, [user.id]: result}));
+            // const result = await predictAbandonment(simulatedData);
+            // setPredictionResult(prev => ({...prev, [user.id]: result}));
+            toast({
+                title: "Función Deshabilitada",
+                description: "La predicción de abandono con IA está deshabilitada temporalmente.",
+                variant: "default",
+            });
 
         } catch (error: any) {
             console.error("Failed to get prediction", error);

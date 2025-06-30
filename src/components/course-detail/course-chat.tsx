@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { Bot, Loader2, Send } from 'lucide-react';
-import { courseTutor } from '@/ai/flows/course-tutor';
+// import { courseTutor } from '@/ai/flows/course-tutor';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -28,8 +28,9 @@ export function CourseChat({ courseTitle, courseContent }: { courseTitle: string
         setLoading(true);
 
         try {
-            const result = await courseTutor({ courseContent, question: input });
-            const aiMessage: ChatMessage = { sender: 'ai', text: result.answer };
+            // const result = await courseTutor({ courseContent, question: input });
+            // const aiMessage: ChatMessage = { sender: 'ai', text: result.answer };
+            const aiMessage: ChatMessage = { sender: 'ai', text: 'El tutor de IA está deshabilitado temporalmente.' };
             setMessages(prev => [...prev, aiMessage]);
         } catch (error: any) {
             const errorText = error.message?.includes('API no está configurada')

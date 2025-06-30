@@ -13,7 +13,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { CheckCircle, Clock, Bot, Loader2, Sparkles, Send, PlusCircle, CheckCircle2, XCircle, MessageSquare, Book, File, Video, Link as LinkIcon, FilePenLine, AlertTriangle, Pencil, Rocket, EyeOff, Archive, Users, FileText, Star, CalendarDays } from 'lucide-react';
 import QRCode from 'qrcode';
 import { cn } from '@/lib/utils';
-import { summarizeModuleContent } from '@/ai/flows/summarize-module-content';
+// import { summarizeModuleContent } from '@/ai/flows/summarize-module-content';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -267,8 +267,9 @@ export default function CourseDetailPage() {
   const handleGenerateSummary = async (moduleId: string, content: string) => {
     setSummaryLoading(prev => ({ ...prev, [moduleId]: true }));
     try {
-      const result = await summarizeModuleContent(content);
-      setSummaries(prev => ({ ...prev, [moduleId]: result.summary }));
+      // const result = await summarizeModuleContent(content);
+      // setSummaries(prev => ({ ...prev, [moduleId]: result.summary }));
+      toast({ title: "Función Deshabilitada", description: "La generación de resúmenes con IA está deshabilitada temporalmente.", variant: "default" });
     } catch (e: any) {
       console.error("Failed to generate summary", e);
       const description = e.message?.includes('API no está configurada')
