@@ -10,7 +10,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useToast } from "@/hooks/use-toast";
 import * as db from '@/lib/db';
-// import { generateCourseFromTopic, type GenerateCourseFromTopicOutput } from '@/ai/flows/generate-course-from-topic';
+import { generateCourseFromTopic, type GenerateCourseFromTopicOutput } from '@/ai/flows/generate-course-from-topic';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -84,12 +84,8 @@ export default function AIGeneratorPage() {
     setIsLoading(true);
     setGeneratedCourse(null);
     try {
-        // const result = await generateCourseFromTopic(data.topic);
-        // setGeneratedCourse(result);
-        toast({
-            title: "Función Deshabilitada",
-            description: "La generación de cursos con IA está deshabilitada temporalmente.",
-        });
+        const result = await generateCourseFromTopic(data.topic);
+        setGeneratedCourse(result);
     } catch (error: any) {
         console.error("Failed to generate course", error);
         const description = error.message?.includes('API no está configurada')

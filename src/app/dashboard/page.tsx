@@ -6,7 +6,7 @@ import { Activity, BookCheck, BotMessageSquare, GraduationCap, Lightbulb, Loader
 import { useLiveQuery } from 'dexie-react-hooks';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
-// import { personalizedCourseRecommendations, type PersonalizedCourseRecommendationsOutput } from '@/ai/flows/course-suggestion';
+import { personalizedCourseRecommendations, type PersonalizedCourseRecommendationsOutput } from '@/ai/flows/course-suggestion';
 import { StatCard } from '@/components/stat-card';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -221,19 +221,50 @@ function AiSuggestions({ user }: { user: User }) {
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  const handleGetSuggestions = async (force = false) => {
+  // Fetch all necessary data for the suggestion logic
+  const allCourses = useLiveQuery(() => db.getAllCourses(), []);
+  const enrolledCourses = useLiveQuery(() => db.getEnrolledCoursesForUser(user.id), [user.id]);
+  const externalTrainings = useLiveQuery(() => db.getExternalTrainingsForUser(user.id), [user.id]);
+
+  const handleGetSuggestions = async () => {
+    if (!allCourses || !enrolledCourses || !externalTrainings) {
+        setError('No se pudieron cargar los datos necesarios para las sugerencias.');
+        return;
+    }
+
     setLoading(true);
     setError(null);
-    // Simulate API call and disable it
-    setTimeout(() => {
-        setError('La recomendación con IA está deshabilitada temporalmente.');
-        setLoading(false);
-    }, 500);
-  };
+    setSuggestions([]);
 
-  useEffect(() => {
-    // Auto-fetching disabled
-  }, []);
+    try {
+        const result = await personalizedCourseRecommendations({
+            userRole: user.role,
+            enrolledCourseTitles: enrolledCourses.map(c => c.title),
+            externalTrainingTitles: externalTrainings.map(t => t.title),
+            allAvailableCourseTitles: allCourses.filter(c => c.status !== 'draft').map(c => c.title),
+        });
+        
+        // Find the full course object for the suggested titles to create links
+        const suggestionsWithDetails = result.suggestions.map(suggestion => {
+            const course = allCourses.find(c => c.title === suggestion.courseTitle);
+            return {
+                ...suggestion,
+                courseId: course?.id,
+            }
+        }).filter(s => s.courseId); // Filter out any suggestions where the course wasn't found
+
+        setSuggestions(suggestionsWithDetails);
+
+    } catch (e) {
+      const errorMessage = (e as Error).message?.includes('API no está configurada')
+          ? (e as Error).message
+          : 'No se pudieron generar las sugerencias. Inténtelo de nuevo.';
+      setError(errorMessage);
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
 
 
   return (
@@ -258,7 +289,7 @@ function AiSuggestions({ user }: { user: User }) {
             ))}
           </ul>
         ) : (
-           <Button onClick={() => handleGetSuggestions(true)} disabled={loading}>
+           <Button onClick={() => handleGetSuggestions()} disabled={loading}>
               {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Lightbulb className="mr-2 h-4 w-4" />}
               Generar Sugerencias
            </Button>
@@ -267,7 +298,7 @@ function AiSuggestions({ user }: { user: User }) {
       </CardContent>
        {(suggestions.length > 0 && !loading) && (
           <CardFooter className="justify-center">
-              <Button variant="outline" onClick={() => handleGetSuggestions(true)} disabled={loading}>
+              <Button variant="outline" onClick={() => handleGetSuggestions()} disabled={loading}>
                  <Lightbulb className="mr-2 h-4 w-4" />
                  Volver a generar
               </Button>

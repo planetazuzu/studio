@@ -13,7 +13,7 @@ import { useAuth } from '@/contexts/auth';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { createAndNotifyAnnouncement } from './actions';
-// import { generateAnnouncementEmail } from '@/ai/flows/announcement-email-generation';
+import { generateAnnouncementEmail } from '@/ai/flows/announcement-email-generation';
 
 import * as db from '@/lib/db';
 import type { Announcement, AnnouncementType, AIConfig } from '@/lib/types';
@@ -136,15 +136,14 @@ function AddAnnouncementDialog({ open, onOpenChange }: { open: boolean, onOpenCh
         setIsGenerating(true);
         setGeneratedEmail(null);
         try {
-            toast({ title: "Función Deshabilitada", description: "La generación de email con IA está deshabilitada temporalmente.", variant: "default" });
-            // const { title, content } = form.getValues();
-            // const result = await generateAnnouncementEmail({
-            //     recipientName: 'Miembro del Equipo',
-            //     announcementTitle: title,
-            //     announcementContent: content,
-            // });
-            // setGeneratedEmail(result);
-            // toast({ title: "Borrador de email generado" });
+            const { title, content } = form.getValues();
+            const result = await generateAnnouncementEmail({
+                recipientName: 'Miembro del Equipo',
+                announcementTitle: title,
+                announcementContent: content,
+            });
+            setGeneratedEmail(result);
+            toast({ title: "Borrador de email generado" });
         } catch (e: any) {
             console.error(e);
             const description = e.message?.includes('API no está configurada')
