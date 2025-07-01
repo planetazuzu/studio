@@ -357,6 +357,13 @@ export type CourseRating = {
 };
 
 
+// --- Permission Types ---
+export type RolePermission = {
+  role: Role;
+  visibleNavs: string[]; // Array of nav item hrefs
+};
+
+
 // --- AI Flow Schemas ---
 
 // From: src/ai/flows/announcement-email-generation.ts

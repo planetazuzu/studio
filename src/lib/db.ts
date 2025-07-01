@@ -1,8 +1,9 @@
 
 import Dexie, { type Table } from 'dexie';
-import type { Course, User, Enrollment, UserProgress, PendingEnrollmentDetails, ForumMessage, ForumMessageWithReplies, Notification, Resource, CourseResource, Announcement, ChatChannel, ChatMessage, Role, ComplianceReportData, DirectMessageThread, CalendarEvent, ExternalTraining, EnrollmentStatus, EnrollmentWithDetails, Cost, StudentForManagement, AIConfig, AIUsageLog, Badge, UserBadge, UserStatus, CustomCostCategory, LearningPath, UserLearningPathProgress, CourseRating } from './types';
+import type { Course, User, Enrollment, UserProgress, PendingEnrollmentDetails, ForumMessage, ForumMessageWithReplies, Notification, Resource, CourseResource, Announcement, ChatChannel, ChatMessage, Role, ComplianceReportData, DirectMessageThread, CalendarEvent, ExternalTraining, EnrollmentStatus, EnrollmentWithDetails, Cost, StudentForManagement, AIConfig, AIUsageLog, Badge, UserBadge, UserStatus, CustomCostCategory, LearningPath, UserLearningPathProgress, CourseRating, RolePermission } from './types';
 import { courses as initialCourses, users as initialUsers, initialChatChannels, initialCosts, defaultAIConfig, roles, departments, initialBadges, initialCostCategories } from './data';
 import { sendEmailNotification, sendWhatsAppNotification } from './notification-service';
+import { getNavItems } from './nav';
 
 const LOGGED_IN_USER_KEY = 'loggedInUserId';
 
@@ -29,11 +30,12 @@ export class AcademiaAIDB extends Dexie {
   learningPaths!: Table<LearningPath>;
   userLearningPathProgress!: Table<UserLearningPathProgress>;
   courseRatings!: Table<CourseRating>;
+  rolePermissions!: Table<RolePermission>;
 
 
   constructor() {
     super('AcademiaAIDB');
-    this.version(28).stores({
+    this.version(29).stores({
       courses: 'id, instructor, status, isScorm, isSynced, *mandatoryForRoles',
       users: 'id, &email, status, points, isSynced',
       enrollments: '++id, studentId, courseId, status, [studentId+status]',
@@ -56,6 +58,7 @@ export class AcademiaAIDB extends Dexie {
       learningPaths: '++id, targetRole',
       userLearningPathProgress: '++id, [userId+learningPathId]',
       courseRatings: '++id, [courseId+userId], courseId, instructorName',
+      rolePermissions: '&role',
     });
   }
 }
@@ -93,9 +96,17 @@ export async function populateDatabase() {
       db.learningPaths.clear(),
       db.userLearningPathProgress.clear(),
       db.courseRatings.clear(),
+      db.rolePermissions.clear(),
     ]);
 
     console.log("Tables cleared. Repopulating with initial data...");
+
+    const initialPermissions: RolePermission[] = roles.map(role => {
+        const visibleNavs = getNavItems()
+            .filter(item => item.roles.includes(role))
+            .map(item => item.href);
+        return { role, visibleNavs };
+    });
 
     await db.courses.bulkAdd(initialCourses.map(c => ({...c, isSynced: true})));
     await db.users.bulkAdd(initialUsers.map(u => ({...u, isSynced: true})));
@@ -104,6 +115,7 @@ export async function populateDatabase() {
     await db.aiConfig.add(defaultAIConfig);
     await db.badges.bulkAdd(initialBadges);
     await db.costCategories.bulkAdd(initialCostCategories.map(name => ({ name })));
+    await db.rolePermissions.bulkAdd(initialPermissions);
 
 
     console.log("Database population complete.");
@@ -1087,4 +1099,21 @@ export async function getRatingsForInstructor(instructorName: string): Promise<C
 
 export async function toggleCourseRatingVisibility(ratingId: number, isPublic: boolean): Promise<number> {
     return await db.courseRatings.update(ratingId, { isPublic });
+}
+
+// --- Permission Functions ---
+
+export async function getPermissionsForRole(role: Role): Promise<string[]> {
+    const perm = await db.rolePermissions.get(role);
+    if (perm) {
+        return perm.visibleNavs;
+    }
+    // Fallback to default if not found in DB
+    return getNavItems()
+        .filter(item => item.roles.includes(role))
+        .map(item => item.href);
+}
+
+export async function updatePermissionsForRole(role: Role, visibleNavs: string[]): Promise<number> {
+    return await db.rolePermissions.put({ role, visibleNavs });
 }

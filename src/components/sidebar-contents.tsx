@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useSidebar } from '@/components/ui/sidebar';
@@ -16,14 +17,21 @@ import { getNavItems } from '@/lib/nav';
 import { Skeleton } from './ui/skeleton';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { useLiveQuery } from 'dexie-react-hooks';
+import * as db from '@/lib/db';
 
 export function SidebarContents() {
   const { isOpen } = useSidebar();
   const pathname = usePathname();
   const { user } = useAuth();
-  const navItems = getNavItems();
+  const allNavItems = getNavItems();
+  
+  const userPermissions = useLiveQuery(
+    () => user ? db.getPermissionsForRole(user.role) : Promise.resolve([]),
+    [user?.role]
+  );
 
-  if (!user) {
+  if (!user || userPermissions === undefined) {
     return (
         <div className="p-4 space-y-4">
             <Skeleton className="h-10 w-full" />
@@ -33,8 +41,8 @@ export function SidebarContents() {
     )
   }
 
-  const visibleNavItems = navItems.filter((item) =>
-    item.roles.includes(user.role)
+  const visibleNavItems = allNavItems.filter((item) =>
+    userPermissions.includes(item.href)
   );
 
   const activeItem = visibleNavItems

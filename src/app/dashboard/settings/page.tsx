@@ -70,7 +70,7 @@ export default function SettingsPage() {
     
     const [profile, setProfile] = useState<any>(null);
     const [general, setGeneral] = useState({
-        orgName: 'AmbuVital S.L.',
+        orgName: 'TalentOS',
         primaryColor: '#2E9AFE',
         accentColor: '#82E0AA',
     });
@@ -182,10 +182,10 @@ export default function SettingsPage() {
     const adminTabs = [
         ...userTabs,
         { value: 'general', label: 'General' },
-        { value: 'api', label: 'APIs' },
-        { value: 'sync', label: 'Sincronización' },
         { value: 'permissions', label: 'Permisos' },
         { value: 'ai', label: 'Inteligencia Artificial' },
+        { value: 'api', label: 'APIs' },
+        { value: 'sync', label: 'Sincronización' },
     ];
 
     const visibleTabs = isAdmin ? adminTabs : userTabs;
@@ -220,17 +220,17 @@ export default function SettingsPage() {
                             <TabsContent value="general" className="mt-4">
                                 <GeneralSettings general={general} setGeneral={setGeneral} />
                             </TabsContent>
-                            <TabsContent value="api" className="mt-4">
-                                <ApiSettings />
-                            </TabsContent>
-                            <TabsContent value="sync" className="mt-4">
-                                <SyncManager />
-                            </TabsContent>
-                             <TabsContent value="permissions" className="mt-4">
+                            <TabsContent value="permissions" className="mt-4">
                                 <PermissionSettings />
                             </TabsContent>
                              <TabsContent value="ai" className="mt-4">
                                 <AISettings />
+                            </TabsContent>
+                             <TabsContent value="api" className="mt-4">
+                                <ApiSettings />
+                            </TabsContent>
+                            <TabsContent value="sync" className="mt-4">
+                                <SyncManager />
                             </TabsContent>
                         </>
                     )}
