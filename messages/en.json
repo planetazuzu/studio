@@ -1,7 +1,7 @@
 
 {
   "LoginPage": {
-    "title": "AcademiaAI",
+    "title": "TalentOS",
     "description": "The AI-powered training platform for your team.",
     "authErrorTitle": "Authentication Error",
     "emailLabel": "Email address",

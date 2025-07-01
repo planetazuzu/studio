@@ -38,7 +38,7 @@ const generateAnnouncementEmailFlow = ai.defineFlow(
       output: {
         schema: GenerateAnnouncementEmailOutputSchema,
       },
-      prompt: `You are an AI assistant for a corporate training platform called AcademiaAI. Your task is to generate a professional email based on an internal announcement.
+      prompt: `You are an AI assistant for a corporate training platform called TalentOS. Your task is to generate a professional email based on an internal announcement.
 
       Recipient Name: {{{recipientName}}}
       Announcement Title: {{{announcementTitle}}}
