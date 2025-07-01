@@ -14,6 +14,7 @@ import { users as testUsers } from '@/lib/data';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -149,7 +150,10 @@ export default function LoginPage() {
           </div>
         </CardContent>
       </Card>
-      <p className="text-xs text-muted-foreground">Copyright © 2025 TalentOS v1.0</p>
+      <div className="flex items-center gap-4">
+        <p className="text-xs text-muted-foreground">Copyright © 2025 TalentOS v1.0</p>
+        <ThemeToggle />
+      </div>
     </div>
   );
 }

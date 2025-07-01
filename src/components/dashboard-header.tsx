@@ -24,6 +24,7 @@ import * as db from '@/lib/db';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { ThemeToggle } from './theme-toggle';
 
 interface DashboardHeaderProps {
     title: string;
@@ -87,6 +88,7 @@ export function DashboardHeader({ title }: DashboardHeaderProps) {
             />
           </div>
         </form>
+        <ThemeToggle />
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="rounded-full relative">
@@ -146,7 +148,7 @@ export function DashboardHeader({ title }: DashboardHeaderProps) {
             <DropdownMenuLabel>Mi Cuenta</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link href="/dashboard/settings">Ajustes</Link>
+              <Link href="/dashboard/profile">Perfil</Link>
             </DropdownMenuItem>
             <DropdownMenuItem>Soporte</DropdownMenuItem>
             <DropdownMenuSeparator />
