@@ -1,4 +1,4 @@
-import { AreaChart, BookOpen, Home, Settings, Users, Calendar, Library, Megaphone, MessagesSquare, ClipboardCheck, UserRoundCog, Wallet, Trophy, Route, type LucideIcon } from 'lucide-react';
+import { AreaChart, BookOpen, Home, Settings, Users, Calendar, Library, Megaphone, MessagesSquare, ClipboardCheck, UserRoundCog, Wallet, Trophy, Route, type LucideIcon, UserCircle, BellRing } from 'lucide-react';
 import type { Role } from './types';
 
 export type NavItem = {
@@ -73,5 +73,7 @@ export const getNavItems = (): NavItem[] => [
     roles: managerRoles,
   },
   { href: '/dashboard/chat', icon: MessagesSquare, label: 'Chat', roles: allRoles },
-  { href: '/dashboard/settings', icon: Settings, label: 'Ajustes', roles: allRoles },
+  { href: '/dashboard/profile', icon: UserCircle, label: 'Perfil', roles: allRoles },
+  { href: '/dashboard/preferences', icon: BellRing, label: 'Preferencias', roles: allRoles },
+  { href: '/dashboard/settings', icon: Settings, label: 'Ajustes', roles: managerRoles },
 ];

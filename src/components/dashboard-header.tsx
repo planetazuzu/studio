@@ -150,6 +150,9 @@ export function DashboardHeader({ title }: DashboardHeaderProps) {
             <DropdownMenuItem asChild>
               <Link href="/dashboard/profile">Perfil</Link>
             </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/dashboard/preferences">Preferencias</Link>
+            </DropdownMenuItem>
             <DropdownMenuItem>Soporte</DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={logout}>
