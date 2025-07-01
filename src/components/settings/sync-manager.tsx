@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -32,8 +31,10 @@ export function SyncManager() {
         
         try {
             // 1. Get unsynced data from client-side Dexie
-            const unsyncedUsers = await db.db.users.where('isSynced').equals(false).toArray();
-            const unsyncedCourses = await db.db.courses.where('isSynced').equals(false).toArray();
+            // Switched from .where().equals() to .filter() to avoid potential indexing issues
+            // with boolean values, which was causing a crash. This is safer.
+            const unsyncedUsers = await db.db.users.filter(user => user.isSynced === false).toArray();
+            const unsyncedCourses = await db.db.courses.filter(course => course.isSynced === false).toArray();
             
             setLog(prev => [...prev, `Encontrados ${unsyncedUsers.length} usuarios y ${unsyncedCourses.length} cursos para sincronizar.`]);
 
