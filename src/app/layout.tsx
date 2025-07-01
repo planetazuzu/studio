@@ -6,8 +6,8 @@ import './globals.css';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata = {
-  title: 'TalentOS',
-  description: 'La plataforma de talento impulsada por IA para tu equipo.',
+  title: 'AcademiaAI',
+  description: 'La plataforma de formación impulsada por IA para tu equipo.',
 };
  
 export default function RootLayout({

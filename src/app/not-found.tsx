@@ -1,10 +1,12 @@
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { SearchX } from 'lucide-react'
+'use client';
 
-// This is a root Not Found page, it should not use i18n features
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { SearchX } from 'lucide-react';
+
 export default function NotFound() {
+  
   return (
     <div className="flex h-screen items-center justify-center bg-background p-4">
         <Card className="w-full max-w-md text-center shadow-2xl">
@@ -12,14 +14,14 @@ export default function NotFound() {
                 <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
                     <SearchX className="h-8 w-8" />
                 </div>
-                <CardTitle className="mt-4 text-3xl font-bold">404 - Page Not Found</CardTitle>
+                <CardTitle className="mt-4 text-3xl font-bold">404 - Página no encontrada</CardTitle>
                 <CardDescription>
-                    Sorry, the page you are looking for does not exist or has been moved.
+                    Lo sentimos, la página que buscas no existe o ha sido movida.
                 </CardDescription>
             </CardHeader>
             <CardContent>
                 <Button asChild>
-                    <Link href="/dashboard">Go to Dashboard</Link>
+                    <Link href="/dashboard">Volver al Dashboard</Link>
                 </Button>
             </CardContent>
         </Card>

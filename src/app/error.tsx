@@ -1,11 +1,12 @@
+
 'use client' // Error components must be Client Components
 
 import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { AlertTriangle } from 'lucide-react'
 
-// This is a root Error page, it should not use i18n features
 export default function Error({
   error,
   reset,
@@ -13,6 +14,8 @@ export default function Error({
   error: Error & { digest?: string }
   reset: () => void
 }) {
+  const router = useRouter();
+
   useEffect(() => {
     // Log the error to an error reporting service
     console.error(error)
@@ -25,10 +28,8 @@ export default function Error({
                 <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10 text-destructive">
                     <AlertTriangle className="h-8 w-8" />
                 </div>
-                <CardTitle className="mt-4 text-3xl font-bold">Oops! Something went wrong</CardTitle>
-                <CardDescription>
-                    We've encountered an unexpected error. Please try reloading the page.
-                </CardDescription>
+                <CardTitle className="mt-4 text-3xl font-bold">¡Ups! Algo salió mal</CardTitle>
+                <CardDescription>Hemos encontrado un error inesperado. Por favor, intenta recargar la página.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
                 <div className="rounded-md bg-muted p-4 text-left text-xs text-muted-foreground">
@@ -40,13 +41,13 @@ export default function Error({
                         className="w-full"
                         variant="outline"
                     >
-                        Try Again
+                        Intentar de Nuevo
                     </Button>
                     <Button
-                        onClick={() => (window.location.href = '/dashboard')}
+                        onClick={() => router.push('/dashboard')}
                         className="w-full"
                     >
-                        Go to Dashboard
+                        Volver al Dashboard
                     </Button>
                  </div>
             </CardContent>
