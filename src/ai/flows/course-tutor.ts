@@ -36,17 +36,23 @@ const courseTutorFlow = ai.defineFlow(
       output: {
         schema: CourseTutorOutputSchema,
       },
-      prompt: `You are an expert AI tutor for a sanitary transport training platform. Your role is to answer student questions based *only* on the provided course content, which focuses on emergency medical procedures and protocols. Be helpful, clear, and concise. If the answer is not in the content, state that you cannot answer the question with the provided information.
+      prompt: `You are an expert AI tutor for a corporate training platform called TalentOS. Your role is to answer student questions based *only* on the provided course content. Be helpful, clear, and concise. If the answer is not in the content, state that you cannot answer the question with the provided information.
 
       Course Content:
       ---
       {{{courseContent}}}
       ---
 
-      User's Question:
+      Here is the conversation history so far. Use it to understand the context of the user's new question.
+      {{#each history}}
+      {{this.role}}: {{{this.text}}}
+      {{/each}}
+
+      ---
+      User's New Question:
       "{{{question}}}"
 
-      Your Answer:
+      Your Answer (based on the course content and conversation history):
       `,
     });
     return output!;

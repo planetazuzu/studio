@@ -402,9 +402,14 @@ export type PersonalizedCourseRecommendationsOutput = z.infer<typeof Personalize
 
 
 // From: src/ai/flows/course-tutor.ts
+const ChatHistoryPartSchema = z.object({
+  role: z.enum(['user', 'model']),
+  text: z.string(),
+});
 export const CourseTutorInputSchema = z.object({
   courseContent: z.string().describe('The full content of the course.'),
-  question: z.string().describe("The user's question about the course."),
+  question: z.string().describe("The user's current question about the course."),
+  history: z.array(ChatHistoryPartSchema).optional().describe('The history of the conversation so far.'),
 });
 export type CourseTutorInput = z.infer<typeof CourseTutorInputSchema>;
 

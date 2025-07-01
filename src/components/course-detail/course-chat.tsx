@@ -23,12 +23,22 @@ export function CourseChat({ courseTitle, courseContent }: { courseTitle: string
         if (!input.trim()) return;
 
         const userMessage: ChatMessage = { sender: 'user', text: input };
-        setMessages(prev => [...prev, userMessage]);
+        const newMessages = [...messages, userMessage];
+        setMessages(newMessages);
         setInput('');
         setLoading(true);
 
+        const historyForAI = newMessages.map(msg => ({
+            role: msg.sender === 'user' ? 'user' : ('model' as 'user' | 'model'),
+            text: msg.text,
+        }));
+
         try {
-            const result = await courseTutor({ courseContent, question: input });
+            const result = await courseTutor({
+                courseContent,
+                question: input,
+                history: historyForAI,
+            });
             const aiMessage: ChatMessage = { sender: 'ai', text: result.answer };
             setMessages(prev => [...prev, aiMessage]);
         } catch (error: any) {
