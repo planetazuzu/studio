@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useSidebar } from '@/components/ui/sidebar';
@@ -19,9 +18,11 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useLiveQuery } from 'dexie-react-hooks';
 import * as db from '@/lib/db';
+import { ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { Button } from './ui/button';
 
 export function SidebarContents() {
-  const { isOpen } = useSidebar();
+  const { isOpen, setIsOpen, isMobile } = useSidebar();
   const pathname = usePathname();
   const { user } = useAuth();
   const allNavItems = getNavItems();
@@ -76,19 +77,31 @@ export function SidebarContents() {
         </SidebarMenu>
       </SidebarContent>
       <SidebarFooter>
-        <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors">
-          <Avatar className="h-10 w-10">
-            <AvatarImage src={user.avatar} alt={user.name} />
-            <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-          </Avatar>
-          {isOpen && (
-            <div className="overflow-hidden">
-              <p className="font-semibold truncate">{user.name}</p>
-              <p className="text-xs text-muted-foreground truncate">
-                {user.role}
-              </p>
+        <div className="flex items-center justify-between p-3">
+            <div className="flex items-center gap-3 overflow-hidden">
+                <Avatar className="h-10 w-10">
+                    <AvatarImage src={user.avatar} alt={user.name} />
+                    <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                </Avatar>
+                {isOpen && (
+                    <div className="overflow-hidden">
+                    <p className="font-semibold truncate">{user.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                        {user.role}
+                    </p>
+                    </div>
+                )}
             </div>
-          )}
+             {!isMobile && (
+                <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setIsOpen(!isOpen)}
+                >
+                {isOpen ? <ChevronsLeft /> : <ChevronsRight />}
+                </Button>
+            )}
         </div>
       </SidebarFooter>
     </>
