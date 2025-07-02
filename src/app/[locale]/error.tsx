@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { AlertTriangle } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import * as db from '@/lib/db';
 
 export default function Error({
   error,
@@ -17,8 +18,9 @@ export default function Error({
   const router = useRouter();
 
   useEffect(() => {
-    // Log the error to an error reporting service
-    console.error(error)
+    // Log the error to console and to our internal system log
+    console.error(error);
+    db.logSystemEvent('ERROR', error.message, { stack: error.stack, digest: error.digest });
   }, [error])
 
   return (

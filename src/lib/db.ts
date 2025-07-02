@@ -1,6 +1,6 @@
 
 import Dexie, { type Table } from 'dexie';
-import type { Course, User, Enrollment, UserProgress, PendingEnrollmentDetails, ForumMessage, ForumMessageWithReplies, Notification, Resource, CourseResource, Announcement, ChatChannel, ChatMessage, Role, ComplianceReportData, DirectMessageThread, CalendarEvent, ExternalTraining, EnrollmentStatus, EnrollmentWithDetails, Cost, StudentForManagement, AIConfig, AIUsageLog, Badge, UserBadge, UserStatus, CustomCostCategory, LearningPath, UserLearningPathProgress, CourseRating, RolePermission } from './types';
+import type { Course, User, Enrollment, UserProgress, PendingEnrollmentDetails, ForumMessage, ForumMessageWithReplies, Notification, Resource, CourseResource, Announcement, ChatChannel, ChatMessage, Role, ComplianceReportData, DirectMessageThread, CalendarEvent, ExternalTraining, EnrollmentStatus, EnrollmentWithDetails, Cost, StudentForManagement, AIConfig, AIUsageLog, Badge, UserBadge, UserStatus, CustomCostCategory, LearningPath, UserLearningPathProgress, CourseRating, RolePermission, SystemLog, LogLevel } from './types';
 import { courses as initialCourses, users as initialUsers, initialChatChannels, initialCosts, defaultAIConfig, roles, departments, initialBadges, initialCostCategories } from './data';
 import { sendEmailNotification, sendWhatsAppNotification } from './notification-service';
 import { getNavItems } from './nav';
@@ -32,11 +32,12 @@ export class AcademiaAIDB extends Dexie {
   userLearningPathProgress!: Table<UserLearningPathProgress>;
   courseRatings!: Table<CourseRating>;
   rolePermissions!: Table<RolePermission>;
+  systemLogs!: Table<SystemLog>;
 
 
   constructor() {
     super('AcademiaAIDB');
-    this.version(29).stores({
+    this.version(30).stores({
       courses: 'id, instructor, status, isScorm, isSynced, *mandatoryForRoles',
       users: 'id, &email, status, points, isSynced',
       enrollments: '++id, studentId, courseId, status, [studentId+status]',
@@ -60,6 +61,7 @@ export class AcademiaAIDB extends Dexie {
       userLearningPathProgress: '++id, [userId+learningPathId]',
       courseRatings: '++id, [courseId+userId], courseId, instructorName',
       rolePermissions: '&role',
+      systemLogs: '++id, timestamp, level',
     });
   }
 }
@@ -98,6 +100,7 @@ export async function populateDatabase() {
       db.userLearningPathProgress.clear(),
       db.courseRatings.clear(),
       db.rolePermissions.clear(),
+      db.systemLogs.clear(),
     ]);
 
     console.log("Tables cleared. Repopulating with initial data...");
@@ -1151,4 +1154,30 @@ export async function getPermissionsForRole(role: Role): Promise<string[]> {
 
 export async function updatePermissionsForRole(role: Role, visibleNavs: string[]): Promise<number> {
     return await db.rolePermissions.put({ role, visibleNavs });
+}
+
+// --- System Log Functions ---
+
+export async function logSystemEvent(level: LogLevel, message: string, details?: Record<string, any>): Promise<void> {
+    try {
+        await db.systemLogs.add({
+            timestamp: new Date().toISOString(),
+            level,
+            message,
+            details,
+        });
+    } catch (error) {
+        console.error("Failed to write to system log:", error);
+    }
+}
+
+export async function getSystemLogs(filterLevel?: LogLevel): Promise<SystemLog[]> {
+    if (filterLevel) {
+        return await db.systemLogs.where('level').equals(filterLevel).reverse().sortBy('timestamp');
+    }
+    return await db.systemLogs.reverse().sortBy('timestamp');
+}
+
+export async function clearAllSystemLogs(): Promise<void> {
+    await db.systemLogs.clear();
 }

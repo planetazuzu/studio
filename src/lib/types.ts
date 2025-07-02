@@ -363,6 +363,18 @@ export type RolePermission = {
   visibleNavs: string[]; // Array of nav item hrefs
 };
 
+// --- System Log Types ---
+export const logLevels = ['DEBUG', 'INFO', 'WARN', 'ERROR'] as const;
+export type LogLevel = typeof logLevels[number];
+
+export type SystemLog = {
+  id?: number;
+  timestamp: string; // ISO date string
+  level: LogLevel;
+  message: string;
+  details?: Record<string, any>;
+};
+
 
 // --- AI Flow Schemas ---
 
