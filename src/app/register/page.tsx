@@ -1,6 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -13,43 +16,53 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/auth';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { roles, Role } from '@/lib/types';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+const registerSchema = z.object({
+  name: z.string().min(2, { message: "El nombre es obligatorio." }),
+  email: z.string().email({ message: "Por favor, introduce un correo válido." }),
+  password: z.string().min(8, { message: "La contraseña debe tener al menos 8 caracteres." }),
+  role: z.enum(roles as [string, ...string[]], { required_error: "Debes seleccionar un rol." }),
+});
+
+type RegisterFormValues = z.infer<typeof registerSchema>;
+
 
 export default function RegisterPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { isLoading: isAuthLoading } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    
-    if (password.length < 8) {
-        setError("La contraseña debe tener al menos 8 caracteres.");
-        return;
-    }
+  const form = useForm<RegisterFormValues>({
+      resolver: zodResolver(registerSchema),
+  });
 
+
+  const handleRegister = async (data: RegisterFormValues) => {
+    setError('');
     setIsSubmitting(true);
     try {
-      await db.addUser({
-        name,
-        email,
-        password,
-        role: 'Trabajador',
-        department: 'Técnicos de Emergencias'
-      });
-      toast({
-        title: "Registro completado",
-        description: "Tu cuenta ha sido creada. Ahora puedes iniciar sesión.",
-      });
-      router.push('/login');
+      const newUser = await db.addUser(data);
+      
+      if(newUser.status === 'pending_approval') {
+          router.push('/pending-approval');
+      } else {
+          toast({
+            title: "Registro completado",
+            description: "Tu cuenta ha sido creada. Ahora puedes iniciar sesión.",
+          });
+          router.push('/login');
+      }
     } catch (err: any) {
-      setError(err.message || 'Ha ocurrido un error inesperado.');
-      console.error(err);
+      if (err.message.includes('correo electrónico ya está en uso')) {
+          form.setError('email', { type: 'manual', message: 'Este correo electrónico ya está en uso.' });
+      } else {
+        setError(err.message || 'Ha ocurrido un error inesperado.');
+        console.error(err);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -61,14 +74,14 @@ export default function RegisterPage() {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md shadow-2xl">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
-            <AppLogo className="h-8 w-8" />
-          </div>
-          <CardTitle className="text-3xl font-bold">Crear una Cuenta</CardTitle>
-          <CardDescription>Regístrate para acceder a la plataforma de formación.</CardDescription>
+           <Link href="/" className="flex items-center justify-center gap-2 mb-4">
+            <AppLogo className="h-10 w-10 text-primary" />
+            <CardTitle className="text-3xl font-bold">AcademiaAI</CardTitle>
+          </Link>
+          <CardDescription>Crea una cuenta para acceder a la plataforma de formación.</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleRegister} className="space-y-6">
+          <form onSubmit={form.handleSubmit(handleRegister)} className="space-y-6">
              {error && (
                 <Alert variant="destructive">
                     <Terminal className="h-4 w-4" />
@@ -76,42 +89,60 @@ export default function RegisterPage() {
                     <AlertDescription>{error}</AlertDescription>
                 </Alert>
             )}
-            <div className="space-y-2">
-              <Label htmlFor="name">Nombre Completo</Label>
-              <Input 
-                id="name" 
-                type="text" 
-                placeholder="Tu nombre y apellidos" 
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                disabled={formIsDisabled}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input 
-                id="email" 
-                type="email" 
-                placeholder="tu.correo@empresa.com" 
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                disabled={formIsDisabled}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input 
-                id="password" 
-                type="password" 
-                placeholder="Debe tener al menos 8 caracteres"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                disabled={formIsDisabled}
-              />
-            </div>
+            
+            <Controller
+                name="name"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                    <div className="space-y-2">
+                        <Label htmlFor="name">Nombre Completo</Label>
+                        <Input id="name" placeholder="Tu nombre y apellidos" {...field} disabled={formIsDisabled} />
+                        {fieldState.error && <p className="text-sm text-destructive">{fieldState.error.message}</p>}
+                    </div>
+                )}
+            />
+             <Controller
+                name="email"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                    <div className="space-y-2">
+                        <Label htmlFor="email">Email</Label>
+                        <Input id="email" type="email" placeholder="tu.correo@empresa.com" {...field} disabled={formIsDisabled} />
+                        {fieldState.error && <p className="text-sm text-destructive">{fieldState.error.message}</p>}
+                    </div>
+                )}
+            />
+              <Controller
+                name="password"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                    <div className="space-y-2">
+                        <Label htmlFor="password">Contraseña</Label>
+                        <Input id="password" type="password" placeholder="Mínimo 8 caracteres" {...field} disabled={formIsDisabled} />
+                        {fieldState.error && <p className="text-sm text-destructive">{fieldState.error.message}</p>}
+                    </div>
+                )}
+            />
+            <Controller
+                name="role"
+                control={form.control}
+                render={({ field, fieldState }) => (
+                    <div className="space-y-2">
+                         <Label htmlFor="role">¿Cómo quieres registrarte?</Label>
+                        <Select onValueChange={field.onChange} defaultValue={field.value} disabled={formIsDisabled}>
+                            <SelectTrigger id="role">
+                                <SelectValue placeholder="Selecciona un rol..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {roles.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                        {fieldState.error && <p className="text-sm text-destructive">{fieldState.error.message}</p>}
+                         <p className="text-xs text-muted-foreground">Los roles de gestión requieren aprobación de un administrador.</p>
+                    </div>
+                )}
+            />
+
              <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row-reverse">
                 <Button type="submit" className="w-full sm:w-auto" disabled={formIsDisabled}>
                   {formIsDisabled ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/> Registrando...</> : "Crear Cuenta"}

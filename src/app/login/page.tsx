@@ -49,7 +49,10 @@ export default function LoginPage() {
     } catch (err: any) {
       if (err.message.includes('desactivada')) {
         setError("Esta cuenta ha sido desactivada. Contacta con un administrador.");
-      } else {
+      } else if (err.message.includes('pendiente de aprobación')) {
+        setError("Esta cuenta está pendiente de aprobación por un administrador.");
+      }
+      else {
         setError("Credenciales incorrectas o usuario no encontrado.");
       }
       console.error(err);
@@ -64,10 +67,10 @@ export default function LoginPage() {
     <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4 gap-6">
       <Card className="w-full max-w-md shadow-2xl">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
-            <AppLogo className="h-8 w-8" />
-          </div>
-          <CardTitle className="text-3xl font-bold">TalentOS</CardTitle>
+          <Link href="/" className="flex items-center justify-center gap-2 mb-4">
+            <AppLogo className="h-10 w-10 text-primary" />
+            <CardTitle className="text-3xl font-bold">AcademiaAI</CardTitle>
+          </Link>
           <CardDescription>La plataforma de formación impulsada por IA para tu equipo.</CardDescription>
         </CardHeader>
         <CardContent>
@@ -150,10 +153,6 @@ export default function LoginPage() {
           </div>
         </CardContent>
       </Card>
-      <div className="flex items-center gap-4">
-        <p className="text-xs text-muted-foreground">Copyright © 2025 TalentOS v1.0</p>
-        <ThemeToggle />
-      </div>
     </div>
   );
 }
