@@ -33,6 +33,7 @@ import { CourseResources } from '@/components/course-detail/course-resources';
 import { CourseManagementTab } from '@/components/course-detail/course-management-tab';
 import { ScormLaunchPanel } from '@/components/course-detail/scorm-launch-panel';
 import { RatingTab } from '@/components/course-detail/RatingTab';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
 function LiveSessionsPanel({ courseId }: { courseId: string }) {
     const events = useLiveQuery(() => db.getCalendarEvents([courseId]), [courseId]);
@@ -330,17 +331,20 @@ export default function CourseDetailPage() {
           {course.isScorm ? (
             <ScormLaunchPanel course={course} />
           ) : (
-            <Tabs defaultValue="overview">
-              <TabsList>
-                <TabsTrigger value="overview">Descripción</TabsTrigger>
-                <TabsTrigger value="modules">Módulos</TabsTrigger>
-                <TabsTrigger value="resources">Recursos</TabsTrigger>
-                <TabsTrigger value="ratings"><Star className="mr-2 h-4 w-4" />Valoraciones</TabsTrigger>
-                {aiConfig?.enabledFeatures.questionGeneration && <TabsTrigger value="test">Test IA</TabsTrigger>}
-                {aiConfig?.enabledFeatures.tutor && <TabsTrigger value="chat">Tutor IA</TabsTrigger>}
-                <TabsTrigger value="forum">Foro</TabsTrigger>
-                {canManageCourse && <TabsTrigger value="manage"><Users className="mr-2 h-4 w-4"/>Gestión</TabsTrigger>}
-              </TabsList>
+            <Tabs defaultValue="overview" className="w-full">
+              <ScrollArea className="w-full whitespace-nowrap">
+                <TabsList className="inline-flex w-max">
+                  <TabsTrigger value="overview">Descripción</TabsTrigger>
+                  <TabsTrigger value="modules">Módulos</TabsTrigger>
+                  <TabsTrigger value="resources">Recursos</TabsTrigger>
+                  <TabsTrigger value="ratings"><Star className="mr-2 h-4 w-4" />Valoraciones</TabsTrigger>
+                  {aiConfig?.enabledFeatures.questionGeneration && <TabsTrigger value="test">Test IA</TabsTrigger>}
+                  {aiConfig?.enabledFeatures.tutor && <TabsTrigger value="chat">Tutor IA</TabsTrigger>}
+                  <TabsTrigger value="forum">Foro</TabsTrigger>
+                  {canManageCourse && <TabsTrigger value="manage"><Users className="mr-2 h-4 w-4"/>Gestión</TabsTrigger>}
+                </TabsList>
+                 <ScrollBar orientation="horizontal" />
+              </ScrollArea>
               <TabsContent value="overview" className="mt-4">
                 <Card className="shadow-lg">
                   <CardHeader>
