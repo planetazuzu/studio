@@ -9,7 +9,8 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { saveApiKeysAction } from '@/app/dashboard/settings/actions';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { Server } from 'lucide-react';
+import { Server, HelpCircle } from 'lucide-react';
+import Link from 'next/link';
 
 
 export function ApiSettings() {
@@ -36,7 +37,7 @@ export function ApiSettings() {
                 <CardTitle>Configuración de APIs</CardTitle>
                 <CardDescription>Gestiona las claves y URLs para servicios externos. Se guardan de forma segura como cookies de servidor.</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-6">
                 <form ref={formRef} action={formAction} className="space-y-6">
                     <div>
                         <h3 className="text-lg font-semibold mb-2">NocoDB (Base de Datos Remota)</h3>
@@ -57,18 +58,21 @@ export function ApiSettings() {
                 </form>
 
                 <Alert className="mt-6 bg-blue-50 border-blue-200 text-blue-900">
-                    <Server className="h-4 w-4 !text-blue-900" />
-                    <AlertTitle>Nota sobre Despliegue en Producción</AlertTitle>
+                    <HelpCircle className="h-4 w-4 !text-blue-900" />
+                    <AlertTitle>¿Necesitas ayuda para configurar NocoDB?</AlertTitle>
                     <AlertDescription>
-                        Para un entorno de producción, se recomienda encarecidamente configurar estas claves como **variables de entorno** en tu plataforma de hosting (Vercel, Netlify, etc.) en lugar de guardarlas aquí. La aplicación buscará primero las variables de entorno. Consulta la documentación de despliegue para más detalles.
+                        Hemos preparado una guía detallada que te explica paso a paso cómo obtener tus credenciales y crear las tablas necesarias.
+                        <Button variant="link" asChild className="p-0 h-auto ml-1 text-blue-900 font-bold">
+                            <Link href="/docs/nocodb_setup.md" target="_blank">Consulta la guía de configuración aquí.</Link>
+                        </Button>
                     </AlertDescription>
                 </Alert>
                  
                  <Alert className="mt-6">
                     <Server className="h-4 w-4" />
-                    <AlertTitle>¿Qué es NocoDB?</AlertTitle>
+                    <AlertTitle>Nota sobre Despliegue en Producción</AlertTitle>
                     <AlertDescription>
-                        NocoDB es una alternativa de código abierto a Airtable. Nos permite crear una base de datos con una API REST lista para usar, ideal para sincronizar los datos de esta aplicación.
+                        Para un entorno de producción, se recomienda encarecidamente configurar estas claves como **variables de entorno** en tu plataforma de hosting (Vercel, Netlify, etc.) en lugar de guardarlas aquí. La aplicación buscará primero las variables de entorno. Consulta la documentación de despliegue para más detalles.
                     </AlertDescription>
                 </Alert>
             </CardContent>
