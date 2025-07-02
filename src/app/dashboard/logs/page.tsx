@@ -4,11 +4,13 @@ import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { useRouter } from 'next/navigation';
 import { Loader2, ShieldAlert, Trash2, ListFilter, Info, AlertTriangle, Bug, BrainCircuit } from 'lucide-react';
 import * as db from '@/lib/db';
 import type { SystemLog, LogLevel } from '@/lib/types';
 import { logLevels } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/auth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -33,12 +35,22 @@ const logLevelColors: Record<LogLevel, string> = {
 export default function LogsPage() {
     const [levelFilter, setLevelFilter] = useState<LogLevel | 'ALL'>('ALL');
     const { toast } = useToast();
+    const { user } = useAuth();
+    const router = useRouter();
 
     const logs = useLiveQuery(
         () => db.getSystemLogs(levelFilter === 'ALL' ? undefined : levelFilter),
         [levelFilter],
         []
     );
+
+    if (!user) {
+        return <div className="flex h-screen items-center justify-center"><Loader2 className="h-16 w-16 animate-spin" /></div>;
+    }
+    if (user.role !== 'Administrador General') {
+        router.push('/dashboard');
+        return null;
+    }
 
     const handleClearLogs = async () => {
         try {

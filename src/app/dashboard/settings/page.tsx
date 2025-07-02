@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useAuth } from '@/contexts/auth';
@@ -21,10 +20,8 @@ export default function SettingsPage() {
             <Loader2 className="h-16 w-16 animate-spin text-primary" />
         </div>
     );
-
-    const isManager = ['Gestor de RRHH', 'Jefe de Formación', 'Administrador General'].includes(user.role);
     
-    if (!isManager) {
+    if (user.role !== 'Administrador General') {
         router.push('/dashboard');
         return null;
     }
