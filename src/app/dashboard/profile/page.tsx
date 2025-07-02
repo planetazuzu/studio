@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -96,7 +97,7 @@ export default function ProfilePage() {
             </div>
             <div className="grid grid-cols-1 gap-8">
                  <Tabs defaultValue="profile" className="w-full">
-                    <TabsList className={`grid w-full max-w-2xl`} style={{ gridTemplateColumns: `repeat(${userTabs.length}, minmax(0, 1fr))` }}>
+                    <TabsList className="grid w-full max-w-2xl grid-cols-1 md:grid-cols-3">
                         {userTabs.map(tab => (
                              <TabsTrigger key={tab.value} value={tab.value}>{tab.label}</TabsTrigger>
                         ))}

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -111,7 +112,7 @@ export function StudentEnrollmentsView({ user }: { user: User }) {
                 <p className="text-muted-foreground">Aquí puedes ver el estado de todas tus solicitudes de cursos.</p>
             </div>
             <Tabs defaultValue="active" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3">
                     <TabsTrigger value="active">En Curso ({categorizedEnrollments.active.length})</TabsTrigger>
                     <TabsTrigger value="processing">En Proceso ({categorizedEnrollments.processing.length})</TabsTrigger>
                     <TabsTrigger value="history">Historial ({categorizedEnrollments.history.length})</TabsTrigger>

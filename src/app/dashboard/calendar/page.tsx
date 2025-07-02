@@ -26,6 +26,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { useSidebar } from '@/components/ui/sidebar';
 
 const eventSchema = z.object({
     title: z.string().min(3, 'El título debe tener al menos 3 caracteres.'),
@@ -198,13 +199,19 @@ function EventDialog({
 export default function CalendarPage() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { isMobile } = useSidebar();
   const allEvents = useLiveQuery(() => db.getAllCalendarEvents(), []);
   const allCourses = useLiveQuery(() => db.getAllCourses(), []);
 
-  const [view, setView] = useState<View>(Views.MONTH);
+  const [view, setView] = useState<View>(isMobile ? Views.AGENDA : Views.MONTH);
   const [date, setDate] = useState(new Date());
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Partial<CalendarEvent> | null>(null);
+
+  useEffect(() => {
+    // Adjust view based on screen size changes
+    setView(isMobile ? Views.AGENDA : Views.MONTH);
+  }, [isMobile]);
 
   const { formats } = useMemo(() => ({
       formats: {
@@ -341,13 +348,14 @@ export default function CalendarPage() {
             endAccessor="end"
             view={view}
             date={date}
-            onView={setView}
+            views={isMobile ? { agenda: true, day: true } : { month: true, week: true, day: true, agenda: true }}
+            onView={isMobile ? (v) => { if (v !== 'month' && v !== 'week') setView(v); } : setView}
             onNavigate={setDate}
             onSelectSlot={handleSelectSlot}
             onSelectEvent={handleSelectEvent}
             onEventDrop={handleEventDrop}
             selectable
-            resizable
+            resizable={!isMobile}
             formats={formats}
             messages={{
                 next: "Sig >",

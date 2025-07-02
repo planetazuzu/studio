@@ -397,7 +397,7 @@ export default function AnalyticsPage() {
       </div>
 
       <Tabs defaultValue="training" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 max-w-lg">
+        <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 max-w-lg">
             <TabsTrigger value="training">Resumen de Formación</TabsTrigger>
             <TabsTrigger value="compliance"><ShieldCheck className="mr-2 h-4 w-4" />Cumplimiento</TabsTrigger>
             <TabsTrigger value="costs">Análisis de Costes</TabsTrigger>

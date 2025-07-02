@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useAuth } from '@/contexts/auth';
@@ -42,7 +43,7 @@ export default function SettingsPage() {
             </div>
             <div className="grid grid-cols-1 gap-8">
                 <Tabs defaultValue="permissions" className="w-full">
-                    <TabsList className={`grid w-full max-w-2xl`} style={{ gridTemplateColumns: `repeat(${adminTabs.length}, minmax(0, 1fr))` }}>
+                    <TabsList className="grid w-full max-w-2xl grid-cols-1 sm:grid-cols-3">
                         {adminTabs.map(tab => (
                             <TabsTrigger key={tab.value} value={tab.value}>{tab.label}</TabsTrigger>
                         ))}
