@@ -133,7 +133,7 @@ pm2 save
 
 ## Paso 5: (Recomendado) Configurar Nginx como Reverse Proxy
 
-Por defecto, la aplicación corre en el puerto 3000. Para exponerla de forma segura en el puerto 80 (HTTP) o 443 (HTTPS), usamos Nginx.
+Por defecto, la aplicación corre en el puerto 3000. Para exponerla de forma segura en un puerto público (como el 8077 que has solicitado), usamos Nginx.
 
 **1. Instalar Nginx:**
 ```bash
@@ -148,11 +148,11 @@ sudo nano /etc/nginx/sites-available/tu_dominio.com
 ```
 
 **3. Pega la siguiente configuración:**
-Esta configuración básica redirige el tráfico del puerto 80 al puerto 3000 donde corre tu app.
+Esta configuración básica redirige el tráfico del puerto 8077 al puerto 3000 donde corre tu app.
 
 ```nginx
 server {
-    listen 80;
+    listen 8077;
     server_name tu_dominio.com www.tu_dominio.com;
 
     location / {
@@ -182,20 +182,26 @@ sudo systemctl restart nginx
 ```
 
 **5. Configurar Firewall (si está activo):**
+Si usas `ufw` (Uncomplicated Firewall), necesitas permitir el tráfico al nuevo puerto.
 ```bash
-sudo ufw allow 'Nginx Full'
+sudo ufw allow 8077/tcp
 ```
 
-¡Listo! Tu aplicación debería estar accesible a través de tu dominio.
+¡Listo! Tu aplicación debería estar accesible en `http://tu_dominio.com:8077`.
 
 ---
 
 ### Paso Adicional: Configurar HTTPS con Let's Encrypt (Certbot)
 
-Para producción, es crucial usar HTTPS. Certbot lo hace muy fácil.
+Para producción, es crucial usar HTTPS. Certbot lo hace muy fácil, pero **generalmente requiere que tu sitio esté accesible en el puerto 80 estándar** para la verificación.
+
+Si deseas usar Certbot, lo más sencillo es configurar temporalmente Nginx para que escuche en el puerto 80, ejecutar Certbot, y luego volver a cambiarlo al puerto 8077 (Certbot modificará tu archivo de configuración para añadir SSL, escuchando en el puerto 443).
 
 ```bash
+# Instala Certbot y su plugin para Nginx
 sudo apt install certbot python3-certbot-nginx
+
+# (Opcional, recomendado) Configura Nginx en el puerto 80, ejecuta el comando de abajo, y luego vuelve a tu puerto personalizado.
 sudo certbot --nginx -d tu_dominio.com -d www.tu_dominio.com
 ```
 
