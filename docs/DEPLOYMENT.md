@@ -6,7 +6,22 @@ Esta aplicación es un proyecto estándar de Next.js y puede ser desplegada en c
 
 ---
 
-## 1. Configuración de Variables de Entorno
+## 1. Advertencia de Seguridad: Sistema de Autenticación
+
+**¡MUY IMPORTANTE!** El sistema de login y registro actual está diseñado para **demostración y prototipado**. Guarda las contraseñas de los usuarios en la base de datos del navegador (IndexedDB) para facilitar las pruebas.
+
+**Para un entorno de producción, este sistema NO es seguro y debe ser reemplazado.**
+
+Se recomienda encarecidamente integrar un proveedor de autenticación profesional como:
+-   **Firebase Authentication** (Recomendado, por su integración con el ecosistema de Google).
+-   **Auth0**
+-   **Supabase Auth**
+
+Estos servicios se encargan de todo el ciclo de vida de la seguridad del usuario, incluyendo el hasheo de contraseñas, la gestión de sesiones y la recuperación de cuentas.
+
+---
+
+## 2. Configuración de Variables de Entorno
 
 Antes de desplegar, necesitas configurar las variables de entorno. Estas son claves secretas y configuraciones que no deben guardarse en el código. En tu plataforma de hosting (Vercel, Netlify, etc.), busca una sección de "Environment Variables" en la configuración de tu proyecto y añade las siguientes:
 
@@ -33,7 +48,7 @@ Si deseas que el envío de notificaciones por email o WhatsApp funcione, configu
 
 ---
 
-## 2. Requisito de HTTPS (SSL) para PWA
+## 3. Requisito de HTTPS (SSL) para PWA
 
 Esta aplicación es una **Progressive Web App (PWA)**, lo que significa que los usuarios pueden "instalarla" en sus dispositivos para tener una experiencia similar a una app nativa.
 
@@ -44,7 +59,7 @@ Para que las funcionalidades de PWA (como el aviso de instalación o el funciona
 
 ---
 
-## 3. Despliegue en Vercel (Recomendado)
+## 4. Despliegue en Vercel (Recomendado)
 
 Vercel son los creadores de Next.js, por lo que el despliegue es increíblemente sencillo.
 
@@ -60,7 +75,7 @@ Cada vez que hagas `git push` a tu rama principal, Vercel redesplegará automát
 
 ---
 
-## 4. Despliegue en un Servidor Node.js (Avanzado)
+## 5. Despliegue en un Servidor Node.js (Avanzado)
 
 Si prefieres tener control total, puedes desplegar la aplicación en tu propio servidor (VPS, EC2, etc.).
 
