@@ -1,4 +1,3 @@
-
 import { ReactNode } from 'react';
 
 // This layout is now obsolete after removing i18n.
