@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -8,6 +9,7 @@ import type { NotificationChannel, User } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ContactPreferences } from '@/components/settings/contact-preferences';
+import { PushNotificationSettings } from '@/components/settings/push-notification-settings';
 
 export default function PreferencesPage() {
     const { toast } = useToast();
@@ -76,11 +78,12 @@ export default function PreferencesPage() {
             </div>
             
             <ContactPreferences preferences={preferences} setPreferences={setPreferences} />
+            <PushNotificationSettings />
 
             <div className="flex justify-end">
                 <Button size="lg" onClick={handleSaveChanges} disabled={isSaving}>
                     {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Guardar Preferencias
+                    Guardar Preferencias de Contacto
                 </Button>
             </div>
         </div>

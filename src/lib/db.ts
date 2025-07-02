@@ -2,7 +2,7 @@
 import Dexie, { type Table } from 'dexie';
 import type { Course, User, Enrollment, UserProgress, PendingEnrollmentDetails, ForumMessage, ForumMessageWithReplies, Notification, Resource, CourseResource, Announcement, ChatChannel, ChatMessage, Role, ComplianceReportData, DirectMessageThread, CalendarEvent, ExternalTraining, EnrollmentStatus, EnrollmentWithDetails, Cost, StudentForManagement, AIConfig, AIUsageLog, Badge, UserBadge, UserStatus, CustomCostCategory, LearningPath, UserLearningPathProgress, CourseRating, RolePermission, SystemLog, LogLevel } from './types';
 import { courses as initialCourses, users as initialUsers, initialChatChannels, initialCosts, defaultAIConfig, roles, departments, initialBadges, initialCostCategories } from './data';
-import { sendEmailNotification, sendWhatsAppNotification } from './notification-service';
+import { sendEmailNotification, sendPushNotification, sendWhatsAppNotification } from './notification-service';
 import { getNavItems } from './nav';
 import { differenceInDays, isAfter } from 'date-fns';
 
@@ -37,7 +37,7 @@ export class AcademiaAIDB extends Dexie {
 
   constructor() {
     super('AcademiaAIDB');
-    this.version(30).stores({
+    this.version(31).stores({
       courses: 'id, instructor, status, isScorm, isSynced, *mandatoryForRoles',
       users: 'id, &email, status, points, isSynced',
       enrollments: '++id, studentId, courseId, status, [studentId+status]',
@@ -157,7 +157,7 @@ export async function getLoggedInUser(): Promise<User | null> {
 
 
 // --- User Management Functions ---
-export async function addUser(user: Omit<User, 'id' | 'avatar' | 'isSynced' | 'updatedAt' | 'notificationSettings' | 'points' | 'status'>): Promise<string> {
+export async function addUser(user: Omit<User, 'id' | 'avatar' | 'isSynced' | 'updatedAt' | 'notificationSettings' | 'points' | 'status' | 'fcmToken'>): Promise<string> {
     const existingUser = await db.users.where('email').equalsIgnoreCase(user.email).first();
     if (existingUser) {
         throw new Error('Este correo electrónico ya está registrado.');
@@ -179,7 +179,7 @@ export async function addUser(user: Omit<User, 'id' | 'avatar' | 'isSynced' | 'u
     return await db.users.add(newUser);
 }
 
-export async function bulkAddUsers(users: Omit<User, 'id' | 'avatar' | 'isSynced' | 'updatedAt' | 'notificationSettings' | 'points' | 'status'>[]): Promise<string[]> {
+export async function bulkAddUsers(users: Omit<User, 'id' | 'avatar' | 'isSynced' | 'updatedAt' | 'notificationSettings' | 'points' | 'status' | 'fcmToken'>[]): Promise<string[]> {
     const newUsers: User[] = users.map(user => ({
         ...user,
         id: `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
@@ -210,6 +210,10 @@ export async function updateUser(id: string, data: Partial<Omit<User, 'id' | 'is
 
 export async function updateUserStatus(userId: string, status: UserStatus): Promise<number> {
     return await db.users.update(userId, { status, updatedAt: new Date().toISOString(), isSynced: false });
+}
+
+export async function saveFcmToken(userId: string, fcmToken: string): Promise<number> {
+    return await db.users.update(userId, { fcmToken, isSynced: false, updatedAt: new Date().toISOString() });
 }
 
 export async function deleteUser(id: string): Promise<void> {
@@ -558,6 +562,9 @@ export async function addNotification(notification: Omit<Notification, 'id' | 'i
         }
         if (settings.channels.includes('whatsapp')) {
              await sendWhatsAppNotification(user, body);
+        }
+        if (user.fcmToken) {
+            await sendPushNotification(user.id, 'Nueva Notificación', body, notification.relatedUrl || '/dashboard');
         }
     }
     

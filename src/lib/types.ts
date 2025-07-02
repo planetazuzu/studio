@@ -26,6 +26,7 @@ export type User = {
   department: Department;
   points: number;
   status: UserStatus;
+  fcmToken?: string; // For Firebase Cloud Messaging
 
   notificationSettings?: {
     consent: boolean;
@@ -161,7 +162,7 @@ export type Notification = {
   id?: number;
   userId: string;
   message: string;
-  type: 'enrollment_approved' | 'new_course' | 'forum_reply' | 'course_announcement' | 'badge_unlocked' | 'course_deadline_reminder';
+  type: 'enrollment_approved' | 'new_course' | 'forum_reply' | 'course_announcement' | 'badge_unlocked' | 'course_deadline_reminder' | 'push_test';
   relatedUrl?: string;
   isRead: boolean;
   timestamp: string; // ISO date string

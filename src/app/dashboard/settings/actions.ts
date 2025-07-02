@@ -6,6 +6,9 @@ import { revalidatePath } from 'next/cache';
 import { getNocoDBConfig } from '@/lib/config';
 import type { User, Course, AIConfig, AIModel } from '@/lib/types';
 import { createNocoUser, createNocoCourse } from '@/lib/noco';
+import { useAuth } from '@/contexts/auth';
+import * as db from '@/lib/db';
+import { sendPushNotification } from '@/lib/notification-service';
 
 const cookieOptions = {
   httpOnly: true,
@@ -149,5 +152,38 @@ export async function syncAllDataAction(data: {
     } catch (e: any) {
         log.push(`ERROR FATAL: ${e.message}`);
         return { success: false, log, syncedIds, message: e.message };
+    }
+}
+
+export async function saveFcmTokenAction(token: string) {
+    const user = await db.getLoggedInUser();
+    if (!user) {
+        return { success: false, message: 'Usuario no autenticado.' };
+    }
+    try {
+        await db.saveFcmToken(user.id, token);
+        return { success: true, message: 'Token guardado correctamente.' };
+    } catch (error) {
+        console.error('Failed to save FCM token', error);
+        return { success: false, message: 'No se pudo guardar el token.' };
+    }
+}
+
+export async function sendTestPushNotificationAction() {
+    const user = await db.getLoggedInUser();
+    if (!user || !user.fcmToken) {
+        return { success: false, message: 'Usuario no autenticado o sin token.' };
+    }
+    try {
+        await sendPushNotification(
+            user.id,
+            'Notificación de Prueba',
+            '¡La configuración funciona correctamente!',
+            '/dashboard'
+        );
+        return { success: true, message: 'Notificación de prueba enviada.' };
+    } catch (error) {
+        console.error('Failed to send test push notification', error);
+        return { success: false, message: 'No se pudo enviar la notificación.' };
     }
 }
