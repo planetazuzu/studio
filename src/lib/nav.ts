@@ -75,6 +75,6 @@ export const getNavItems = (): NavItem[] => [
   { href: '/dashboard/chat', icon: MessagesSquare, label: 'Chat', roles: allRoles },
   { href: '/dashboard/profile', icon: UserCircle, label: 'Perfil', roles: allRoles },
   { href: '/dashboard/preferences', icon: BellRing, label: 'Preferencias', roles: allRoles },
-  { href: '/dashboard/logs', icon: ShieldAlert, label: 'Registro del Sistema', roles: ['Administrador General'] },
+  { href: '/dashboard/logs', icon: ShieldAlert, label: 'Registro del Sistema', roles: managerRoles },
   { href: '/dashboard/settings', icon: Settings, label: 'Ajustes', roles: managerRoles },
 ];
