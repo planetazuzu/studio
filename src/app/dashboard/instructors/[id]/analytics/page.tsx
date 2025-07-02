@@ -7,14 +7,13 @@ import Link from 'next/link';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { ArrowLeft, BarChart2, BookCopy, Loader2, Star, UserCheck } from 'lucide-react';
 import * as db from '@/lib/db';
-import type { Course, User, CourseRating } from '@/lib/types';
+import type { User } from '@/lib/types';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { StatCard } from '@/components/stat-card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 export default function InstructorAnalyticsPage() {
@@ -23,57 +22,80 @@ export default function InstructorAnalyticsPage() {
     const instructorId = params.id as string;
 
     const instructor = useLiveQuery(() => db.getUserById(instructorId), [instructorId]);
-    const courses = useLiveQuery(
-        () => (instructor ? db.getCoursesByInstructorName(instructor.name) : []),
-        [instructor?.name],
-        []
-    );
-    const ratings = useLiveQuery(
-        () => (instructor ? db.getRatingsForInstructor(instructor.name) : []),
-        [instructor?.name],
-        []
-    );
+
+    const data = useLiveQuery(async () => {
+        if (!instructor) return null;
+        
+        const courses = await db.getCoursesByInstructorName(instructor.name);
+        if (courses.length === 0) {
+            return { courses: [], enrollments: [], progresses: [], ratings: [] };
+        }
+        
+        const courseIds = courses.map(c => c.id);
+
+        const enrollments = await db.db.enrollments.where('courseId').anyOf(courseIds).toArray();
+        const progresses = await db.db.userProgress.where('courseId').anyOf(courseIds).toArray();
+        const ratings = await db.getRatingsForInstructor(instructor.name);
+
+        return { courses, enrollments, progresses, ratings };
+    }, [instructor]);
+    
 
     const stats = useMemo(() => {
-        if (!instructor || !courses || !ratings) return null;
+        if (!instructor || !data) return null;
+
+        const { courses, enrollments, progresses, ratings } = data;
 
         const totalCourses = courses.length;
         const totalRatings = ratings.length;
-
-        const courseRatingsMap = new Map<string, CourseRating[]>();
-        ratings.forEach(r => {
-            if (!courseRatingsMap.has(r.courseId)) {
-                courseRatingsMap.set(r.courseId, []);
-            }
-            courseRatingsMap.get(r.courseId)!.push(r);
-        });
+        const totalStudents = new Set(enrollments.map(e => e.studentId)).size;
         
         const overallInstructorRating = totalRatings > 0 
             ? ratings.reduce((acc, r) => acc + r.instructorRating, 0) / totalRatings 
             : 0;
 
+        const courseModuleCounts = new Map(courses.map(c => [c.id, c.modules?.length || 0]));
+
+        let totalProgressSum = 0;
+        let progressRecordsCount = 0;
+
         const courseStats = courses.map(course => {
-            const courseRatings = courseRatingsMap.get(course.id) || [];
+            const courseEnrollments = enrollments.filter(e => e.courseId === course.id);
+            const studentCount = new Set(courseEnrollments.map(e => e.studentId)).size;
+
+            const courseRatings = ratings.filter(r => r.courseId === course.id);
             const avgRating = courseRatings.length > 0 
                 ? courseRatings.reduce((acc, r) => acc + r.rating, 0) / courseRatings.length
                 : 0;
+            
             return {
                 id: course.id,
                 title: course.title,
-                studentCount: 0, // Placeholder, would require fetching enrollments
+                studentCount: studentCount,
                 averageRating: avgRating.toFixed(1),
             };
         });
+        
+        progresses.forEach(p => {
+            const totalModules = courseModuleCounts.get(p.courseId);
+            if (totalModules && totalModules > 0) {
+                totalProgressSum += (p.completedModules.length / totalModules) * 100;
+                progressRecordsCount++;
+            }
+        });
+        
+        const averageCompletion = progressRecordsCount > 0 ? totalProgressSum / progressRecordsCount : 0;
 
         return {
             totalCourses,
-            totalStudents: 0, // Placeholder
+            totalStudents,
             overallInstructorRating: overallInstructorRating.toFixed(1),
-            averageCompletion: 0, // Placeholder
+            averageCompletion: averageCompletion.toFixed(0),
             courseStats,
             recentComments: ratings.slice(-5).reverse(),
+            totalRatings,
         };
-    }, [instructor, courses, ratings]);
+    }, [instructor, data]);
 
     if (!instructor || !stats) {
         return (
@@ -107,9 +129,9 @@ export default function InstructorAnalyticsPage() {
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <StatCard title="Cursos Impartidos" value={stats.totalCourses.toString()} icon={BookCopy} />
-                <StatCard title="Valoración Media" value={stats.overallInstructorRating} icon={Star} description={`Basada en ${ratings.length} valoraciones`} />
-                <StatCard title="Alumnos Totales" value="-" icon={UserCheck} description="Funcionalidad en desarrollo" />
-                <StatCard title="Finalización Media" value="-%" icon={BarChart2} description="Funcionalidad en desarrollo" />
+                <StatCard title="Valoración Media" value={stats.overallInstructorRating} icon={Star} description={`Basada en ${stats.totalRatings} valoraciones`} />
+                <StatCard title="Alumnos Totales" value={stats.totalStudents.toString()} icon={UserCheck} description="Alumnos únicos en sus cursos" />
+                <StatCard title="Finalización Media" value={`${stats.averageCompletion}%`} icon={BarChart2} description="En todos sus cursos" />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -131,7 +153,7 @@ export default function InstructorAnalyticsPage() {
                                     {stats.courseStats.map(stat => (
                                         <TableRow key={stat.id}>
                                             <TableCell className="font-medium">{stat.title}</TableCell>
-                                            <TableCell>{stat.studentCount > 0 ? stat.studentCount : '-'}</TableCell>
+                                            <TableCell>{stat.studentCount}</TableCell>
                                             <TableCell className="text-right flex justify-end items-center gap-1">{stat.averageRating} <Star className="h-4 w-4 text-amber-400" /></TableCell>
                                         </TableRow>
                                     ))}
