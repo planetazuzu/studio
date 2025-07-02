@@ -14,36 +14,34 @@ const cookieOptions = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
   path: '/',
-  sameSite: 'strict',
+  sameSite: 'strict' as const,
+  maxAge: 31536000, // 1 year
 };
 
 export async function saveApiKeysAction(prevState: any, formData: FormData) {
   try {
-    // Handle NocoDB URL
-    if (formData.has('nocodbApiUrl')) {
-      const nocodbApiUrl = formData.get('nocodbApiUrl') as string;
-      if (nocodbApiUrl) {
-        cookies().set('nocodb_api_url', nocodbApiUrl, cookieOptions);
-      } else {
-        cookies().delete('nocodb_api_url');
-      }
-    }
+    const fieldsToSet = [
+      'nocodb_api_url', 'nocodb_auth_token',
+      'sendgrid_api_key', 'sendgrid_from_email',
+      'twilio_account_sid', 'twilio_auth_token', 'twilio_whatsapp_from', 'twilio_whatsapp_to_test',
+    ];
 
-    // Handle NocoDB Auth Token
-     if (formData.has('nocodbAuthToken')) {
-        const nocodbAuthToken = formData.get('nocodbAuthToken') as string;
-        if (nocodbAuthToken) {
-            cookies().set('nocodb_auth_token', nocodbAuthToken, cookieOptions);
+    for (const field of fieldsToSet) {
+        const value = formData.get(field) as string;
+        if (value) {
+            cookies().set(field, value, cookieOptions);
         } else {
-            cookies().delete('nocodb_auth_token');
+            // No se elimina la cookie si el campo está vacío, 
+            // para no borrar credenciales existentes si el usuario solo quiere actualizar una.
+            // Para borrar, se debería implementar un botón específico o una lógica de campo vacío explícita.
         }
     }
-
+    
     revalidatePath('/dashboard/settings');
-    return { success: true, message: 'La configuración de NocoDB ha sido guardada.' };
+    return { success: true, message: 'La configuración de APIs ha sido guardada.' };
   } catch (error) {
     console.error('Failed to save API keys', error);
-    return { success: false, message: 'Error al guardar la configuración de NocoDB.' };
+    return { success: false, message: 'Error al guardar la configuración de APIs.' };
   }
 }
 

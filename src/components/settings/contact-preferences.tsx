@@ -54,7 +54,7 @@ export function ContactPreferences({ preferences, setPreferences }: { preference
                                     htmlFor={`channel-${channel}`}
                                     className={`font-normal capitalize ${!preferences.consent ? 'text-muted-foreground cursor-not-allowed' : ''}`}
                                 >
-                                    {channel === 'app' ? 'App (Notificaciones Internas)' : channel === 'email' ? 'Email' : 'WhatsApp'}
+                                    {channel === 'app' ? 'App (Notificaciones Push)' : channel === 'email' ? 'Email' : 'WhatsApp'}
                                 </Label>
                             </div>
                          ))}

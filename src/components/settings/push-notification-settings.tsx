@@ -12,7 +12,7 @@ import { getFirebaseMessagingToken } from '@/lib/firebase-client';
 export function PushNotificationSettings() {
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
-    const [isSubscribed, setIsSubscribed] = useState(Notification.permission === 'granted');
+    const [isSubscribed, setIsSubscribed] = useState(typeof window !== 'undefined' && Notification.permission === 'granted');
 
     const handleSubscribe = async () => {
         setIsLoading(true);

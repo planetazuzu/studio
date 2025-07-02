@@ -37,7 +37,7 @@ export class AcademiaAIDB extends Dexie {
 
   constructor() {
     super('AcademiaAIDB');
-    this.version(31).stores({
+    this.version(28).stores({
       courses: 'id, instructor, status, isScorm, isSynced, *mandatoryForRoles',
       users: 'id, &email, status, points, isSynced',
       enrollments: '++id, studentId, courseId, status, [studentId+status]',
@@ -136,8 +136,11 @@ export async function login(email: string, password?: string): Promise<User | nu
     if (user.password !== password) {
         throw new Error('La contraseña es incorrecta.');
     }
-    if (user.status !== 'approved') {
+    if (user.status === 'suspended') {
         throw new Error('Esta cuenta ha sido desactivada. Contacta con un administrador.');
+    }
+    if (user.status === 'pending_approval') {
+         throw new Error('Esta cuenta está pendiente de aprobación por un administrador.');
     }
     
     localStorage.setItem(LOGGED_IN_USER_KEY, user.id);
@@ -163,11 +166,13 @@ export async function addUser(user: Omit<User, 'id' | 'avatar' | 'isSynced' | 'u
         throw new Error('Este correo electrónico ya está registrado.');
     }
     
+    const requiresApproval = ['Formador', 'Jefe de Formación', 'Gestor de RRHH', 'Administrador General'].includes(user.role);
+
     const newUser: User = {
         ...user,
         id: `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
         avatar: `https://i.pravatar.cc/150?u=user${Date.now()}`,
-        status: 'approved',
+        status: requiresApproval ? 'pending_approval' : 'approved',
         isSynced: false,
         points: 0,
         updatedAt: new Date().toISOString(),
@@ -554,16 +559,16 @@ export async function addNotification(notification: Omit<Notification, 'id' | 'i
     const user = await db.users.get(notification.userId);
     if (user && user.notificationSettings?.consent) {
         const settings = user.notificationSettings;
-        const subject = `Notificación de TalentOS`;
+        const subject = `Notificación de AcademiaAI`;
         const body = notification.message;
         
         if (settings.channels.includes('email')) {
             await sendEmailNotification(user, subject, body);
         }
-        if (settings.channels.includes('whatsapp')) {
+        if (settings.channels.includes('whatsapp') && user.phone) {
              await sendWhatsAppNotification(user, body);
         }
-        if (user.fcmToken) {
+        if (settings.channels.includes('app') && user.fcmToken) {
             await sendPushNotification(user.id, 'Nueva Notificación', body, notification.relatedUrl || '/dashboard');
         }
     }

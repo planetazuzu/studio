@@ -1,20 +1,75 @@
 
 'use server';
 
+import { cookies } from 'next/headers';
 import type { User } from './types';
 import * as db from './db';
 import sgMail from '@sendgrid/mail';
 import twilio from 'twilio';
 import { GoogleAuth } from 'google-auth-library';
 
+function getConfigValue(cookieName: string, envVarName: string): string | undefined {
+    return cookies().get(cookieName)?.value || process.env[envVarName];
+}
+
 // --- Email Service (SendGrid) ---
 export async function sendEmailNotification(user: User, subject: string, body: string): Promise<void> {
-  // ... (existing implementation)
+    const apiKey = getConfigValue('sendgrid_api_key', 'SENDGRID_API_KEY');
+    const fromEmail = getConfigValue('sendgrid_from_email', 'SENDGRID_FROM_EMAIL');
+
+    if (!apiKey || !fromEmail) {
+        console.warn(`--- [EMAIL SIMULATION to ${user.email}] ---`);
+        console.warn('SendGrid API Key or From Email not set. Simulating email send.');
+        console.log(`Subject: ${subject}`);
+        console.log(`Body: ${body}`);
+        console.log('---------------------------');
+        return;
+    }
+
+    sgMail.setApiKey(apiKey);
+    const msg = {
+        to: user.email,
+        from: fromEmail,
+        subject,
+        text: body,
+        html: `<p>${body.replace(/\n/g, '<br>')}</p>`,
+    };
+
+    try {
+        await sgMail.send(msg);
+        console.log(`Email sent successfully to ${user.email}`);
+    } catch (error) {
+        console.error('Error sending email via SendGrid:', error);
+    }
 }
 
 // --- WhatsApp Service (Twilio) ---
 export async function sendWhatsAppNotification(user: User, message: string): Promise<void> {
-  // ... (existing implementation)
+    const accountSid = getConfigValue('twilio_account_sid', 'TWILIO_ACCOUNT_SID');
+    const authToken = getConfigValue('twilio_auth_token', 'TWILIO_AUTH_TOKEN');
+    const fromPhone = getConfigValue('twilio_whatsapp_from', 'TWILIO_WHATSAPP_FROM');
+    const toPhone = user.phone;
+
+    if (!accountSid || !authToken || !fromPhone || !toPhone) {
+        console.warn(`--- [WHATSAPP SIMULATION to ${toPhone || 'N/A'}] ---`);
+        console.warn('Twilio credentials, From Phone, or User Phone not set. Simulating WhatsApp send.');
+        console.log(`Message: ${message}`);
+        console.log('------------------------------------');
+        return;
+    }
+
+    const client = twilio(accountSid, authToken);
+
+    try {
+        await client.messages.create({
+            from: `whatsapp:${fromPhone}`,
+            to: `whatsapp:${toPhone}`,
+            body: message,
+        });
+        console.log(`WhatsApp message sent successfully to ${toPhone}`);
+    } catch (error) {
+        console.error('Error sending WhatsApp message via Twilio:', error);
+    }
 }
 
 

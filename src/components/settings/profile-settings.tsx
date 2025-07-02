@@ -22,9 +22,15 @@ export function ProfileSettings({ profile, setProfile }: { profile: any, setProf
                     <Label htmlFor="name">Nombre</Label>
                     <Input id="name" value={profile.name} onChange={(e) => setProfile({ ...profile, name: e.target.value })} />
                 </div>
-                <div className="space-y-2">
-                    <Label htmlFor="email">Correo Electrónico</Label>
-                    <Input id="email" type="email" value={profile.email} onChange={(e) => setProfile({ ...profile, email: e.target.value })} />
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="email">Correo Electrónico</Label>
+                        <Input id="email" type="email" value={profile.email} onChange={(e) => setProfile({ ...profile, email: e.target.value })} />
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="phone">Teléfono (para WhatsApp)</Label>
+                        <Input id="phone" type="tel" value={profile.phone} onChange={(e) => setProfile({ ...profile, phone: e.target.value })} placeholder="+34123456789" />
+                    </div>
                 </div>
                  <div className="space-y-2">
                     <Label htmlFor="avatar">URL del Avatar</Label>

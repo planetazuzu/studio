@@ -1,4 +1,3 @@
-
 import { z } from 'zod';
 
 export type Role =
@@ -14,13 +13,14 @@ export type Department = 'Técnicos de Emergencias' | 'Teleoperadores' | 'Admini
 export type NotificationChannel = 'email' | 'whatsapp' | 'app';
 export const notificationChannels: NotificationChannel[] = ['email', 'whatsapp', 'app'];
 
-export type UserStatus = 'approved' | 'suspended';
+export type UserStatus = 'pending_approval' | 'approved' | 'suspended';
 
 export type User = {
   id: string;
   name: string;
   email: string;
   password?: string;
+  phone?: string; // Added phone number
   avatar: string;
   role: Role;
   department: Department;
@@ -28,7 +28,7 @@ export type User = {
   status: UserStatus;
   fcmToken?: string; // For Firebase Cloud Messaging
 
-  notificationSettings?: {
+  notificationSettings: {
     consent: boolean;
     channels: NotificationChannel[];
   };
