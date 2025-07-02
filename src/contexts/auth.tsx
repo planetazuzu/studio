@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { User } from '@/lib/types';
 import * as db from '@/lib/db';
 import { Loader2 } from 'lucide-react';
+import { getAuthService } from '@/lib/authService';
 
 interface AuthContextType {
   user: User | null;
@@ -21,12 +22,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
+  const authService = getAuthService();
 
   useEffect(() => {
     const initializeApp = async () => {
       try {
         await db.populateDatabase();
-        const loggedInUser = await db.getLoggedInUser();
+        const loggedInUser = await authService.getCurrentUser();
         setUser(loggedInUser);
       } catch (error) {
         console.error("Failed to initialize app", error);
@@ -36,12 +38,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     };
     initializeApp();
-  }, []);
+  }, [authService]);
 
   const login = async (email: string, password?: string) => {
     setIsLoading(true);
     try {
-        const loggedInUser = await db.login(email, password);
+        const loggedInUser = await authService.login(email, password);
         setUser(loggedInUser);
         return loggedInUser;
     } catch(error) {
@@ -52,8 +54,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const logout = () => {
-    db.logout();
+  const logout = async () => {
+    await authService.logout();
     setUser(null);
     router.push('/login');
   };

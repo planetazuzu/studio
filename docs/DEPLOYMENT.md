@@ -6,24 +6,53 @@ Esta aplicación es un proyecto estándar de Next.js y puede ser desplegada en c
 
 ---
 
-## 1. Advertencia de Seguridad: Sistema de Autenticación
+## 1. Configuración de Variables de Entorno
 
-**¡MUY IMPORTANTE!** El sistema de login y registro actual está diseñado para **demostración y prototipado**. Guarda las contraseñas de los usuarios en la base de datos del navegador (IndexedDB) para facilitar las pruebas.
+Antes de desplegar, necesitas configurar las variables de entorno. Estas son claves secretas y configuraciones que no deben guardarse en el código. En tu plataforma de hosting (Vercel, Netlify, etc.), busca una sección de "Environment Variables" en la configuración de tu proyecto y añade las siguientes:
 
-**Para un entorno de producción, este sistema NO es seguro y debe ser reemplazado.**
-
-Se recomienda encarecidamente integrar un proveedor de autenticación profesional como:
--   **Firebase Authentication** (Recomendado, por su integración con el ecosistema de Google).
--   **Auth0**
--   **Supabase Auth**
-
-Estos servicios se encargan de todo el ciclo de vida de la seguridad del usuario, incluyendo el hasheo de contraseñas, la gestión de sesiones y la recuperación de cuentas.
+### Proveedor de Autenticación (¡Elegir uno!)
+La aplicación está preparada para usar diferentes sistemas de autenticación. Debes elegir uno y configurar sus variables.
+-   `NEXT_PUBLIC_AUTH_PROVIDER`: Define qué sistema usar. Opciones: `dexie`, `firebase`, `auth0`, `supabase`.
+    -   `dexie`: Usa el sistema de login local (solo para prototipos, no para producción).
+    -   `firebase`: Usa Firebase Authentication.
+    -   `auth0`: Usa Auth0.
+    -   `supabase`: Usa Supabase Auth.
 
 ---
 
-## 2. Configuración de Variables de Entorno
+#### Opción A: Variables de Firebase (Recomendado para Producción)
+Copia estas variables desde la configuración de tu proyecto en la consola de Firebase.
 
-Antes de desplegar, necesitas configurar las variables de entorno. Estas son claves secretas y configuraciones que no deben guardarse en el código. En tu plataforma de hosting (Vercel, Netlify, etc.), busca una sección de "Environment Variables" en la configuración de tu proyecto y añade las siguientes:
+-   `NEXT_PUBLIC_FIREBASE_API_KEY`: Tu clave de API.
+-   `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`: Tu dominio de autenticación.
+-   `NEXT_PUBLIC_FIREBASE_PROJECT_ID`: El ID de tu proyecto.
+-   `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`: Tu bucket de almacenamiento.
+-   `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`: ID del remitente de mensajería.
+-   `NEXT_PUBLIC_FIREBASE_APP_ID`: ID de tu aplicación.
+-   `NEXT_PUBLIC_FIREBASE_VAPID_KEY`: La clave VAPID de Cloud Messaging para notificaciones push.
+-   `FIREBASE_CLIENT_EMAIL`: Email de la cuenta de servicio (para notificaciones del servidor).
+-   `FIREBASE_PRIVATE_KEY`: Clave privada de la cuenta de servicio (para notificaciones del servidor).
+
+---
+
+#### Opción B: Variables de Auth0
+Copia estas variables desde la configuración de tu aplicación en el panel de Auth0.
+
+-   `AUTH0_SECRET`: Una cadena larga y aleatoria para firmar cookies.
+-   `AUTH0_BASE_URL`: La URL de tu aplicación desplegada (ej. `https://mi-app.vercel.app`).
+-   `AUTH0_ISSUER_BASE_URL`: El dominio de tu tenant de Auth0 (ej. `https://tu-tenant.us.auth0.com`).
+-   `AUTH0_CLIENT_ID`: El Client ID de tu aplicación.
+-   `AUTH0_CLIENT_SECRET`: El Client Secret de tu aplicación.
+
+---
+
+#### Opción C: Variables de Supabase
+Copia estas variables desde la configuración de API de tu proyecto en Supabase.
+
+-   `NEXT_PUBLIC_SUPABASE_URL`: La URL de tu proyecto Supabase.
+-   `NEXT_PUBLIC_SUPABASE_ANON_KEY`: La clave anónima (public) de tu proyecto.
+
+---
 
 ### Variables de NocoDB (Obligatorio)
 Tu aplicación necesita conectarse a tu instancia de NocoDB para la sincronización de datos.
@@ -31,10 +60,14 @@ Tu aplicación necesita conectarse a tu instancia de NocoDB para la sincronizaci
 -   `NOCODB_API_URL`: La URL completa de tu API de NocoDB. Ejemplo: `https://app.nocodb.com/api/v2`
 -   `NOCODB_AUTH_TOKEN`: Tu token de autenticación de NocoDB (lo encuentras en "API Tokens" dentro de tu proyecto en NocoDB).
 
+---
+
 ### Variables de IA (Obligatorio para funciones de IA)
 Para que las funcionalidades de Inteligencia Artificial funcionen, debes proporcionar al menos una clave API.
 
 -   `GOOGLE_API_KEY`: Tu clave API de Google AI Studio para usar Gemini.
+
+---
 
 ### Variables de Notificaciones (Opcional)
 Si deseas que el envío de notificaciones por email o WhatsApp funcione, configura estas variables.
@@ -48,7 +81,7 @@ Si deseas que el envío de notificaciones por email o WhatsApp funcione, configu
 
 ---
 
-## 3. Requisito de HTTPS (SSL) para PWA
+## 2. Requisito de HTTPS (SSL) para PWA
 
 Esta aplicación es una **Progressive Web App (PWA)**, lo que significa que los usuarios pueden "instalarla" en sus dispositivos para tener una experiencia similar a una app nativa.
 
@@ -59,7 +92,7 @@ Para que las funcionalidades de PWA (como el aviso de instalación o el funciona
 
 ---
 
-## 4. Despliegue en Vercel (Recomendado)
+## 3. Despliegue en Vercel (Recomendado)
 
 Vercel son los creadores de Next.js, por lo que el despliegue es increíblemente sencillo.
 
@@ -72,26 +105,3 @@ Vercel son los creadores de Next.js, por lo que el despliegue es increíblemente
 5.  **Despliega**: Haz clic en el botón "Deploy". Vercel construirá y desplegará tu aplicación.
 
 Cada vez que hagas `git push` a tu rama principal, Vercel redesplegará automáticamente los cambios.
-
----
-
-## 5. Despliegue en un Servidor Node.js (Avanzado)
-
-Si prefieres tener control total, puedes desplegar la aplicación en tu propio servidor (VPS, EC2, etc.).
-
-1.  **Prepara tu servidor**: Asegúrate de que tienes Node.js (versión 20 o superior) y `npm` o `yarn` instalados.
-2.  **Clona tu repositorio**: `git clone [URL_DE_TU_REPO]`
-3.  **Instala las dependencias**: `cd [NOMBRE_DEL_PROYECTO]` y luego `npm install`.
-4.  **Configura las variables de entorno**: Crea un archivo `.env.local` en la raíz del proyecto y añade todas las variables de entorno del paso 1.
-    ```
-    NOCODB_API_URL=...
-    NOCODB_AUTH_TOKEN=...
-    GOOGLE_API_KEY=...
-    ```
-5.  **Construye la aplicación**: `npm run build`. Este comando compila tu aplicación para producción y la optimiza.
-6.  **Inicia la aplicación**: `npm start`. Esto iniciará el servidor de Next.js en el puerto 3000 por defecto.
-7.  **(Recomendado) Usa un gestor de procesos**: Para mantener la aplicación corriendo de forma continua y reiniciarla si falla, usa un gestor como `pm2`.
-    -   Instala pm2: `npm install pm2 -g`
-    -   Inicia tu app con pm2: `pm2 start npm --name "talent-os" -- start`
-
-Ahora tu aplicación estará corriendo en tu servidor. Necesitarás configurar un proxy inverso (como Nginx) para exponerla al público y, de forma crucial, **configurar un certificado SSL para habilitar HTTPS**. Consulta nuestra guía para Ubuntu para un ejemplo detallado.
