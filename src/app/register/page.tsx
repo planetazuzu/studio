@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -16,7 +17,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/auth';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { roles, Role } from '@/lib/types';
+import { roles } from '@/lib/data';
+import type { Role } from '@/lib/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const registerSchema = z.object({
