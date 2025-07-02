@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, Suspense, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { Hash, Send, Loader2, Users, MessageSquarePlus } from 'lucide-react';
+import { Hash, Send, Loader2, Users, MessageSquarePlus, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/contexts/auth';
 import * as db from '@/lib/db';
 import type { ChatChannel, DirectMessageThread } from '@/lib/types';
@@ -14,12 +14,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSearchParams } from 'next/navigation';
 import { NewMessageDialog } from '@/components/chat/NewMessageDialog';
 import { ChatMessageItem } from '@/components/chat/ChatMessageItem';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
 
 
 function ChatPageContent() {
     const { user } = useAuth();
     const searchParams = useSearchParams();
     const initialChannelId = searchParams.get('channelId');
+    const isMobile = useIsMobile();
 
     const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null);
     const [newMessage, setNewMessage] = useState('');
@@ -40,10 +43,10 @@ function ChatPageContent() {
     useEffect(() => {
         if (initialChannelId && initialChannelId !== selectedChannelId) {
           setSelectedChannelId(initialChannelId);
-        } else if (!selectedChannelId && publicChannels && publicChannels.length > 0) {
+        } else if (!isMobile && !selectedChannelId && publicChannels && publicChannels.length > 0) {
             setSelectedChannelId(publicChannels.find(c => c.name === 'general')?.id || publicChannels[0].id);
         }
-    }, [initialChannelId, selectedChannelId, publicChannels]);
+    }, [initialChannelId, selectedChannelId, publicChannels, isMobile]);
 
     // Scroll to bottom when new messages arrive
     useEffect(() => {
@@ -54,6 +57,14 @@ function ChatPageContent() {
             });
         }
     }, [messages]);
+    
+    // When switching from mobile to desktop and no channel is selected, select one.
+    useEffect(() => {
+        if (!isMobile && !selectedChannelId && publicChannels && publicChannels.length > 0) {
+            setSelectedChannelId(publicChannels.find(c => c.name === 'general')?.id || publicChannels[0].id);
+        }
+    }, [isMobile, selectedChannelId, publicChannels]);
+
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -92,9 +103,12 @@ function ChatPageContent() {
 
     return (
         <div className="h-[calc(100vh-8rem)]">
-            <Card className="h-full grid grid-cols-[280px_1fr] shadow-lg">
+            <Card className="h-full flex overflow-hidden shadow-lg">
                 {/* Channels Sidebar */}
-                <div className="border-r flex flex-col">
+                <div className={cn(
+                    "border-r flex-col w-full md:w-[280px] flex-shrink-0 md:flex",
+                    isMobile && selectedChannelId ? "hidden" : "flex"
+                )}>
                     <CardHeader className="flex flex-row items-center justify-between">
                         <CardTitle>Canales</CardTitle>
                         <Button variant="ghost" size="icon" onClick={() => setIsNewMessageDialogOpen(true)} className="h-8 w-8">
@@ -143,7 +157,10 @@ function ChatPageContent() {
                 </div>
 
                 {/* Main Chat Area */}
-                <div className="flex flex-col h-full">
+                <div className={cn(
+                    "flex-col flex-1 h-full",
+                    isMobile && !selectedChannelId ? "hidden" : "flex"
+                )}>
                     {!selectedChannel ? (
                         <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
                             <Users className="h-12 w-12 mb-4" />
@@ -154,6 +171,11 @@ function ChatPageContent() {
                         <>
                             {/* Chat Header */}
                             <div className="p-4 border-b flex items-center gap-3">
+                                {isMobile && (
+                                    <Button variant="ghost" size="icon" className="-ml-2" onClick={() => setSelectedChannelId(null)}>
+                                        <ArrowLeft className="h-5 w-5" />
+                                    </Button>
+                                )}
                                {selectedDmThread ? (
                                     <>
                                         <Avatar className="h-10 w-10">
