@@ -33,7 +33,18 @@ Si deseas que el envío de notificaciones por email o WhatsApp funcione, configu
 
 ---
 
-## 2. Despliegue en Vercel (Recomendado)
+## 2. Requisito de HTTPS (SSL) para PWA
+
+Esta aplicación es una **Progressive Web App (PWA)**, lo que significa que los usuarios pueden "instalarla" en sus dispositivos para tener una experiencia similar a una app nativa.
+
+Para que las funcionalidades de PWA (como el aviso de instalación o el funcionamiento offline) se activen, **es obligatorio que la aplicación se sirva a través de una conexión segura (HTTPS)**.
+
+-   Plataformas como **Vercel** gestionan esto automáticamente.
+-   Si despliegas en tu **propio servidor**, deberás configurar un certificado SSL (se recomienda usar Let's Encrypt).
+
+---
+
+## 3. Despliegue en Vercel (Recomendado)
 
 Vercel son los creadores de Next.js, por lo que el despliegue es increíblemente sencillo.
 
@@ -42,13 +53,14 @@ Vercel son los creadores de Next.js, por lo que el despliegue es increíblemente
 3.  **Importa tu proyecto**: En el dashboard de Vercel, haz clic en "Add New... -> Project" y selecciona el repositorio de tu aplicación.
 4.  **Configura el Proyecto**: Vercel detectará automáticamente que es un proyecto de Next.js y preconfigurará todo por ti.
     -   Ve a la sección "Environment Variables" y añade todas las variables mencionadas en el paso 1.
+    -   Vercel proporciona automáticamente un certificado SSL, cumpliendo con el requisito de HTTPS para la PWA.
 5.  **Despliega**: Haz clic en el botón "Deploy". Vercel construirá y desplegará tu aplicación.
 
 Cada vez que hagas `git push` a tu rama principal, Vercel redesplegará automáticamente los cambios.
 
 ---
 
-## 3. Despliegue en un Servidor Node.js (Avanzado)
+## 4. Despliegue en un Servidor Node.js (Avanzado)
 
 Si prefieres tener control total, puedes desplegar la aplicación en tu propio servidor (VPS, EC2, etc.).
 
@@ -67,4 +79,4 @@ Si prefieres tener control total, puedes desplegar la aplicación en tu propio s
     -   Instala pm2: `npm install pm2 -g`
     -   Inicia tu app con pm2: `pm2 start npm --name "talent-os" -- start`
 
-Ahora tu aplicación estará corriendo en tu servidor. Probablemente necesitarás configurar un proxy inverso (como Nginx o Apache) para exponerla al público a través del puerto 80/443 y configurar un dominio.
+Ahora tu aplicación estará corriendo en tu servidor. Necesitarás configurar un proxy inverso (como Nginx) para exponerla al público y, de forma crucial, **configurar un certificado SSL para habilitar HTTPS**. Consulta nuestra guía para Ubuntu para un ejemplo detallado.

@@ -131,7 +131,7 @@ pm2 save
 
 ---
 
-## Paso 5: (Recomendado) Configurar Nginx como Reverse Proxy
+## Paso 5: Configurar Nginx como Reverse Proxy
 
 Por defecto, la aplicación corre en el puerto 3000. Para exponerla de forma segura en un puerto público (como el 8077 que has solicitado), usamos Nginx.
 
@@ -187,22 +187,43 @@ Si usas `ufw` (Uncomplicated Firewall), necesitas permitir el tráfico al nuevo 
 sudo ufw allow 8077/tcp
 ```
 
-¡Listo! Tu aplicación debería estar accesible en `http://tu_dominio.com:8077`.
+Tu aplicación debería estar accesible en `http://tu_dominio.com:8077`. ¡Pero aún no hemos terminado!
 
 ---
 
-### Paso Adicional: Configurar HTTPS con Let's Encrypt (Certbot)
+## Paso 6: (Crucial) Configurar HTTPS con Let's Encrypt
 
-Para producción, es crucial usar HTTPS. Certbot lo hace muy fácil, pero **generalmente requiere que tu sitio esté accesible en el puerto 80 estándar** para la verificación.
+Para que las funcionalidades de **PWA (Progressive Web App)**, como el aviso de "Instalar Aplicación", funcionen correctamente, es **obligatorio** que tu sitio se sirva a través de **HTTPS**. Este paso no es opcional si quieres aprovechar todo el potencial de la aplicación.
 
-Si deseas usar Certbot, lo más sencillo es configurar temporalmente Nginx para que escuche en el puerto 80, ejecutar Certbot, y luego volver a cambiarlo al puerto 8077 (Certbot modificará tu archivo de configuración para añadir SSL, escuchando en el puerto 443).
+Usaremos Certbot con Let's Encrypt para obtener un certificado SSL gratuito.
+
+**1. Instala Certbot y su plugin para Nginx:**
+```bash
+sudo apt install certbot python3-certbot-nginx
+```
+
+**2. Obtén e instala el certificado:**
+**Nota:** Certbot funciona mejor si tu dominio apunta al puerto 80 estándar para la verificación. Si tienes el puerto 80 disponible temporalmente, es el método más sencillo.
 
 ```bash
-# Instala Certbot y su plugin para Nginx
-sudo apt install certbot python3-certbot-nginx
+# Asegúrate de que el puerto 80 está abierto en tu firewall si lo vas a usar
+# sudo ufw allow 80/tcp
 
-# (Opcional, recomendado) Configura Nginx en el puerto 80, ejecuta el comando de abajo, y luego vuelve a tu puerto personalizado.
+# Ejecuta certbot
 sudo certbot --nginx -d tu_dominio.com -d www.tu_dominio.com
 ```
 
-Sigue las instrucciones en pantalla. Certbot modificará tu archivo de Nginx para configurar SSL y renovará los certificados automáticamente.
+-   Sigue las instrucciones en pantalla. Te pedirá un email y que aceptes los términos de servicio.
+-   Certbot modificará automáticamente tu archivo de configuración de Nginx para añadir la configuración SSL, redirigir el tráfico HTTP a HTTPS y escuchar en el puerto 443 (el puerto estándar para HTTPS).
+-   También configurará la renovación automática de los certificados.
+
+**3. Verifica la configuración de Nginx:**
+Después de que Certbot termine, tu archivo `/etc/nginx/sites-available/tu_dominio.com` se habrá actualizado. Debería tener ahora un bloque `server` escuchando en el puerto 443 con las directivas `ssl_certificate`.
+
+**4. Ajusta el firewall para HTTPS:**
+```bash
+sudo ufw allow 443/tcp
+sudo ufw reload
+```
+
+¡Listo! Ahora tu aplicación es accesible de forma segura en `https://tu_dominio.com` y las funciones de PWA estarán activadas.
