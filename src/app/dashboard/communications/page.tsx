@@ -88,6 +88,18 @@ const announcementTemplates = [
     type: 'Urgente' as const,
     title: 'URGENTE: Recordatorio de [Asunto]',
     content: 'Este es un recordatorio urgente sobre [Asunto]. Es imperativo que todo el personal [Acción requerida] antes del [Fecha Límite].\n\nGracias por su cooperación.',
+  },
+  {
+    name: 'Recordatorio de Plazo',
+    type: 'Informativo' as const,
+    title: 'Recordatorio: Fecha límite del curso [Nombre del Curso]',
+    content: "Hola a todos,\n\nEste es un recordatorio amistoso de que la fecha límite para completar el curso '[Nombre del Curso]' es el próximo [Fecha Límite].\n\nAsegúrate de finalizar todos los módulos antes de esa fecha para obtener tu certificado.\n\n¡Mucho ánimo en la recta final!",
+  },
+  {
+    name: 'Nueva Funcionalidad',
+    type: 'Informativo' as const,
+    title: '¡Novedad en la Plataforma!: [Nombre de la Funcionalidad]',
+    content: '¡Estamos emocionados de anunciar una nueva funcionalidad en la plataforma!: [Nombre de la Funcionalidad].\n\nAhora podrás [Breve descripción de lo que hace la nueva funcionalidad].\n\nExplórala en la sección de [Sección donde se encuentra] y cuéntanos qué te parece.',
   }
 ];
 
