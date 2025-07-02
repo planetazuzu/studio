@@ -112,14 +112,15 @@ export default function RegisterPage() {
                 disabled={formIsDisabled}
               />
             </div>
-            <Button type="submit" className="w-full text-lg h-12" disabled={formIsDisabled}>
-              {formIsDisabled ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/> Registrando...</> : "Crear Cuenta"}
-            </Button>
-            <div className="text-center text-sm space-x-1">
-              <span>¿Ya tienes una cuenta?</span>
-              <Link href="/login" className={`text-primary hover:underline font-semibold ${formIsDisabled ? 'pointer-events-none opacity-50' : ''}`}>
-                Inicia sesión
-              </Link>
+             <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row-reverse">
+                <Button type="submit" className="w-full sm:w-auto" disabled={formIsDisabled}>
+                  {formIsDisabled ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/> Registrando...</> : "Crear Cuenta"}
+                </Button>
+                 <Button asChild variant="outline" className="w-full sm:w-auto" disabled={formIsDisabled}>
+                    <Link href="/login">
+                        Volver
+                    </Link>
+                </Button>
             </div>
           </form>
         </CardContent>
