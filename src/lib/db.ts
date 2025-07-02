@@ -4,6 +4,7 @@ import type { Course, User, Enrollment, UserProgress, PendingEnrollmentDetails, 
 import { courses as initialCourses, users as initialUsers, initialChatChannels, initialCosts, defaultAIConfig, roles, departments, initialBadges, initialCostCategories } from './data';
 import { sendEmailNotification, sendWhatsAppNotification } from './notification-service';
 import { getNavItems } from './nav';
+import { differenceInDays, isAfter } from 'date-fns';
 
 const LOGGED_IN_USER_KEY = 'loggedInUserId';
 
@@ -576,6 +577,40 @@ export async function markAllNotificationsAsRead(userId: string): Promise<void> 
             key: id,
             changes: { isRead: true, updatedAt: new Date().toISOString(), isSynced: false }
         })));
+    }
+}
+
+export async function checkAndSendDeadlineReminders(user: User): Promise<void> {
+    const enrolledCourses = await getEnrolledCoursesForUser(user.id);
+    if (enrolledCourses.length === 0) return;
+
+    const now = new Date();
+
+    for (const course of enrolledCourses) {
+        if (course.endDate) {
+            const endDate = new Date(course.endDate);
+            const daysUntilDeadline = differenceInDays(endDate, now);
+
+            // Check if end date is in the future and within 7 days
+            if (isAfter(endDate, now) && daysUntilDeadline <= 7) {
+                // Check if a reminder was already sent for this course and user
+                const existingReminder = await db.notifications
+                    .where({ userId: user.id })
+                    .filter(notif => notif.type === 'course_deadline_reminder' && notif.relatedUrl === `/dashboard/courses/${course.id}`)
+                    .first();
+
+                if (!existingReminder) {
+                    await addNotification({
+                        userId: user.id,
+                        message: `¡Fecha límite próxima! El curso "${course.title}" finaliza en ${daysUntilDeadline + 1} día(s).`,
+                        type: 'course_deadline_reminder',
+                        relatedUrl: `/dashboard/courses/${course.id}`,
+                        isRead: false,
+                        timestamp: new Date().toISOString(),
+                    });
+                }
+            }
+        }
     }
 }
 

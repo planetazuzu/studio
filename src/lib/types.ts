@@ -161,7 +161,7 @@ export type Notification = {
   id?: number;
   userId: string;
   message: string;
-  type: 'enrollment_approved' | 'new_course' | 'forum_reply' | 'course_announcement' | 'badge_unlocked';
+  type: 'enrollment_approved' | 'new_course' | 'forum_reply' | 'course_announcement' | 'badge_unlocked' | 'course_deadline_reminder';
   relatedUrl?: string;
   isRead: boolean;
   timestamp: string; // ISO date string
