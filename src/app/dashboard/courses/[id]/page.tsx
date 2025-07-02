@@ -14,6 +14,7 @@ import { CheckCircle, Clock, Bot, Loader2, Sparkles, Send, PlusCircle, CheckCirc
 import QRCode from 'qrcode';
 import { cn } from '@/lib/utils';
 import { summarizeModuleContent } from '@/ai/flows/summarize-module-content';
+import { generateManifestXML } from '@/lib/scorm-service';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -258,11 +259,32 @@ export default function CourseDetailPage() {
       }
   }
 
-  const handleScormExport = () => {
+  const handleScormExport = async () => {
+    // This is a proof-of-concept for the first step: manifest generation.
+    // In a real implementation, you would generate HTML files for each module
+    // and zip them all together with this manifest.
     toast({
-        title: "Exportación a SCORM",
-        description: "Esta funcionalidad está en desarrollo y estará disponible próximamente.",
+        title: "Generando Manifiesto SCORM...",
+        description: "Revisa la consola del navegador para ver el XML generado.",
     });
+
+    try {
+        const manifestXml = await generateManifestXML(course);
+        console.log("--- INICIO MANIFIESTO SCORM 1.2 ---");
+        console.log(manifestXml);
+        console.log("--- FIN MANIFIESTO SCORM 1.2 ---");
+        toast({
+            title: "¡Manifiesto Generado!",
+            description: "El XML del manifiesto se ha impreso en la consola del desarrollador.",
+        });
+    } catch (error) {
+        console.error("Error generating SCORM manifest:", error);
+        toast({
+            title: "Error de Exportación",
+            description: "No se pudo generar el manifiesto SCORM.",
+            variant: "destructive",
+        });
+    }
   };
 
   const handleGenerateSummary = async (moduleId: string, content: string) => {
