@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
@@ -63,7 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value = { user, isLoading, login, logout };
 
   // If loading, show a spinner, unless we're on a public page
-  const isPublicPage = ['/login', '/register'].includes(pathname);
+  const isPublicPage = ['/', '/login', '/register'].includes(pathname);
   if (isLoading && !isPublicPage) {
       return (
           <div className="flex h-screen w-full items-center justify-center">
