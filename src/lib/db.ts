@@ -37,7 +37,7 @@ export class AcademiaAIDB extends Dexie {
 
   constructor() {
     super('AcademiaAIDB');
-    this.version(28).stores({
+    this.version(32).stores({
       courses: 'id, instructor, status, isScorm, isSynced, *mandatoryForRoles',
       users: 'id, &email, status, points, isSynced',
       enrollments: '++id, studentId, courseId, status, [studentId+status]',
