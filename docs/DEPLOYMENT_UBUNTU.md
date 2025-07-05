@@ -1,6 +1,6 @@
 # Guía de Despliegue en Servidor Ubuntu
 
-Esta guía detalla los pasos para desplegar la aplicación AcademiaAI en un servidor Ubuntu (20.04 o superior). Se recomienda tener conocimientos básicos de administración de sistemas Linux.
+Esta guía detalla los pasos para desplegar la aplicación Talentos en un servidor Ubuntu (20.04 o superior). Se recomienda tener conocimientos básicos de administración de sistemas Linux.
 
 ---
 
@@ -69,8 +69,8 @@ npm install pm2 -g
 
 **1. Clona el repositorio:**
 ```bash
-git clone https://URL_DE_TU_REPOSITORIO.git academia-ai
-cd academia-ai
+git clone https://URL_DE_TU_REPOSITORIO.git talentos
+cd talentos
 ```
 
 **2. Instala las dependencias del proyecto:**
@@ -108,17 +108,17 @@ npm run build
 Ahora, iniciaremos la aplicación con `pm2` para que se ejecute en segundo plano.
 
 ```bash
-pm2 start npm --name "academia-ai" -- start
+pm2 start npm --name "talentos" -- start
 ```
 
--   `--name "academia-ai"`: Asigna un nombre al proceso.
+-   `--name "talentos"`: Asigna un nombre al proceso.
 -   `-- start`: Ejecuta el comando `npm start`.
 
 **Comandos útiles de PM2:**
 -   `pm2 list`: Muestra todos los procesos.
--   `pm2 logs academia-ai`: Muestra los logs de la aplicación.
--   `pm2 restart academia-ai`: Reinicia la aplicación.
--   `pm2 stop academia-ai`: Detiene la aplicación.
+-   `pm2 logs talentos`: Muestra los logs de la aplicación.
+-   `pm2 restart talentos`: Reinicia la aplicación.
+-   `pm2 stop talentos`: Detiene la aplicación.
 
 **Guardar la lista de procesos de PM2:**
 Para que la aplicación se reinicie automáticamente si el servidor se reinicia, ejecuta:

@@ -38,7 +38,7 @@ const generateNotificationEmailFlow = ai.defineFlow(
       output: {
         schema: GenerateNotificationEmailOutputSchema,
       },
-      prompt: `You are an AI assistant for a corporate training platform called AcademiaAI. Your task is to generate a personalized and professional email notification.
+      prompt: `You are an AI assistant for a corporate training platform called Talentos. Your task is to generate a personalized and professional email notification.
 
       Recipient Name: {{{recipientName}}}
       Course Name: {{{courseName}}}

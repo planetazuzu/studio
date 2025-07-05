@@ -1,13 +1,13 @@
 
-# Resumen de la Aplicación: AcademiaAI
+# Resumen de la Aplicación: Talentos
 
-Este documento proporciona una visión general de la arquitectura, funcionalidades y el flujo de desarrollo de AcademiaAI.
+Este documento proporciona una visión general de la arquitectura, funcionalidades y el flujo de desarrollo de Talentos.
 
 ---
 
 ## 1. Arquitectura y Filosofía
 
-AcademiaAI está construida sobre tres pilares fundamentales que garantizan una experiencia de usuario moderna, rápida y adaptable.
+Talentos está construida sobre tres pilares fundamentales que garantizan una experiencia de usuario moderna, rápida y adaptable.
 
 ### A. Offline-First con Dexie.js (Base de Datos Principal)
 

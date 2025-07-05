@@ -12,7 +12,7 @@ export default function LandingPage() {
         <div className="container flex h-16 max-w-7xl items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
             <AppLogo className="h-7 w-7 text-primary" />
-            <span className="text-xl font-bold">AcademiaAI</span>
+            <span className="text-xl font-bold">Talentos</span>
           </Link>
           <div className="flex items-center gap-2">
             <ThemeToggle />
@@ -34,7 +34,7 @@ export default function LandingPage() {
               Eleva tu Talento con Formación Inteligente
             </h1>
             <p className="max-w-2xl text-lg text-muted-foreground md:text-xl">
-              AcademiaAI personaliza el aprendizaje, automatiza la gestión y maximiza el potencial de tu equipo con el poder de la Inteligencia Artificial.
+              Talentos personaliza el aprendizaje, automatiza la gestión y maximiza el potencial de tu equipo con el poder de la Inteligencia Artificial.
             </p>
             <div className="flex flex-col gap-4 sm:flex-row sm:justify-center md:justify-start">
               <Button asChild size="lg">
@@ -48,7 +48,7 @@ export default function LandingPage() {
           <div className="relative">
             <Image
               src="https://placehold.co/600x400.png"
-              alt="Dashboard de AcademiaAI"
+              alt="Dashboard de Talentos"
               width={600}
               height={400}
               className="rounded-xl shadow-2xl"
@@ -62,7 +62,7 @@ export default function LandingPage() {
           <div className="container max-w-7xl text-center">
             <h2 className="text-3xl font-bold">La formación no debería ser un coste, sino una inversión estratégica.</h2>
             <p className="mx-auto mt-4 max-w-3xl text-lg text-muted-foreground">
-              ¿Te enfrentas a planes de formación genéricos, baja participación y dificultades para medir el impacto real? AcademiaAI convierte estos desafíos en oportunidades de crecimiento.
+              ¿Te enfrentas a planes de formación genéricos, baja participación y dificultades para medir el impacto real? Talentos convierte estos desafíos en oportunidades de crecimiento.
             </p>
           </div>
         </section>
@@ -84,7 +84,7 @@ export default function LandingPage() {
             <div className="space-y-4 rounded-lg border bg-card p-6 text-card-foreground shadow-sm">
               <Zap className="h-10 w-10 text-primary" />
               <h3 className="text-xl font-bold">Feedback Instantáneo y Automatizado</h3>
-              <p className="text-muted-foreground">Olvida las correcciones manuales. AcademiaAI evalúa las pruebas y proporciona feedback constructivo al instante, fomentando un ciclo de mejora continua.</p>
+              <p className="text-muted-foreground">Olvida las correcciones manuales. Talentos evalúa las pruebas y proporciona feedback constructivo al instante, fomentando un ciclo de mejora continua.</p>
             </div>
             <div className="space-y-4 rounded-lg border bg-card p-6 text-card-foreground shadow-sm">
               <Target className="h-10 w-10 text-primary" />
@@ -140,7 +140,7 @@ export default function LandingPage() {
         <section className="container max-w-7xl py-16 text-center md:py-24">
           <h2 className="text-3xl font-bold md:text-4xl">¿Listo para Liderar la Transformación del Talento?</h2>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
-            Descubre cómo las empresas líderes están utilizando AcademiaAI para construir equipos más competentes, motivados y preparados para el futuro. Agenda una demo personalizada hoy mismo.
+            Descubre cómo las empresas líderes están utilizando Talentos para construir equipos más competentes, motivados y preparados para el futuro. Agenda una demo personalizada hoy mismo.
           </p>
           <Button asChild size="lg" className="mt-8">
             <Link href="/register">Solicitar una Demo</Link>
@@ -152,7 +152,7 @@ export default function LandingPage() {
         <div className="container flex h-20 max-w-7xl flex-col items-center justify-between gap-2 text-sm text-muted-foreground md:flex-row">
             <div className="flex items-center gap-2">
                 <AppLogo className="h-5 w-5" />
-                <p>&copy; {new Date().getFullYear()} AcademiaAI. Todos los derechos reservados.</p>
+                <p>&copy; {new Date().getFullYear()} Talentos. Todos los derechos reservados.</p>
             </div>
             <div className="flex items-center gap-4">
                 <Link href="#" className="hover:text-primary">Términos de Servicio</Link>

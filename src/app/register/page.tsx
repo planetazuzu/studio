@@ -78,7 +78,7 @@ export default function RegisterPage() {
         <CardHeader className="text-center">
            <Link href="/" className="flex items-center justify-center gap-2 mb-4">
             <AppLogo className="h-10 w-10 text-primary" />
-            <CardTitle className="text-3xl font-bold">AcademiaAI</CardTitle>
+            <CardTitle className="text-3xl font-bold">Talentos</CardTitle>
           </Link>
           <CardDescription>Crea una cuenta para acceder a la plataforma de formación.</CardDescription>
         </CardHeader>
