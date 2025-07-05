@@ -36,7 +36,7 @@ const courseTutorFlow = ai.defineFlow(
       output: {
         schema: CourseTutorOutputSchema,
       },
-      prompt: `You are an expert AI tutor for a corporate training platform called Talentos. Your role is to answer student questions based *only* on the provided course content. Be helpful, clear, and concise. If the answer is not in the content, state that you cannot answer the question with the provided information.
+      prompt: `You are an expert AI tutor for a corporate training platform called TalentOS. Your role is to answer student questions based *only* on the provided course content. Be helpful, clear, and concise. If the answer is not in the content, state that you cannot answer the question with the provided information.
 
       Course Content:
       ---

@@ -1,13 +1,12 @@
+# Resumen de la Aplicación: TalentOS
 
-# Resumen de la Aplicación: Talentos
-
-Este documento proporciona una visión general de la arquitectura, funcionalidades y el flujo de desarrollo de Talentos.
+Este documento proporciona una visión general de la arquitectura, funcionalidades y el flujo de desarrollo de TalentOS.
 
 ---
 
 ## 1. Arquitectura y Filosofía
 
-Talentos está construida sobre tres pilares fundamentales que garantizan una experiencia de usuario moderna, rápida y adaptable.
+TalentOS está construida sobre tres pilares fundamentales que garantizan una experiencia de usuario moderna, rápida y adaptable.
 
 ### A. Offline-First con Dexie.js (Base de Datos Principal)
 

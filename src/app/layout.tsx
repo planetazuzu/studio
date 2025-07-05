@@ -7,7 +7,7 @@ import './globals.css';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata = {
-  title: 'Talentos',
+  title: 'TalentOS',
   description: 'La plataforma de formación impulsada por IA para tu equipo.',
   manifest: '/manifest.json',
   icons: {

@@ -1,6 +1,6 @@
 # Guía de Configuración de NocoDB
 
-Esta guía te ayudará a configurar tu instancia de NocoDB para que funcione correctamente con la aplicación Talentos.
+Esta guía te ayudará a configurar tu instancia de NocoDB para que funcione correctamente con la aplicación TalentOS.
 
 ---
 
@@ -25,7 +25,7 @@ Antes de que la aplicación pueda conectarse, necesitas dos piezas de informaci�
     1.  Ve a tu dashboard en [NocoDB](https://app.nocodb.com/).
     2.  Abre tu proyecto.
     3.  La **URL base de tu API** es `https://app.nocodb.com/api/v2`.
-    4.  Para el **Token**, ve a `Project Settings` > `API Tokens`. Crea un nuevo token (dale un nombre como "Talentos App") y copia la clave generada.
+    4.  Para el **Token**, ve a `Project Settings` > `API Tokens`. Crea un nuevo token (dale un nombre como "TalentOS App") y copia la clave generada.
 
 *   **Si tienes NocoDB auto-alojado (Self-Hosted):**
     1.  La **URL base de tu API** será la dirección de tu servidor seguida de `/api/v2`. Ejemplo: `http://tu-dominio.com/api/v2`.
@@ -64,7 +64,7 @@ Ahora, necesitas crear las tablas que la aplicación utilizará para almacenar l
 
 ## Paso 3: Configurar la Aplicación
 
-Con las credenciales obtenidas y las tablas creadas, el último paso es configurar la aplicación Talentos.
+Con las credenciales obtenidas y las tablas creadas, el último paso es configurar la aplicación TalentOS.
 
 1.  **Inicia la aplicación** y entra con una cuenta de administrador.
 2.  Ve a la sección **Ajustes** en el menú lateral.

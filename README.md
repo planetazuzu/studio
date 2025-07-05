@@ -1,7 +1,6 @@
+# TalentOS: Plataforma de Formación Corporativa con IA
 
-# Talentos: Plataforma de Formación Corporativa con IA
-
-Talentos es una plataforma de aprendizaje (LMS) moderna, diseñada para empresas que buscan potenciar el talento de sus equipos a través de una experiencia formativa inteligente, personalizada y eficiente. Construida con Next.js y Dexie.js, opera bajo una filosofía "offline-first" y utiliza la IA de Genkit como núcleo para automatizar y enriquecer el proceso educativo.
+TalentOS es una plataforma de aprendizaje (LMS) moderna, diseñada para empresas que buscan potenciar el talento de sus equipos a través de una experiencia formativa inteligente, personalizada y eficiente. Construida con Next.js y Dexie.js, opera bajo una filosofía "offline-first" y utiliza la IA de Genkit como núcleo para automatizar y enriquecer el proceso educativo.
 
 ## Funcionalidades Clave
 

@@ -1,7 +1,6 @@
-
 # Guía de Configuración del Entorno de Desarrollo
 
-Esta guía te llevará paso a paso a través del proceso de configuración de Talentos en tu máquina local para el desarrollo.
+Esta guía te llevará paso a paso a través del proceso de configuración de TalentOS en tu máquina local para el desarrollo.
 
 ---
 
@@ -19,8 +18,8 @@ Antes de comenzar, asegúrate de tener instalado lo siguiente:
 Abre tu terminal y clona el código fuente del proyecto en una carpeta de tu elección.
 
 ```bash
-git clone <URL_DEL_REPOSITORIO> talentos
-cd talentos
+git clone <URL_DEL_REPOSITORIO> talent-os
+cd talent-os
 ```
 
 ---
@@ -38,7 +37,7 @@ Este comando leerá el archivo `package.json` y descargará todas las librerías
 
 ## Paso 3: Configurar NocoDB (Base de Datos Remota)
 
-Talentos utiliza una base de datos local (Dexie.js) para funcionar, pero para la sincronización de datos y la persistencia a largo plazo, se conecta a **NocoDB**.
+TalentOS utiliza una base de datos local (Dexie.js) para funcionar, pero para la sincronización de datos y la persistencia a largo plazo, se conecta a **NocoDB**.
 
 1.  **Configura tu instancia de NocoDB:** Si aún no lo has hecho, necesitarás una instancia de NocoDB. Puedes usar su servicio en la nube o auto-alojarla.
 2.  **Crea las Tablas:** Dentro de tu proyecto en NocoDB, crea todas las tablas y columnas exactamente como se especifica en nuestra guía del esquema.
@@ -102,4 +101,4 @@ La primera vez que ejecutes la aplicación, la base de datos local (Dexie.js) es
     -   **Contraseña:** `password123`
 -   **Sincronización:** Recuerda que estos datos iniciales solo existen en tu navegador. Para subirlos a NocoDB, ve a `Ajustes > APIs & Sincronización` y ejecuta el proceso de sincronización manual.
 
-¡Y eso es todo! Ahora tienes un entorno de desarrollo de Talentos completamente funcional.
+¡Y eso es todo! Ahora tienes un entorno de desarrollo de TalentOS completamente funcional.
