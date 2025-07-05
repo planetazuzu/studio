@@ -453,7 +453,7 @@ export async function getUserProgressForUser(userId: string): Promise<UserProgre
 }
 
 export async function markModuleAsCompleted(userId: string, courseId: string, moduleId: string): Promise<void> {
-    return db.transaction('rw', db.users, db.userProgress, db.badges, db.userBadges, db.notifications, async () => {
+    return db.transaction('rw', db.users, db.userProgress, db.badges, db.userBadges, db.notifications, db.courses, db.enrollments, db.learningPaths, db.userLearningPathProgress, async () => {
         const existingProgress = await getUserProgress(userId, courseId);
         const user = await getUserById(userId);
 

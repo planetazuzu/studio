@@ -76,7 +76,36 @@ Guarda el progreso de cada usuario en cada curso.
 
 ---
 
-## 5. Tabla de Anuncios (`announcements`)
+## 5. Tabla de Planes de Carrera (`learning_paths`)
+
+Define las rutas de aprendizaje guiadas para los roles.
+
+| Nombre de Columna (`Column Name`) | Tipo de Columna (`Column Type`) | Notas |
+| :--- | :--- | :--- |
+| `id` | `Id` | **Clave Primaria Autoincremental** |
+| `title` | `SingleLineText` | |
+| `description` | `LongText` | |
+| `targetRole` | `SingleSelect` | Opciones: `Trabajador`, `Jefe de Formación`, etc. |
+| `courseIds` | `Json` | Almacena el array ordenado de IDs de curso |
+| `updatedAt` | `LastModifiedTime` | |
+
+---
+
+## 6. Tabla de Progreso en Planes de Carrera (`user_learning_path_progress`)
+
+Registra el avance de un usuario en un plan de carrera específico.
+
+| Nombre de Columna | Tipo de Columna | Notas |
+| :--- | :--- | :--- |
+| `id` | `Id` | **Clave Primaria Autoincremental** |
+| `user` | `LinkToAnotherRecord` | **Relación Muchos a Uno (ManyToOne)** a la tabla `users` |
+| `learningPath` | `LinkToAnotherRecord` | **Relación Muchos a Uno (ManyToOne)** a la tabla `learning_paths` |
+| `completedCourseIds` | `Json` | Almacena el array de IDs de cursos completados |
+| `updatedAt` | `LastModifiedTime` | |
+
+---
+
+## 7. Tabla de Anuncios (`announcements`)
 
 Almacena todas las comunicaciones y avisos enviados a los usuarios.
 
@@ -92,7 +121,7 @@ Almacena todas las comunicaciones y avisos enviados a los usuarios.
 
 ---
 
-## 6. Tabla de Eventos del Calendario (`calendar_events`)
+## 8. Tabla de Eventos del Calendario (`calendar_events`)
 
 Registra todos los eventos formativos como clases, exámenes o entregas.
 
@@ -111,7 +140,7 @@ Registra todos los eventos formativos como clases, exámenes o entregas.
 
 ---
 
-## 7. Tabla de Formación Externa (`external_trainings`)
+## 9. Tabla de Formación Externa (`external_trainings`)
 
 Permite a los usuarios registrar sus logros formativos obtenidos fuera de la plataforma.
 
@@ -129,7 +158,7 @@ Permite a los usuarios registrar sus logros formativos obtenidos fuera de la pla
 
 ---
 
-## 8. Tabla de Recursos (`resources`)
+## 10. Tabla de Recursos (`resources`)
 
 Biblioteca central de materiales de estudio (PDF, vídeos, etc.).
 
@@ -145,7 +174,7 @@ Biblioteca central de materiales de estudio (PDF, vídeos, etc.).
 
 ---
 
-## 9. Tabla de Costes (`costs`)
+## 11. Tabla de Costes (`costs`)
 
 Almacena los gastos asociados a la formación.
 
