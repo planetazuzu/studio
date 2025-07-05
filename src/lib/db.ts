@@ -160,10 +160,10 @@ export async function getLoggedInUser(): Promise<User | null> {
 
 
 // --- User Management Functions ---
-export async function addUser(user: Omit<User, 'id' | 'avatar' | 'isSynced' | 'updatedAt' | 'notificationSettings' | 'points' | 'status' | 'fcmToken'>): Promise<string> {
+export async function addUser(user: Omit<User, 'id' | 'avatar' | 'isSynced' | 'updatedAt' | 'notificationSettings' | 'points' | 'status' | 'fcmToken'>): Promise<User> {
     const existingUser = await db.users.where('email').equalsIgnoreCase(user.email).first();
     if (existingUser) {
-        throw new Error('Este correo electrónico ya está registrado.');
+        throw new Error('Este correo electrónico ya está en uso.');
     }
     
     const requiresApproval = ['Formador', 'Jefe de Formación', 'Gestor de RRHH', 'Administrador General'].includes(user.role);
@@ -181,7 +181,8 @@ export async function addUser(user: Omit<User, 'id' | 'avatar' | 'isSynced' | 'u
             channels: [],
         },
     };
-    return await db.users.add(newUser);
+    await db.users.add(newUser);
+    return newUser;
 }
 
 export async function bulkAddUsers(users: Omit<User, 'id' | 'avatar' | 'isSynced' | 'updatedAt' | 'notificationSettings' | 'points' | 'status' | 'fcmToken'>[]): Promise<string[]> {
@@ -214,7 +215,23 @@ export async function updateUser(id: string, data: Partial<Omit<User, 'id' | 'is
 }
 
 export async function updateUserStatus(userId: string, status: UserStatus): Promise<number> {
-    return await db.users.update(userId, { status, updatedAt: new Date().toISOString(), isSynced: false });
+    const user = await db.users.get(userId);
+    if (!user) return 0;
+    
+    const result = await db.users.update(userId, { status, updatedAt: new Date().toISOString(), isSynced: false });
+
+    if (status === 'approved' && user.status === 'pending_approval') {
+        await addNotification({
+            userId: user.id,
+            message: `¡Tu cuenta ha sido aprobada! Ya puedes acceder a todas las funcionalidades de la plataforma.`,
+            type: 'enrollment_approved', // Re-using a generic type.
+            relatedUrl: `/dashboard`,
+            isRead: false,
+            timestamp: new Date().toISOString(),
+        });
+    }
+
+    return result;
 }
 
 export async function saveFcmToken(userId: string, fcmToken: string): Promise<number> {

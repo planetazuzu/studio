@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -58,7 +59,7 @@ export default function RegisterPage() {
           router.push('/login');
       }
     } catch (err: any) {
-      if (err.message.includes('correo electrónico ya está en uso')) {
+      if (err.message.includes('Este correo electrónico ya está en uso.')) {
           form.setError('email', { type: 'manual', message: 'Este correo electrónico ya está en uso.' });
       } else {
         setError(err.message || 'Ha ocurrido un error inesperado.');
@@ -77,7 +78,7 @@ export default function RegisterPage() {
         <CardHeader className="text-center">
            <Link href="/" className="flex items-center justify-center gap-2 mb-4">
             <AppLogo className="h-10 w-10 text-primary" />
-            <CardTitle className="text-3xl font-bold">TalentOS</CardTitle>
+            <CardTitle className="text-3xl font-bold">AcademiaAI</CardTitle>
           </Link>
           <CardDescription>Crea una cuenta para acceder a la plataforma de formación.</CardDescription>
         </CardHeader>

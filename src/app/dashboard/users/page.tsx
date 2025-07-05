@@ -4,7 +4,7 @@
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { MoreHorizontal, PlusCircle, ListFilter, Loader2, Trash2, FilePenLine, Upload, BrainCircuit, Bot } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, ListFilter, Loader2, Trash2, FilePenLine, Upload, BrainCircuit, Bot, Check, X, Hourglass } from 'lucide-react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -19,7 +19,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import {
   DropdownMenu,
@@ -65,7 +64,7 @@ export default function UsersPage() {
     const users = useLiveQuery(db.getAllUsers, []);
     const aiConfig = useLiveQuery<AIConfig | undefined>(() => db.getAIConfig());
     
-    const [userToDelete, setUserToDelete] = useState<User | null>(null);
+    const [action, setAction] = useState<{ type: 'approve' | 'reject' | 'delete', user: User } | null>(null);
     const [predictionLoading, setPredictionLoading] = useState<string | null>(null); // user.id
     const [predictionResult, setPredictionResult] = useState<Record<string, PredictAbandonmentOutput | null>>({});
 
@@ -77,12 +76,23 @@ export default function UsersPage() {
         Object.fromEntries(departments.map(d => [d, true])) as Record<Department, boolean>
     );
     
-    if (!authUser) return null; // Or a loader
+    if (!authUser) return null;
 
     if (!['Gestor de RRHH', 'Jefe de Formación', 'Administrador General'].includes(authUser.role)) {
-        router.push('/dashboard'); // Or show an unauthorized message
+        router.push('/dashboard');
         return null;
     }
+
+    const { pendingUsers, filteredActiveUsers } = useMemo(() => {
+        if (!users) return { pendingUsers: [], filteredActiveUsers: [] };
+        
+        const pending = users.filter(u => u.status === 'pending_approval');
+        const active = users.filter(u => u.status !== 'pending_approval');
+        
+        const filteredActive = active.filter(u => roleFilters[u.role] && departmentFilters[u.department]);
+
+        return { pendingUsers, filteredActiveUsers };
+    }, [users, roleFilters, departmentFilters]);
 
     const handleRoleFilterChange = (role: Role, checked: boolean) => {
         setRoleFilters(prev => ({ ...prev, [role]: checked }));
@@ -92,23 +102,64 @@ export default function UsersPage() {
         setDepartmentFilters(prev => ({ ...prev, [department]: checked }));
     }
 
-    const handleDeleteUser = async () => {
-        if (!userToDelete) return;
-        if (userToDelete.id === authUser.id) {
+    const handleConfirmAction = async () => {
+        if (!action) return;
+        const { type, user } = action;
+
+        if (type === 'delete' && user.id === authUser.id) {
             toast({ title: "Error", description: "No puedes eliminar tu propia cuenta.", variant: "destructive"});
-            setUserToDelete(null);
+            setAction(null);
             return;
         }
 
         try {
-            await db.deleteUser(userToDelete.id);
-            toast({ title: "Usuario Eliminado", description: `El usuario ${userToDelete.name} ha sido eliminado.` });
+            if (type === 'approve') {
+                await db.updateUserStatus(user.id, 'approved');
+                toast({ title: "Usuario Aprobado", description: `El usuario ${user.name} ha sido activado.` });
+            } else if (type === 'reject' || type === 'delete') {
+                await db.deleteUser(user.id);
+                const toastTitle = type === 'reject' ? "Solicitud Rechazada" : "Usuario Eliminado";
+                const toastDesc = type === 'reject' 
+                    ? `La solicitud de ${user.name} ha sido rechazada y eliminada.`
+                    : `El usuario ${user.name} ha sido eliminado.`;
+                toast({ title: toastTitle, description: toastDesc });
+            }
         } catch (error) {
-            toast({ title: "Error", description: "No se pudo eliminar al usuario.", variant: "destructive" });
+            toast({ title: "Error", description: "La operación no pudo completarse.", variant: "destructive" });
         } finally {
-            setUserToDelete(null);
+            setAction(null);
         }
-    }
+    };
+    
+    const getDialogContent = () => {
+        if (!action) return null;
+        const { type, user } = action;
+        
+        const contentMap = {
+            approve: {
+                title: '¿Aprobar este usuario?',
+                description: `El usuario ${user.name} (${user.email}) obtendrá acceso a la plataforma con el rol de ${user.role}.`,
+                actionText: 'Aprobar',
+                actionClass: ''
+            },
+            reject: {
+                title: '¿Rechazar esta solicitud?',
+                description: `Se eliminará permanentemente la solicitud del usuario ${user.name}.`,
+                actionText: 'Rechazar y Eliminar',
+                actionClass: 'bg-destructive hover:bg-destructive/90'
+            },
+            delete: {
+                title: '¿Estás realmente seguro?',
+                description: `Esta acción no se puede deshacer. Esto eliminará permanentemente al usuario ${user.name} y todos sus datos asociados.`,
+                actionText: 'Eliminar Usuario',
+                actionClass: 'bg-destructive hover:bg-destructive/90'
+            }
+        };
+        return contentMap[type];
+    };
+
+    const dialogContent = getDialogContent();
+
     
     const handlePredictAbandonment = async (user: User) => {
         if (predictionLoading === user.id) return;
@@ -156,8 +207,6 @@ export default function UsersPage() {
         }
     }
 
-    const filteredUsers = users ? users.filter(u => roleFilters[u.role] && departmentFilters[u.department]) : [];
-
     return (
         <div className="space-y-8">
             <div className="flex items-center justify-between">
@@ -183,14 +232,63 @@ export default function UsersPage() {
                 </div>
             </div>
             
-            <AlertDialog onOpenChange={(open) => !open && setUserToDelete(null)}>
+             {pendingUsers.length > 0 && (
+                <Card className="border-amber-500/50 bg-amber-500/5">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><Hourglass/> Solicitudes Pendientes</CardTitle>
+                        <CardDescription>Estos usuarios se han registrado con roles que requieren aprobación manual.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="border rounded-lg bg-background">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Usuario</TableHead>
+                                    <TableHead>Rol Solicitado</TableHead>
+                                    <TableHead className="text-right">Acciones</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {pendingUsers.map(u => (
+                                    <TableRow key={u.id}>
+                                        <TableCell className="font-medium">
+                                            <div className="flex items-center gap-3 group">
+                                                <Avatar className="h-9 w-9">
+                                                    <AvatarImage src={u.avatar} alt={u.name} />
+                                                    <AvatarFallback>{u.name?.slice(0, 2) ?? '?'}</AvatarFallback>
+                                                </Avatar>
+                                                <div>
+                                                    <p className="font-semibold">{u.name || u.email}</p>
+                                                    <p className="text-xs text-muted-foreground">{u.email}</p>
+                                                </div>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            {u.role ? <Badge variant={roleBadgeVariant[u.role]}>{u.role}</Badge> : '-'}
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <div className="flex gap-2 justify-end">
+                                                <Button size="sm" onClick={() => setAction({ type: 'approve', user: u })}><Check className="mr-2 h-4 w-4"/>Aprobar</Button>
+                                                <Button size="sm" variant="destructive" onClick={() => setAction({ type: 'reject', user: u })}><X className="mr-2 h-4 w-4"/>Rechazar</Button>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+            
+            <AlertDialog open={!!action} onOpenChange={(open) => !open && setAction(null)}>
                 <Card>
                     <CardHeader>
                         <div className="flex items-center justify-between">
                             <div>
                                 <CardTitle>Usuarios Registrados</CardTitle>
                                 <CardDescription>
-                                    Un total de {users?.length || 0} usuarios en la plataforma.
+                                    Un total de {filteredActiveUsers?.length || 0} usuarios activos en la plataforma.
                                 </CardDescription>
                             </div>
                             <div className="flex items-center gap-2">
@@ -259,7 +357,7 @@ export default function UsersPage() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {filteredUsers.map(u => (
+                                    {filteredActiveUsers.map(u => (
                                         <TableRow key={u.id}>
                                             <TableCell className="font-medium">
                                                 <Link href={`/dashboard/users/${u.id}`} className="flex items-center gap-3 group">
@@ -350,12 +448,10 @@ export default function UsersPage() {
                                                         Editar
                                                     </Link>
                                                 </DropdownMenuItem>
-                                                <AlertDialogTrigger asChild>
-                                                    <DropdownMenuItem onSelect={() => setUserToDelete(u)} className="text-destructive focus:bg-destructive/10 focus:text-destructive" disabled={authUser.id === u.id}>
-                                                        <Trash2 className="mr-2 h-4 w-4" />
-                                                        Eliminar
-                                                    </DropdownMenuItem>
-                                                </AlertDialogTrigger>
+                                                <DropdownMenuItem onSelect={() => setAction({ type: 'delete', user: u })} className="text-destructive focus:bg-destructive/10 focus:text-destructive" disabled={authUser.id === u.id}>
+                                                    <Trash2 className="mr-2 h-4 w-4" />
+                                                    Eliminar
+                                                </DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
                                             </TableCell>
@@ -366,18 +462,21 @@ export default function UsersPage() {
                         )}
                     </CardContent>
                 </Card>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>¿Estás realmente seguro?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Esta acción no se puede deshacer. Esto eliminará permanentemente al usuario <span className="font-bold">{userToDelete?.name}</span> y todos sus datos asociados.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDeleteUser} className="bg-destructive hover:bg-destructive/90">Eliminar</AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
+                
+                {dialogContent && (
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>{dialogContent.title}</AlertDialogTitle>
+                            <AlertDialogDescription>{dialogContent.description}</AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel onClick={() => setAction(null)}>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleConfirmAction} className={dialogContent.actionClass}>
+                                {dialogContent.actionText}
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                )}
             </AlertDialog>
         </div>
     );
