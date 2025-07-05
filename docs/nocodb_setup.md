@@ -56,6 +56,7 @@ Ahora, necesitas crear las tablas que la aplicación utilizará para almacenar l
 *   `calendar_events` (Eventos del Calendario)
 *   `external_trainings` (Formación Externa)
 *   `resources` (Recursos)
+*   `costs` (Costes)
 
 **Consejo:** Presta especial atención a las columnas de tipo `LinkToAnotherRecord`, ya que estas crean las relaciones entre las tablas (por ejemplo, qué usuario está inscrito en qué curso).
 

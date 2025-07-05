@@ -71,6 +71,7 @@ La IA no es un complemento, sino una parte integral de la plataforma, impulsada 
 -   **Exportación de Datos:** Los informes clave se pueden exportar a PDF o CSV.
 
 ### Administración y Configuración
+-   **Gestión de Costes:** Una sección dedicada para que los administradores registren y categoricen todos los gastos relacionados con la formación (honorarios, materiales, licencias, etc.).
 -   **Gestión de APIs y Sincronización:** Panel para configurar las credenciales de NocoDB, SendGrid (email) y Twilio (WhatsApp) e iniciar la sincronización manual.
 -   **Configuración de IA:** Permite seleccionar el proveedor de IA (ej. Gemini) y activar o desactivar funcionalidades específicas.
 -   **Gestión de Notificaciones:** Sistema integrado que envía notificaciones por Email, WhatsApp o Push (si están configuradas) para eventos clave como aprobaciones o anuncios.

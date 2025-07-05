@@ -145,4 +145,21 @@ Biblioteca central de materiales de estudio (PDF, vídeos, etc.).
 
 ---
 
+## 9. Tabla de Costes (`costs`)
+
+Almacena los gastos asociados a la formación.
+
+| Nombre de Columna | Tipo de Columna | Notas |
+|:--- |:--- |:--- |
+| `id` | `Id` | **Clave Primaria Autoincremental** |
+| `item` | `SingleLineText` | Concepto del gasto |
+| `category` | `SingleSelect` | Opciones: `Honorarios Formador`, `Licencias`, etc. |
+| `amount` | `Decimal` | Importe del gasto |
+| `date` | `Date` | Fecha del gasto |
+| `course` | `LinkToAnotherRecord` | **Relación Muchos a Uno (ManyToOne)** a la tabla `courses` |
+| `updatedAt` | `LastModifiedTime` | |
+
+
+---
+
 Con estas tablas configuradas en NocoDB, tendrás una base de datos remota más completa y lista para la sincronización.
