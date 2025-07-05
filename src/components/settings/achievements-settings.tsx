@@ -3,20 +3,19 @@
 
 import { useLiveQuery } from 'dexie-react-hooks';
 import * as db from '@/lib/db';
-import type { User, Badge, UserBadge } from '@/lib/types';
+import type { User } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Award, Loader2, Lock } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import * as LucideIcons from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { StatCard } from '../stat-card';
 
 const DynamicIcon = ({ name }: { name: string }) => {
-    const Icon = (LucideIcons as any)[name];
-    if (!Icon) {
-        return <Award />; // Fallback icon
+    const IconComponent = (LucideIcons as any)[name];
+    if (!IconComponent) {
+        return <Award className="h-6 w-6" />; // Fallback icon
     }
-    return <Icon />;
+    return <IconComponent className="h-6 w-6" />;
 };
 
 export function AchievementsSettings({ user }: { user: User }) {
@@ -52,7 +51,7 @@ export function AchievementsSettings({ user }: { user: User }) {
                                    <Tooltip>
                                         <TooltipTrigger asChild>
                                             <div className="flex flex-col items-center gap-2 text-center p-4 border rounded-lg bg-green-50 border-green-200">
-                                                <div className="p-3 bg-green-100 rounded-full">
+                                                <div className="p-3 bg-green-100 rounded-full text-green-700">
                                                     <DynamicIcon name={badge.icon} />
                                                 </div>
                                                 <p className="font-semibold text-sm">{badge.name}</p>

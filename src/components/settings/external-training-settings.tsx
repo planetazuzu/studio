@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useForm, Controller } from 'react-hook-form';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Loader2, PlusCircle, FilePenLine, Trash2 } from 'lucide-react';
@@ -14,19 +14,19 @@ import { externalTrainingTypes } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+
 
 const externalTrainingSchema = z.object({
   title: z.string().min(3, "El título es obligatorio."),
   type: z.enum(externalTrainingTypes as [string, ...string[]], { required_error: "Debes seleccionar un tipo."}),
   institution: z.string().min(2, "La entidad es obligatoria."),
-  startDate: z.string().optional(),
-  endDate: z.string().optional(),
+  endDate: z.string().refine(val => !val || !isNaN(parseISO(val).getTime()), { message: "Fecha inválida." }),
   fileUrl: z.string().url("Debe ser una URL válida.").optional().or(z.literal('')),
   comments: z.string().optional(),
 });
@@ -51,7 +51,6 @@ function ExternalTrainingDialog({
             title: '',
             type: undefined,
             institution: '',
-            startDate: '',
             endDate: '',
             fileUrl: '',
             comments: '',
@@ -64,8 +63,7 @@ function ExternalTrainingDialog({
                 title: training.title || '',
                 type: training.type,
                 institution: training.institution || '',
-                startDate: training.startDate ? format(new Date(training.startDate), "yyyy-MM-dd") : '',
-                endDate: training.endDate ? format(new Date(training.endDate), "yyyy-MM-dd") : '',
+                endDate: training.endDate ? format(parseISO(training.endDate), "yyyy-MM-dd") : '',
                 fileUrl: training.fileUrl || '',
                 comments: training.comments || '',
             });
@@ -74,7 +72,6 @@ function ExternalTrainingDialog({
                 title: '',
                 type: undefined,
                 institution: '',
-                startDate: '',
                 endDate: '',
                 fileUrl: '',
                 comments: '',
@@ -87,7 +84,6 @@ function ExternalTrainingDialog({
             const payload: Omit<ExternalTraining, 'id'> = {
                 userId,
                 ...data,
-                startDate: data.startDate || undefined,
                 endDate: data.endDate || undefined,
             };
 
@@ -111,19 +107,18 @@ function ExternalTrainingDialog({
                 <DialogHeader>
                     <DialogTitle>{training ? 'Editar' : 'Añadir'} Formación Externa</DialogTitle>
                 </DialogHeader>
+                <Form {...form}>
                 <form id="et-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-                    <Controller name="title" control={form.control} render={({ field }) => ( <div><Label>Título</Label><Input {...field} />{form.formState.errors.title && <p className="text-sm text-destructive">{form.formState.errors.title.message}</p>}</div> )} />
+                    <FormField control={form.control} name="title" render={({ field }) => ( <FormItem><FormLabel>Título</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                     <div className="grid grid-cols-2 gap-4">
-                        <Controller name="type" control={form.control} render={({ field }) => ( <div><Label>Tipo</Label><Select onValueChange={field.onChange} value={field.value}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent>{externalTrainingTypes.map(t=><SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select>{form.formState.errors.type && <p className="text-sm text-destructive">{form.formState.errors.type.message}</p>}</div>)} />
-                        <Controller name="institution" control={form.control} render={({ field }) => ( <div><Label>Entidad Formadora</Label><Input {...field} />{form.formState.errors.institution && <p className="text-sm text-destructive">{form.formState.errors.institution.message}</p>}</div> )} />
+                        <FormField control={form.control} name="type" render={({ field }) => (<FormItem><FormLabel>Tipo</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent>{externalTrainingTypes.map(t=><SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
+                        <FormField control={form.control} name="institution" render={({ field }) => ( <FormItem><FormLabel>Entidad</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <Controller name="startDate" control={form.control} render={({ field }) => ( <div><Label>Fecha Inicio</Label><Input type="date" {...field} /></div> )} />
-                        <Controller name="endDate" control={form.control} render={({ field }) => ( <div><Label>Fecha Fin</Label><Input type="date" {...field} /></div> )} />
-                    </div>
-                     <Controller name="fileUrl" control={form.control} render={({ field }) => ( <div><Label>Enlace al Certificado (URL)</Label><Input type="url" placeholder="https://..." {...field} />{form.formState.errors.fileUrl && <p className="text-sm text-destructive">{form.formState.errors.fileUrl.message}</p>}</div> )} />
-                     <Controller name="comments" control={form.control} render={({ field }) => ( <div><Label>Comentarios</Label><Textarea {...field} /></div> )} />
+                     <FormField control={form.control} name="endDate" render={({ field }) => ( <FormItem><FormLabel>Fecha Fin</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                     <FormField control={form.control} name="fileUrl" render={({ field }) => ( <FormItem><FormLabel>URL Certificado</FormLabel><FormControl><Input type="url" placeholder="https://..." {...field} /></FormControl><FormMessage /></FormItem> )} />
+                     <FormField control={form.control} name="comments" render={({ field }) => ( <FormItem><FormLabel>Comentarios</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem> )} />
                 </form>
+                </Form>
                 <DialogFooter>
                     <DialogClose asChild><Button type="button" variant="outline">Cancelar</Button></DialogClose>
                     <Button type="submit" form="et-form" disabled={form.formState.isSubmitting}>
@@ -197,11 +192,13 @@ export function ExternalTrainingSettings({ user }: { user: User }) {
                                     <TableCell>{t.type}</TableCell>
                                     <TableCell>{t.institution}</TableCell>
                                     <TableCell>
-                                        {t.endDate ? format(new Date(t.endDate), 'MMM yyyy') : 'En curso'}
+                                        {t.endDate ? format(parseISO(t.endDate), 'MMM yyyy') : 'En curso'}
                                     </TableCell>
                                     <TableCell className="text-right">
                                         <Button variant="ghost" size="icon" onClick={() => handleEdit(t)}><FilePenLine className="h-4 w-4" /></Button>
-                                        <Button variant="ghost" size="icon" onClick={() => setTrainingToDelete(t)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                        <AlertDialogTrigger asChild>
+                                            <Button variant="ghost" size="icon" onClick={() => setTrainingToDelete(t)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                        </AlertDialogTrigger>
                                     </TableCell>
                                 </TableRow>
                             ))}

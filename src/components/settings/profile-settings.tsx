@@ -14,7 +14,7 @@ export function ProfileSettings({ profile, setProfile }: { profile: any, setProf
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Perfil</CardTitle>
+                <CardTitle>Información Personal</CardTitle>
                 <CardDescription>Gestiona tu información personal y de contacto.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -37,17 +37,8 @@ export function ProfileSettings({ profile, setProfile }: { profile: any, setProf
                     <Input id="avatar" value={profile.avatar} onChange={(e) => setProfile({ ...profile, avatar: e.target.value })} />
                 </div>
                  <div className="space-y-2">
-                    <Label htmlFor="role">Rol</Label>
-                    <Select value={profile.role} onValueChange={(value) => setProfile({ ...profile, role: value })}>
-                        <SelectTrigger id="role" className="w-full">
-                            <SelectValue placeholder="Selecciona un rol" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {roles.map(role => (
-                            <SelectItem key={role} value={role}>{role}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                    <Label htmlFor="role">Rol (No editable)</Label>
+                    <Input id="role" value={profile.role} disabled />
                 </div>
                 <div className="space-y-2">
                     <Label>Puntos de Experiencia</Label>

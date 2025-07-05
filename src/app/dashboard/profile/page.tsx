@@ -29,6 +29,7 @@ export default function ProfilePage() {
                 avatar: user.avatar,
                 role: user.role,
                 points: user.points,
+                phone: user.phone || '',
             });
         }
     }, [user]);
@@ -46,15 +47,17 @@ export default function ProfilePage() {
 
         setIsSaving(true);
         try {
-            const updatedData = {
+            const updatedData: Partial<User> = {
                 name: profile.name,
                 email: profile.email,
                 avatar: profile.avatar,
                 role: profile.role,
+                phone: profile.phone,
             };
 
             await db.updateUser(user.id, updatedData);
             
+            // Re-login to update the user object in the auth context
             if (user.password) {
               await login(profile.email, user.password);
             }
@@ -104,6 +107,12 @@ export default function ProfilePage() {
                     </TabsList>
                     <TabsContent value="profile" className="mt-4">
                         <ProfileSettings profile={profile} setProfile={setProfile} />
+                         <div className="flex justify-end mt-6">
+                            <Button size="lg" onClick={handleSaveChanges} disabled={isSaving}>
+                                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Guardar Información Personal
+                            </Button>
+                        </div>
                     </TabsContent>
                     <TabsContent value="achievements" className="mt-4">
                         <AchievementsSettings user={user} />
@@ -112,12 +121,6 @@ export default function ProfilePage() {
                         <TrainingHistory user={user} />
                     </TabsContent>
                 </Tabs>
-            </div>
-            <div className="flex justify-end">
-                <Button size="lg" onClick={handleSaveChanges} disabled={isSaving}>
-                    {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Guardar Cambios de Perfil
-                </Button>
             </div>
         </div>
     );

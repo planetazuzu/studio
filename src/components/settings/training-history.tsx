@@ -44,7 +44,7 @@ function InternalTrainingHistory({ user }: { user: User }) {
                                             {e.courseTitle}
                                         </Link>
                                     </TableCell>
-                                    <TableCell>{format(new Date(e.requestDate), 'dd/MM/yyyy', { locale: es })}</TableCell>
+                                    <TableCell>{format(new Date(e.requestDate), 'dd MMM, yyyy', { locale: es })}</TableCell>
                                     <TableCell>
                                         <StatusBadge status={e.status} />
                                     </TableCell>
