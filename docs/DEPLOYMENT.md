@@ -23,6 +23,9 @@ La aplicación está preparada para usar diferentes sistemas de autenticación. 
 #### Opción A: Variables de Firebase (Recomendado para Producción)
 Copia estas variables desde la configuración de tu proyecto en la consola de Firebase.
 
+> **⚠️ Nota Importante sobre la Base de Datos:**
+> La configuración de Firebase es **exclusivamente para la autenticación de usuarios**. La base de datos principal de la aplicación sigue siendo **Dexie.js** en el navegador, con sincronización a **NocoDB**. Esta aplicación **no utiliza Firestore** ni Firebase Realtime Database.
+
 -   `NEXT_PUBLIC_FIREBASE_API_KEY`: Tu clave de API.
 -   `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`: Tu dominio de autenticación.
 -   `NEXT_PUBLIC_FIREBASE_PROJECT_ID`: El ID de tu proyecto.

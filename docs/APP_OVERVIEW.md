@@ -9,11 +9,11 @@ Este documento proporciona una visión general de la arquitectura, funcionalidad
 
 AcademiaAI está construida sobre tres pilares fundamentales que garantizan una experiencia de usuario moderna, rápida y adaptable.
 
-### A. Offline-First con Dexie.js
+### A. Offline-First con Dexie.js (Base de Datos Principal)
 
-La aplicación prioriza la disponibilidad y la velocidad utilizando **Dexie.js**, una capa sobre IndexedDB, como su base de datos principal en el navegador.
+La aplicación prioriza la disponibilidad y la velocidad utilizando **Dexie.js**, una capa sobre IndexedDB, como su **base de datos principal en el navegador**.
 
--   **Rendimiento Instantáneo:** Todas las operaciones (leer, escribir, actualizar) se realizan localmente, eliminando la latencia de la red.
+-   **Rendimiento Instantáneo:** Todas las operaciones (leer, escribir, actualizar) se realizan localmente, eliminando la latencia de la red. La aplicación **no** se conecta directamente a una base de datos en la nube como Firestore o Supabase para sus operaciones diarias.
 -   **Disponibilidad sin Conexión:** Los usuarios pueden continuar aprendiendo, completando módulos y participando en foros incluso sin conexión a internet.
 -   **Persistencia de Datos:** Todos los datos generados se guardan de forma segura en el navegador del usuario.
 

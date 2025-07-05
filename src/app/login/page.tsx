@@ -69,7 +69,7 @@ export default function LoginPage() {
         <CardHeader className="text-center">
           <Link href="/" className="flex items-center justify-center gap-2 mb-4">
             <AppLogo className="h-10 w-10 text-primary" />
-            <CardTitle className="text-3xl font-bold">TalentOS</CardTitle>
+            <CardTitle className="text-3xl font-bold">AcademiaAI</CardTitle>
           </Link>
           <CardDescription>La plataforma de formación impulsada por IA para tu equipo.</CardDescription>
         </CardHeader>

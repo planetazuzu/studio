@@ -55,7 +55,7 @@ export function SidebarContents() {
       <SidebarHeader>
         <Link href="/dashboard" className="flex items-center gap-2 p-2">
           <AppLogo className="h-8 w-8 text-primary" />
-          {isOpen && <span className="text-xl font-semibold">TalentOS</span>}
+          {isOpen && <span className="text-xl font-semibold">AcademiaAI</span>}
         </Link>
       </SidebarHeader>
       <SidebarContent>

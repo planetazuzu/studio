@@ -2,7 +2,7 @@
 
 > **Nota sobre la Arquitectura:** Este archivo define el esquema para la base de datos remota en **NocoDB**, que actúa como el backend persistente. La aplicación utiliza **Dexie.js** (IndexedDB) como una base de datos local rápida en el navegador para una experiencia "offline-first". Los datos se sincronizan desde Dexie a estas tablas de NocoDB a través del "Gestor de Sincronización" en los ajustes de la aplicación.
 
-Aquí tienes la estructura de las tablas principales que necesitas configurar en tu instancia de NocoDB para la aplicación TalentOS.
+Aquí tienes la estructura de las tablas principales que necesitas configurar en tu instancia de NocoDB para la aplicación AcademiaAI.
 
 **Consejo:** Presta especial atención a los tipos de columna (`Column Type`) y a las relaciones (`Links`).
 
