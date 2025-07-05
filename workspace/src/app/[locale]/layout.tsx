@@ -1,7 +1,5 @@
-import { ReactNode } from 'react';
 
-// This layout is being disabled to prevent conflicts with the main /src/app/layout.tsx
-// It was causing server crashes by importing a non-existent package.
-export default function DisabledLocaleLayout({ children }: { children: ReactNode }) {
+// This file has been emptied to remove i18n conflicts.
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
