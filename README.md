@@ -23,6 +23,7 @@ Para entender completamente la aplicación, su arquitectura y cómo ponerla en m
 | 🚀 **[Guía de Configuración](./docs/SETUP_GUIDE.md)**     | Pasos para clonar, instalar y configurar el entorno de desarrollo local.                         |
 | ☁️ **[Guía de Despliegue](./docs/DEPLOYMENT.md)**         | Instrucciones para desplegar la aplicación en producción y configurar las variables de entorno.    |
 | 🗃️ **[Esquema de NocoDB](./docs/nocodb_schema.md)**       | Define la estructura de las tablas necesarias en tu instancia de NocoDB para la sincronización.   |
+| 🔧 **[Conexión con NocoDB](./docs/nocodb_setup.md)**     | Guía para obtener las credenciales de NocoDB y conectar la aplicación para la sincronización.    |
 
 ## Tech Stack
 
