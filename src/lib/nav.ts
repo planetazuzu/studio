@@ -1,4 +1,4 @@
-import { AreaChart, BookOpen, Home, Settings, Users, Calendar, Library, Megaphone, MessagesSquare, ClipboardCheck, UserRoundCog, Wallet, Trophy, Route, type LucideIcon, UserCircle, BellRing, ShieldAlert } from 'lucide-react';
+import { AreaChart, BookOpen, Home, Settings, Users, Calendar, Library, Megaphone, MessagesSquare, ClipboardCheck, UserRoundCog, Wallet, Trophy, Route, type LucideIcon, UserCircle, BellRing, ShieldAlert, GraduationCap } from 'lucide-react';
 import type { Role } from './types';
 
 export type NavItem = {
@@ -20,13 +20,13 @@ const allRoles: Role[] = [
 const managerRoles: Role[] = ['Gestor de RRHH', 'Jefe de Formación', 'Administrador General'];
 
 export const getNavItems = (): NavItem[] => [
-  { href: '/dashboard', icon: Home, label: 'Dashboard', roles: allRoles },
+  { href: '/dashboard/dashboard', icon: Home, label: 'Dashboard', roles: allRoles },
   { href: '/dashboard/courses', icon: BookOpen, label: 'Cursos', roles: allRoles },
   { href: '/dashboard/enrollments', icon: ClipboardCheck, label: 'Inscripciones', roles: allRoles },
   { href: '/dashboard/leaderboard', icon: Trophy, label: 'Clasificación', roles: allRoles },
   {
     href: '/dashboard/learning-paths',
-    icon: Route,
+    icon: GraduationCap,
     label: 'Planes de Carrera',
     roles: managerRoles,
   },
@@ -34,7 +34,7 @@ export const getNavItems = (): NavItem[] => [
     href: '/dashboard/calendar',
     icon: Calendar,
     label: 'Calendario',
-    roles: managerRoles,
+    roles: allRoles,
   },
   {
     href: '/dashboard/library',
