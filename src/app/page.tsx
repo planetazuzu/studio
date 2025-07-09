@@ -1,11 +1,37 @@
-import { ArrowRight, Bot, CheckCircle, Target, Zap } from 'lucide-react';
+'use client';
+
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { ArrowRight, Bot, CheckCircle, Loader2, Target, Zap } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { AppLogo } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { useAuth } from '@/contexts/auth';
 
 export default function LandingPage() {
+  const { user, isLoading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    // If auth state is determined and user is logged in, redirect them.
+    if (!isLoading && user) {
+      router.push('/dashboard');
+    }
+  }, [user, isLoading, router]);
+
+  // While checking auth state or if user exists (and redirect is pending), show a loader.
+  // This prevents the landing page from flashing for logged-in users.
+  if (isLoading || user) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background">
+        <Loader2 className="h-16 w-16 animate-spin" />
+      </div>
+    );
+  }
+
+  // If auth is done and there's no user, show the landing page.
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur-sm">
