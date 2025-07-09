@@ -93,7 +93,7 @@ export default function ScormImportPage() {
             instructor: 'Instructor SCORM',
             duration: 'Variable',
             modality: 'Online' as const,
-            image: 'https://placehold.co/600x400.png',
+            image: '/images/courses/default.png',
             aiHint: 'scorm elearning',
             isScorm: true,
             scormPackage: file, // Store the blob

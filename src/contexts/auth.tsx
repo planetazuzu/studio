@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
@@ -38,6 +39,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
     initializeApp();
   }, [authService]);
+  
+  useEffect(() => {
+      if (!isLoading && !user && !['/', '/login', '/register'].includes(pathname)) {
+          router.push('/login');
+      }
+  }, [user, isLoading, router, pathname]);
 
   const login = async (email: string, password?: string) => {
     setIsLoading(true);
@@ -56,13 +63,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     await authService.logout();
     setUser(null);
-    router.push('/login');
+    router.push('/');
   };
 
   const value = { user, isLoading, login, logout };
 
-  // If loading, show a spinner, unless we're on a public page
-  const isPublicPage = ['/', '/login', '/register'].includes(pathname);
+  const isPublicPage = ['/', '/login', '/register', '/pending-approval'].includes(pathname);
   if (isLoading && !isPublicPage) {
       return (
           <div className="flex h-screen w-full items-center justify-center">

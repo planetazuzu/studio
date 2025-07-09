@@ -15,15 +15,6 @@ export default function LandingPage() {
   const { user, isLoading } = useAuth();
   const router = useRouter();
 
-  useEffect(() => {
-    // If auth state is determined and user is logged in, redirect them.
-    if (!isLoading && user) {
-      router.push('/dashboard');
-    }
-  }, [user, isLoading, router]);
-
-  // While checking auth state or if user exists (and redirect is pending), show a loader.
-  // This prevents the landing page from flashing for logged-in users.
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
@@ -31,18 +22,7 @@ export default function LandingPage() {
       </div>
     );
   }
-  
-  // If the user is logged in, this component will shortly redirect, so we render a loader
-  // to prevent the landing page from flashing.
-  if (user) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-background">
-        <Loader2 className="h-16 w-16 animate-spin" />
-      </div>
-    );
-  }
 
-  // If auth is done and there's no user, show the landing page.
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur-sm">
@@ -53,12 +33,20 @@ export default function LandingPage() {
           </Link>
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <Button asChild variant="outline">
-              <Link href="/login">Iniciar Sesión</Link>
-            </Button>
-            <Button asChild>
-              <Link href="/register">Solicitar una Demo</Link>
-            </Button>
+            {user ? (
+                 <Button asChild>
+                    <Link href="/dashboard">Ir al Dashboard</Link>
+                </Button>
+            ) : (
+                <>
+                    <Button asChild variant="outline">
+                      <Link href="/login">Iniciar Sesión</Link>
+                    </Button>
+                    <Button asChild>
+                      <Link href="/register">Solicitar una Demo</Link>
+                    </Button>
+                </>
+            )}
           </div>
         </div>
       </header>
@@ -84,7 +72,7 @@ export default function LandingPage() {
           </div>
           <div className="relative">
             <Image
-              src="https://placehold.co/600x400.png"
+              src="/images/landing/dashboard.png"
               alt="Dashboard de TalentOS"
               width={600}
               height={400}
@@ -136,7 +124,7 @@ export default function LandingPage() {
           <div className="container grid max-w-7xl items-center gap-12 md:grid-cols-2">
              <div>
                <Image
-                src="https://placehold.co/500x500.png"
+                src="/images/landing/analytics.png"
                 alt="Gráficas de analíticas"
                 width={500}
                 height={500}

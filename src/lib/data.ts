@@ -107,7 +107,7 @@ export const courses: Omit<Course, 'progress'>[] = [
     duration: '8 horas',
     modality: 'Presencial',
     status: 'published',
-    image: 'https://placehold.co/600x400.png',
+    image: '/images/courses/paramedic-cpr.png',
     aiHint: 'paramedic cpr',
     startDate: new Date(new Date().setDate(new Date().getDate() + 5)).toISOString(),
     endDate: new Date(new Date().setDate(new Date().getDate() + 5)).toISOString(),
@@ -126,7 +126,7 @@ export const courses: Omit<Course, 'progress'>[] = [
     duration: '20 horas',
     modality: 'Mixta',
     status: 'published',
-    image: 'https://placehold.co/600x400.png',
+    image: '/images/courses/ambulance-driving.png',
     aiHint: 'ambulance driving',
     startDate: new Date(new Date().setDate(new Date().getDate() + 15)).toISOString(),
     endDate: new Date(new Date().setDate(new Date().getDate() + 16)).toISOString(),
@@ -145,7 +145,7 @@ export const courses: Omit<Course, 'progress'>[] = [
     duration: '12 horas',
     modality: 'Online',
     status: 'published',
-    image: 'https://placehold.co/600x400.png',
+    image: '/images/courses/emergency-dispatcher.png',
     aiHint: 'emergency dispatcher',
     startDate: new Date(new Date().setDate(new Date().getDate() + 10)).toISOString(),
     endDate: new Date(new Date().setDate(new Date().getDate() + 10)).toISOString(),
@@ -164,7 +164,7 @@ export const courses: Omit<Course, 'progress'>[] = [
     duration: '10 horas',
     modality: 'Online',
     status: 'published',
-    image: 'https://placehold.co/600x400.png',
+    image: '/images/courses/mental-health-support.png',
     aiHint: 'mental health support',
     startDate: new Date(new Date().setDate(new Date().getDate() + 25)).toISOString(),
     modules: [
@@ -182,7 +182,7 @@ export const courses: Omit<Course, 'progress'>[] = [
     duration: '16 horas',
     modality: 'Presencial',
     status: 'published',
-    image: 'https://placehold.co/600x400.png',
+    image: '/images/courses/airway-management-paramedic.png',
     aiHint: 'airway management paramedic',
     startDate: new Date(new Date().setDate(new Date().getDate() + 30)).toISOString(),
     modules: [
@@ -200,7 +200,7 @@ export const courses: Omit<Course, 'progress'>[] = [
     duration: '25 horas',
     modality: 'Online',
     status: 'published',
-    image: 'https://placehold.co/600x400.png',
+    image: '/images/courses/pharmacology-emergency.png',
     aiHint: 'pharmacology emergency',
     modules: [
       { id: 'm6_1', title: 'Principios de Farmacocinética', duration: '5 horas', content: 'Conceptos básicos de farmacología.' },
@@ -217,7 +217,7 @@ export const courses: Omit<Course, 'progress'>[] = [
     duration: '14 horas',
     modality: 'Mixta',
     status: 'published',
-    image: 'https://placehold.co/600x400.png',
+    image: '/images/courses/patient-immobilization-training.png',
     aiHint: 'patient immobilization training',
     startDate: new Date(new Date().setDate(new Date().getDate() + 45)).toISOString(),
     modules: [
@@ -235,7 +235,7 @@ export const courses: Omit<Course, 'progress'>[] = [
     duration: '18 horas',
     modality: 'Presencial',
     status: 'published',
-    image: 'https://placehold.co/600x400.png',
+    image: '/images/courses/pediatric-emergency-care.png',
     aiHint: 'pediatric emergency care',
     modules: [
       { id: 'm8_1', title: 'Triángulo de Evaluación Pediátrica', duration: '4 horas', content: 'Contenido sobre evaluación pediátrica.' },
@@ -252,7 +252,7 @@ export const courses: Omit<Course, 'progress'>[] = [
     duration: '30 horas',
     modality: 'Online',
     status: 'published',
-    image: 'https://placehold.co/600x400.png',
+    image: '/images/courses/trauma-care-update.png',
     aiHint: 'trauma care update',
     modules: [
       { id: 'm9_1', title: 'Evaluación Primaria (XABCDE)', duration: '10 horas', content: 'Contenido sobre evaluación de trauma.' },
@@ -269,7 +269,7 @@ export const courses: Omit<Course, 'progress'>[] = [
     duration: '22 horas',
     modality: 'Mixta',
     status: 'published',
-    image: 'https://placehold.co/600x400.png',
+    image: '/images/courses/mass-casualty-incident.png',
     aiHint: 'mass casualty incident',
     modules: [
       { id: 'm10_1', title: 'Principios de IMV y Mando', duration: '8 horas', content: 'Contenido teórico sobre IMV.' },
@@ -355,4 +355,5 @@ export const defaultAIConfig: AIConfig = {
         emailGeneration: true,
     }
 };
+
 

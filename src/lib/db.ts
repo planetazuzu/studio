@@ -345,7 +345,7 @@ export async function addCourse(course: Partial<Omit<Course, 'id' | 'isSynced' |
     instructor: course.instructor || 'Por definir',
     duration: course.duration || 'Por definir',
     modality: course.modality || 'Online',
-    image: course.image || 'https://placehold.co/600x400.png',
+    image: course.image || '/images/courses/default.png',
     aiHint: course.aiHint || '',
     modules: course.modules || [],
     status: course.status || 'draft',
@@ -468,7 +468,7 @@ export async function getAllEnrollmentsWithDetails(): Promise<EnrollmentWithDeta
         userName: userMap.get(e.studentId)?.name || 'Usuario desconocido',
         userEmail: userMap.get(e.studentId)?.email || 'Email desconocido',
         courseTitle: courseMap.get(e.courseId)?.title || 'Curso desconocido',
-        courseImage: courseMap.get(e.courseId)?.image || 'https://placehold.co/600x400.png',
+        courseImage: courseMap.get(e.courseId)?.image || '/images/courses/default.png',
     }));
 }
 
@@ -486,7 +486,7 @@ export async function getEnrollmentsForStudent(userId: string): Promise<Enrollme
         userName: user?.name || 'Usuario desconocido',
         userEmail: user?.email || 'Email desconocido',
         courseTitle: courseMap.get(e.courseId)?.title || 'Curso desconocido',
-        courseImage: courseMap.get(e.courseId)?.image || 'https://placehold.co/600x400.png',
+        courseImage: courseMap.get(e.courseId)?.image || '/images/courses/default.png',
     })).sort((a, b) => new Date(b.requestDate).getTime() - new Date(a.requestDate).getTime());
 }
 

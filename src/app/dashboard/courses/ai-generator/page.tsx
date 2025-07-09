@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -105,7 +106,7 @@ export default function AIGeneratorPage() {
     try {
         const newCourseData = {
             ...generatedCourse,
-            image: 'https://placehold.co/600x400.png',
+            image: '/images/courses/default.png',
             aiHint: generatedCourse.title.toLowerCase().split(' ').slice(0, 2).join(' '),
             modules: generatedCourse.modules.map((m: any, i: number) => ({...m, id: `mod_${Date.now()}_${i}`})),
         };
