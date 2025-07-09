@@ -165,7 +165,7 @@ export async function addUser(user: Omit<User, 'id' | 'avatar' | 'isSynced' | 'u
     if (existingUser) {
         throw new Error('Este correo electrónico ya está en uso.');
     }
-    
+
     const requiresApproval = ['Formador', 'Jefe de Formación', 'Gestor de RRHH', 'Administrador General'].includes(user.role);
 
     const newUser: User = {
@@ -181,7 +181,26 @@ export async function addUser(user: Omit<User, 'id' | 'avatar' | 'isSynced' | 'u
             channels: [],
         },
     };
-    await db.users.add(newUser);
+
+    // Use a transaction to ensure both the user and their learning path are added atomically.
+    await db.transaction('rw', db.users, db.learningPaths, db.userLearningPathProgress, async () => {
+        await db.users.add(newUser);
+
+        // If the user is approved, assign a learning path immediately.
+        if (newUser.status === 'approved') {
+            const pathForRole = await db.learningPaths.where('targetRole').equals(user.role).first();
+            if (pathForRole?.id) {
+                await db.userLearningPathProgress.add({
+                    userId: newUser.id,
+                    learningPathId: pathForRole.id,
+                    completedCourseIds: [],
+                    isSynced: false,
+                    updatedAt: new Date().toISOString(),
+                });
+            }
+        }
+    });
+
     return newUser;
 }
 
@@ -199,7 +218,38 @@ export async function bulkAddUsers(users: Omit<User, 'id' | 'avatar' | 'isSynced
             channels: [],
         },
     }));
-    return await db.users.bulkAdd(newUsers, { allKeys: true });
+
+    // Use a transaction to ensure both users and their learning paths are added atomically.
+    return db.transaction('rw', db.users, db.learningPaths, db.userLearningPathProgress, async () => {
+        // Add users and get their generated keys (though we use our pre-generated ones)
+        const userIds = await db.users.bulkAdd(newUsers, { allKeys: true }) as string[];
+
+        // Fetch all learning paths once to avoid querying in a loop
+        const allPaths = await db.learningPaths.toArray();
+        const pathsByRole = new Map<Role, LearningPath>();
+        allPaths.forEach(p => pathsByRole.set(p.targetRole, p));
+
+        const progressToAdd: Omit<UserLearningPathProgress, 'id'>[] = [];
+
+        newUsers.forEach(user => {
+            const pathForRole = pathsByRole.get(user.role);
+            if (pathForRole?.id) {
+                progressToAdd.push({
+                    userId: user.id,
+                    learningPathId: pathForRole.id,
+                    completedCourseIds: [],
+                    isSynced: false,
+                    updatedAt: new Date().toISOString(),
+                });
+            }
+        });
+
+        if (progressToAdd.length > 0) {
+            await db.userLearningPathProgress.bulkAdd(progressToAdd);
+        }
+
+        return userIds;
+    });
 }
 
 export async function getAllUsers(): Promise<User[]> {
@@ -211,27 +261,69 @@ export async function getUserById(id: string): Promise<User | undefined> {
 }
 
 export async function updateUser(id: string, data: Partial<Omit<User, 'id' | 'isSynced' | 'password'>>): Promise<number> {
-    return await db.users.update(id, { ...data, updatedAt: new Date().toISOString(), isSynced: false });
+    const currentUser = await db.users.get(id);
+    if (!currentUser) return 0;
+    
+    // Check if role is being changed to something new
+    const roleIsChanging = data.role && currentUser.role !== data.role;
+
+    return db.transaction('rw', db.users, db.learningPaths, db.userLearningPathProgress, async () => {
+        const result = await db.users.update(id, { ...data, updatedAt: new Date().toISOString(), isSynced: false });
+        
+        if (roleIsChanging) {
+            const pathForNewRole = await db.learningPaths.where('targetRole').equals(data.role!).first();
+            if (pathForNewRole?.id) {
+                // Check if the user is already on this path to avoid duplicates
+                const existingProgress = await db.userLearningPathProgress.where({ userId: id, learningPathId: pathForNewRole.id }).first();
+                if (!existingProgress) {
+                    await db.userLearningPathProgress.add({
+                        userId: id,
+                        learningPathId: pathForNewRole.id,
+                        completedCourseIds: [],
+                        isSynced: false,
+                        updatedAt: new Date().toISOString(),
+                    });
+                }
+            }
+        }
+        return result;
+    });
 }
 
 export async function updateUserStatus(userId: string, status: UserStatus): Promise<number> {
     const user = await db.users.get(userId);
     if (!user) return 0;
-    
-    const result = await db.users.update(userId, { status, updatedAt: new Date().toISOString(), isSynced: false });
 
-    if (status === 'approved' && user.status === 'pending_approval') {
-        await addNotification({
-            userId: user.id,
-            message: `¡Tu cuenta ha sido aprobada! Ya puedes acceder a todas las funcionalidades de la plataforma.`,
-            type: 'enrollment_approved', // Re-using a generic type.
-            relatedUrl: `/dashboard`,
-            isRead: false,
-            timestamp: new Date().toISOString(),
-        });
-    }
+    return db.transaction('rw', db.users, db.learningPaths, db.userLearningPathProgress, db.notifications, async () => {
+        const result = await db.users.update(userId, { status, updatedAt: new Date().toISOString(), isSynced: false });
 
-    return result;
+        if (status === 'approved' && user.status === 'pending_approval') {
+            // Assign learning path on approval
+            const pathForRole = await db.learningPaths.where('targetRole').equals(user.role).first();
+            if (pathForRole?.id) {
+                const existingProgress = await db.userLearningPathProgress.where({ userId: user.id, learningPathId: pathForRole.id }).first();
+                if (!existingProgress) {
+                    await db.userLearningPathProgress.add({
+                        userId: user.id,
+                        learningPathId: pathForRole.id,
+                        completedCourseIds: [],
+                        isSynced: false,
+                        updatedAt: new Date().toISOString(),
+                    });
+                }
+            }
+
+            await addNotification({
+                userId: user.id,
+                message: `¡Tu cuenta ha sido aprobada! Ya puedes acceder a todas las funcionalidades de la plataforma.`,
+                type: 'enrollment_approved',
+                relatedUrl: `/dashboard`,
+                isRead: false,
+                timestamp: new Date().toISOString(),
+            });
+        }
+        return result;
+    });
 }
 
 export async function saveFcmToken(userId: string, fcmToken: string): Promise<number> {
