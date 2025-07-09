@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect } from 'react';
@@ -23,7 +24,17 @@ export default function LandingPage() {
 
   // While checking auth state or if user exists (and redirect is pending), show a loader.
   // This prevents the landing page from flashing for logged-in users.
-  if (isLoading || user) {
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background">
+        <Loader2 className="h-16 w-16 animate-spin" />
+      </div>
+    );
+  }
+  
+  // If the user is logged in, this component will shortly redirect, so we render a loader
+  // to prevent the landing page from flashing.
+  if (user) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
         <Loader2 className="h-16 w-16 animate-spin" />
