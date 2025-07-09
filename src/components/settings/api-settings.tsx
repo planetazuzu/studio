@@ -45,12 +45,12 @@ export function ApiSettings() {
                         <h3 className="text-lg font-semibold flex items-center gap-2"><Server />NocoDB (Base de Datos Remota)</h3>
                          <div className="space-y-4">
                             <div className="space-y-2">
-                                <Label htmlFor="nocodbApiUrl">URL de la API de NocoDB</Label>
-                                <Input id="nocodbApiUrl" name="nocodbApiUrl" type="text" placeholder="https://mi.nocodb.instance/api/v2" />
+                                <Label htmlFor="nocodb_api_url">URL de la API de NocoDB</Label>
+                                <Input id="nocodb_api_url" name="nocodb_api_url" type="text" placeholder="https://mi.nocodb.instance/api/v2" />
                             </div>
                              <div className="space-y-2">
-                                <Label htmlFor="nocodbAuthToken">Token de Autenticación (xc-token)</Label>
-                                <Input id="nocodbAuthToken" name="nocodbAuthToken" type="password" placeholder="Introduce tu token de API de NocoDB" />
+                                <Label htmlFor="nocodb_auth_token">Token de Autenticación (xc-token)</Label>
+                                <Input id="nocodb_auth_token" name="nocodb_auth_token" type="password" placeholder="Introduce tu token de API de NocoDB" />
                             </div>
                         </div>
                     </div>
@@ -59,12 +59,12 @@ export function ApiSettings() {
                         <h3 className="text-lg font-semibold flex items-center gap-2"><Mail/>SendGrid (Email)</h3>
                          <div className="space-y-4">
                             <div className="space-y-2">
-                                <Label htmlFor="sendgridApiKey">Clave API de SendGrid</Label>
-                                <Input id="sendgridApiKey" name="sendgrid_api_key" type="password" placeholder="Introduce tu clave API de SendGrid" />
+                                <Label htmlFor="sendgrid_api_key">Clave API de SendGrid</Label>
+                                <Input id="sendgrid_api_key" name="sendgrid_api_key" type="password" placeholder="Introduce tu clave API de SendGrid" />
                             </div>
                              <div className="space-y-2">
-                                <Label htmlFor="sendgridFromEmail">Email Remitente</Label>
-                                <Input id="sendgridFromEmail" name="sendgrid_from_email" type="email" placeholder="notificaciones@tu-empresa.com" />
+                                <Label htmlFor="sendgrid_from_email">Email Remitente</Label>
+                                <Input id="sendgrid_from_email" name="sendgrid_from_email" type="email" placeholder="notificaciones@tu-empresa.com" />
                             </div>
                         </div>
                     </div>
@@ -73,20 +73,20 @@ export function ApiSettings() {
                         <h3 className="text-lg font-semibold flex items-center gap-2"><MessageSquare/>Twilio (WhatsApp)</h3>
                          <div className="space-y-4">
                              <div className="space-y-2">
-                                <Label htmlFor="twilioAccountSid">Account SID de Twilio</Label>
-                                <Input id="twilioAccountSid" name="twilio_account_sid" type="text" placeholder="AC..." />
+                                <Label htmlFor="twilio_account_sid">Account SID de Twilio</Label>
+                                <Input id="twilio_account_sid" name="twilio_account_sid" type="text" placeholder="AC..." />
                             </div>
                              <div className="space-y-2">
-                                <Label htmlFor="twilioAuthToken">Auth Token de Twilio</Label>
-                                <Input id="twilioAuthToken" name="twilio_auth_token" type="password" placeholder="Introduce tu Auth Token" />
+                                <Label htmlFor="twilio_auth_token">Auth Token de Twilio</Label>
+                                <Input id="twilio_auth_token" name="twilio_auth_token" type="password" placeholder="Introduce tu Auth Token" />
                             </div>
                              <div className="space-y-2">
-                                <Label htmlFor="twilioFromPhone">Número de WhatsApp Remitente</Label>
-                                <Input id="twilioFromPhone" name="twilio_whatsapp_from" type="text" placeholder="+14155238886" />
+                                <Label htmlFor="twilio_whatsapp_from">Número de WhatsApp Remitente</Label>
+                                <Input id="twilio_whatsapp_from" name="twilio_whatsapp_from" type="text" placeholder="+14155238886" />
                             </div>
                              <div className="space-y-2">
-                                <Label htmlFor="twilioToTest">Número de WhatsApp para Pruebas</Label>
-                                <Input id="twilioToTest" name="twilio_whatsapp_to_test" type="text" placeholder="+34123456789" />
+                                <Label htmlFor="twilio_whatsapp_to_test">Número de WhatsApp para Pruebas</Label>
+                                <Input id="twilio_whatsapp_to_test" name="twilio_whatsapp_to_test" type="text" placeholder="+34123456789" />
                             </div>
                         </div>
                     </div>
