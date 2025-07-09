@@ -23,6 +23,8 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
     ],
+    // Allow loading images from the same origin (for local files in /public)
+    domains: ['localhost'],
   },
 };
 
