@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ArrowLeft, Loader2, PlusCircle, Edit, Trash2, Link2, X, ChevronDown } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -35,7 +36,7 @@ const courseFormSchema = z.object({
   duration: z.string().min(1, { message: "La duración es obligatoria." }),
   modality: z.enum(['Online', 'Presencial', 'Mixta'], { errorMap: () => ({ message: "Debes seleccionar una modalidad." }) }),
   capacity: z.coerce.number().int().optional().transform(v => v === 0 ? undefined : v),
-  image: z.string().url({ message: "Debe ser una URL válida." }),
+  image: z.string(), // Can be URL or Data URL
   startDate: z.string().optional(),
   endDate: z.string().optional(),
   mandatoryForRoles: z.array(z.string()).optional(),
@@ -204,7 +205,7 @@ export default function EditCoursePage() {
         duration: '',
         modality: undefined,
         capacity: undefined,
-        image: '',
+        image: '/images/courses/default.png',
         startDate: '',
         endDate: '',
         mandatoryForRoles: [],
@@ -212,6 +213,8 @@ export default function EditCoursePage() {
   });
   
   const { isSubmitting, isDirty, isLoading } = form.formState;
+
+  const imageValue = form.watch('image');
 
   useEffect(() => {
     if (courseId) {
@@ -368,7 +371,42 @@ export default function EditCoursePage() {
                                     </FormItem>
                                 )} />
                             </div>
-                            <FormField control={form.control} name="image" render={({ field }) => (<FormItem><FormLabel>URL de la Imagen</FormLabel><FormControl><Input type="url" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField
+                                control={form.control}
+                                name="image"
+                                render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Imagen de Cabecera</FormLabel>
+                                    <FormDescription>Recomendado: 1200x600px. Máx 1MB.</FormDescription>
+                                    <FormControl>
+                                    <Input
+                                        type="file"
+                                        accept="image/png, image/jpeg"
+                                        onChange={(e) => {
+                                        if (e.target.files && e.target.files[0]) {
+                                            const file = e.target.files[0];
+                                            if (file.size > 1 * 1024 * 1024) {
+                                                toast({ title: 'Archivo demasiado grande', description: 'La imagen no debe superar 1MB.', variant: 'destructive'});
+                                                return;
+                                            }
+                                            const reader = new FileReader();
+                                            reader.onloadend = () => {
+                                                field.onChange(reader.result as string);
+                                            };
+                                            reader.readAsDataURL(file);
+                                        }
+                                        }}
+                                    />
+                                    </FormControl>
+                                    {imageValue && (
+                                        <div className="mt-4 relative w-full h-48 rounded-lg overflow-hidden">
+                                            <Image src={imageValue} alt="Vista previa de la imagen del curso" layout="fill" objectFit="cover" />
+                                        </div>
+                                    )}
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
                             <FormField
                                 control={form.control}
                                 name="mandatoryForRoles"

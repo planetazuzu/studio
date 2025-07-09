@@ -3,6 +3,7 @@
 
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ArrowLeft, ChevronDown, Loader2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -30,7 +31,7 @@ const courseFormSchema = z.object({
   duration: z.string().min(1, { message: "La duración es obligatoria." }),
   modality: z.enum(['Online', 'Presencial', 'Mixta'], { errorMap: () => ({ message: "Debes seleccionar una modalidad." }) }),
   capacity: z.coerce.number().int().optional().transform(v => v === 0 ? undefined : v),
-  image: z.string().url({ message: "Debe ser una URL válida." }).optional().default('/images/courses/default.png'),
+  image: z.string().optional().default('/images/courses/default.png'),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
   mandatoryForRoles: z.array(z.string()).optional(),
@@ -63,6 +64,7 @@ export default function NewCoursePage() {
   });
   
   const { isSubmitting } = form.formState;
+  const imageValue = form.watch('image');
 
   const onSubmit = async (data: CourseFormValues) => {
     const newCourseData = {
@@ -154,7 +156,42 @@ export default function NewCoursePage() {
                                     </FormItem>
                                 )} />
                             </div>
-                             <FormField control={form.control} name="image" render={({ field }) => (<FormItem><FormLabel>URL de la Imagen</FormLabel><FormControl><Input type="url" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            <FormField
+                                control={form.control}
+                                name="image"
+                                render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Imagen de Cabecera</FormLabel>
+                                    <FormDescription>Recomendado: 1200x600px. Máx 1MB.</FormDescription>
+                                    <FormControl>
+                                    <Input
+                                        type="file"
+                                        accept="image/png, image/jpeg"
+                                        onChange={(e) => {
+                                        if (e.target.files && e.target.files[0]) {
+                                            const file = e.target.files[0];
+                                            if (file.size > 1 * 1024 * 1024) {
+                                                toast({ title: 'Archivo demasiado grande', description: 'La imagen no debe superar 1MB.', variant: 'destructive'});
+                                                return;
+                                            }
+                                            const reader = new FileReader();
+                                            reader.onloadend = () => {
+                                                field.onChange(reader.result as string);
+                                            };
+                                            reader.readAsDataURL(file);
+                                        }
+                                        }}
+                                    />
+                                    </FormControl>
+                                    {imageValue && imageValue !== '/images/courses/default.png' && (
+                                        <div className="mt-4 relative w-full h-48 rounded-lg overflow-hidden">
+                                            <Image src={imageValue} alt="Vista previa de la imagen del curso" layout="fill" objectFit="cover" />
+                                        </div>
+                                    )}
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
                             <FormField
                                 control={form.control}
                                 name="mandatoryForRoles"
