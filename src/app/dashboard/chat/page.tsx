@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef, Suspense, useMemo } from 'react';
@@ -13,6 +14,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSearchParams } from 'next/navigation';
 import { NewMessageDialog } from '@/components/chat/NewMessageDialog';
+import { CreateChannelDialog } from '@/components/chat/CreateChannelDialog';
 import { ChatMessageItem } from '@/components/chat/ChatMessageItem';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
@@ -28,6 +30,7 @@ function ChatPageContent() {
     const [newMessage, setNewMessage] = useState('');
     const [isSending, setIsSending] = useState(false);
     const [isNewMessageDialogOpen, setIsNewMessageDialogOpen] = useState(false);
+    const [isCreateChannelOpen, setIsCreateChannelOpen] = useState(false);
 
     const scrollAreaRef = useRef<HTMLDivElement>(null);
 
@@ -99,6 +102,7 @@ function ChatPageContent() {
     const allChannels = [...(publicChannels || []), ...(dmThreads || [])];
     const selectedChannel = allChannels.find(c => c.id === selectedChannelId);
     const selectedDmThread = dmThreads?.find(t => t.id === selectedChannelId);
+    const isManager = user && ['Jefe de Formación', 'Administrador General'].includes(user.role);
 
 
     return (
@@ -111,10 +115,18 @@ function ChatPageContent() {
                 )}>
                     <CardHeader className="flex flex-row items-center justify-between">
                         <CardTitle>Canales</CardTitle>
-                        <Button variant="ghost" size="icon" onClick={() => setIsNewMessageDialogOpen(true)} className="h-8 w-8">
-                            <MessageSquarePlus className="h-5 w-5" />
-                            <span className="sr-only">Nuevo Mensaje</span>
-                        </Button>
+                        <div className="flex items-center">
+                            {isManager && (
+                                <Button variant="ghost" size="icon" onClick={() => setIsCreateChannelOpen(true)} className="h-8 w-8">
+                                    <Hash className="h-4 w-4" />
+                                    <span className="sr-only">Crear Canal</span>
+                                </Button>
+                            )}
+                            <Button variant="ghost" size="icon" onClick={() => setIsNewMessageDialogOpen(true)} className="h-8 w-8">
+                                <MessageSquarePlus className="h-5 w-5" />
+                                <span className="sr-only">Nuevo Mensaje</span>
+                            </Button>
+                        </div>
                     </CardHeader>
                     <ScrollArea className="flex-1">
                         <CardContent className="pt-0">
@@ -233,6 +245,7 @@ function ChatPageContent() {
                 </div>
             </Card>
             <NewMessageDialog open={isNewMessageDialogOpen} onOpenChange={setIsNewMessageDialogOpen} />
+            <CreateChannelDialog open={isCreateChannelOpen} onOpenChange={setIsCreateChannelOpen} />
         </div>
     );
 }

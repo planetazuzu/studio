@@ -740,6 +740,19 @@ export async function getPublicChatChannels(): Promise<ChatChannel[]> {
     return await db.chatChannels.where('type').equals('public').sortBy('name');
 }
 
+export async function addPublicChatChannel(name: string, description: string): Promise<number> {
+    const newChannel: ChatChannel = {
+        id: `channel_${name.toLowerCase().replace(/\s+/g, '-')}`,
+        name: name,
+        description: description,
+        type: 'public',
+        isSynced: false,
+        updatedAt: new Date().toISOString(),
+    };
+    return await db.chatChannels.add(newChannel);
+}
+
+
 export async function getDirectMessageThreadsForUserWithDetails(userId: string): Promise<DirectMessageThread[]> {
     const threads = await db.chatChannels.where('participantIds').equals(userId).toArray();
     const otherParticipantIds = threads.flatMap(t => t.participantIds!.filter(pid => pid !== userId));
