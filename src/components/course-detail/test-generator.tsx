@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -86,7 +87,7 @@ export function TestGenerator({ courseTitle, courseContent, studentName, aiConfi
         assignmentName: `Test de ${courseTitle}`,
         score: score,
         questions: questionsForFeedback,
-      }));
+      });
       setFeedback(result.feedback);
     } catch (e: any) {
       toast({
