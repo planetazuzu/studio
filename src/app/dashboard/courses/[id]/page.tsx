@@ -10,7 +10,7 @@ import { es } from 'date-fns/locale';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { CheckCircle, Clock, Bot, Loader2, Sparkles, Send, PlusCircle, CheckCircle2, XCircle, MessageSquare, Book, File, Video, Link as LinkIcon, FilePenLine, AlertTriangle, Pencil, Rocket, EyeOff, Archive, Users, FileText, Star, CalendarDays } from 'lucide-react';
+import { CheckCircle, Clock, Bot, Loader2, Sparkles, Send, PlusCircle, CheckCircle2, XCircle, MessageSquare, Book, File, Video, Link as LinkIcon, FilePenLine, AlertTriangle, Pencil, Rocket, EyeOff, Archive, Users, FileText, Star, CalendarDays, Users2 } from 'lucide-react';
 import QRCode from 'qrcode';
 import { cn } from '@/lib/utils';
 import { summarizeModuleContent } from '@/ai/flows/summarize-module-content';
@@ -113,6 +113,11 @@ export default function CourseDetailPage() {
   const [summaryLoading, setSummaryLoading] = useState<Record<string, boolean>>({});
 
   const aiConfig = useLiveQuery<AIConfig | undefined>(() => db.getAIConfig());
+  
+  const enrollmentCount = useLiveQuery(
+    () => db.getApprovedEnrollmentCount(courseId),
+    [courseId]
+  );
 
   const fetchCourse = useCallback(async () => {
         setLoadingCourse(true);
@@ -181,6 +186,7 @@ export default function CourseDetailPage() {
   const canAccessForum = canFullyManage || isEnrolled;
   const canManageCourse = canFullyManage || isInstructor;
   const isMandatory = user && course.mandatoryForRoles?.includes(user.role);
+  const isCourseFull = course.capacity !== undefined && enrollmentCount !== undefined && enrollmentCount >= course.capacity;
 
 
   const handleEnrollmentRequest = async () => {
@@ -191,11 +197,11 @@ export default function CourseDetailPage() {
             title: "Solicitud enviada",
             description: "Tu solicitud de inscripción ha sido enviada para su aprobación.",
         });
-    } catch (error) {
+    } catch (error: any) {
         console.error("Failed to request enrollment", error);
         toast({
-            title: "Error",
-            description: "No se pudo enviar la solicitud. Inténtalo de nuevo.",
+            title: "Error en la Solicitud",
+            description: error.message,
             variant: "destructive",
         })
     }
@@ -336,7 +342,18 @@ export default function CourseDetailPage() {
             {isMandatory && <Badge variant="destructive" className="w-fit mb-2"><AlertTriangle className="h-3 w-3 mr-1.5" />Obligatorio</Badge>}
           </div>
           <h1 className="text-4xl font-bold text-white">{course.title}</h1>
-          <p className="text-lg text-white/90">Impartido por {course.instructor}</p>
+          <div className="flex items-center gap-4 text-white/90">
+            <p>Impartido por {course.instructor}</p>
+             {course.capacity !== undefined && enrollmentCount !== undefined && (
+                <>
+                    <span className="text-white/50">•</span>
+                    <div className="flex items-center gap-2">
+                        <Users2 className="h-5 w-5" />
+                        <span>{enrollmentCount} / {course.capacity} plazas</span>
+                    </div>
+                </>
+            )}
+          </div>
         </div>
       </header>
 
@@ -510,7 +527,16 @@ export default function CourseDetailPage() {
                     <CardTitle>Inscripción</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <Button className="w-full" onClick={handleEnrollmentRequest}>
+                    {isCourseFull && (
+                        <Alert variant="destructive" className="mb-4">
+                            <AlertTriangle className="h-4 w-4" />
+                            <AlertTitle>Curso Completo</AlertTitle>
+                            <AlertDescription>
+                                No quedan plazas disponibles para este curso.
+                            </AlertDescription>
+                        </Alert>
+                    )}
+                    <Button className="w-full" onClick={handleEnrollmentRequest} disabled={isCourseFull}>
                         <PlusCircle className="mr-2 h-4 w-4" />
                         Solicitar Inscripción
                     </Button>

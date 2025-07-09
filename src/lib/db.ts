@@ -265,6 +265,8 @@ export async function addCourse(course: Partial<Omit<Course, 'id' | 'isSynced' |
     updatedAt: new Date().toISOString(),
     ...(course.startDate && { startDate: course.startDate }),
     ...(course.endDate && { endDate: course.endDate }),
+    ...(course.category && { category: course.category }),
+    ...(course.capacity && { capacity: course.capacity }),
   };
   
   return await db.courses.add(newCourse);
@@ -299,6 +301,26 @@ export async function deleteCourse(id: string): Promise<void> {
 // --- Enrollment Functions ---
 
 export async function requestEnrollment(courseId: string, studentId: string): Promise<number> {
+    const course = await db.courses.get(courseId);
+    if (!course) {
+        throw new Error("El curso no existe.");
+    }
+    
+    const existingEnrollment = await db.enrollments
+        .where({ studentId, courseId })
+        .filter(e => e.status !== 'rejected' && e.status !== 'cancelled' && e.status !== 'expired')
+        .first();
+    if(existingEnrollment) {
+        throw new Error("Ya tienes una solicitud para este curso.");
+    }
+
+    if (course.capacity !== undefined && course.capacity > 0) {
+        const approvedCount = await getApprovedEnrollmentCount(courseId);
+        if (approvedCount >= course.capacity) {
+            throw new Error("El curso está completo. No quedan plazas disponibles.");
+        }
+    }
+
     const newEnrollment: Enrollment = {
         studentId,
         courseId,
@@ -308,6 +330,13 @@ export async function requestEnrollment(courseId: string, studentId: string): Pr
         updatedAt: new Date().toISOString(),
     };
     return await db.enrollments.add(newEnrollment);
+}
+
+export async function getApprovedEnrollmentCount(courseId: string): Promise<number> {
+    return await db.enrollments
+        .where({ courseId })
+        .and(e => e.status === 'approved' || e.status === 'active' || e.status === 'completed')
+        .count();
 }
 
 export async function getPendingEnrollmentsWithDetails(): Promise<PendingEnrollmentDetails[]> {

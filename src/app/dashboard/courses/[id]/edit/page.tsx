@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -34,6 +34,7 @@ const courseFormSchema = z.object({
   instructor: z.string().min(2, { message: "El nombre del instructor debe tener al menos 2 caracteres." }),
   duration: z.string().min(1, { message: "La duración es obligatoria." }),
   modality: z.enum(['Online', 'Presencial', 'Mixta'], { errorMap: () => ({ message: "Debes seleccionar una modalidad." }) }),
+  capacity: z.coerce.number().int().optional().transform(v => v === 0 ? undefined : v),
   image: z.string().url({ message: "Debe ser una URL válida." }),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
@@ -202,6 +203,7 @@ export default function EditCoursePage() {
         instructor: '',
         duration: '',
         modality: undefined,
+        capacity: undefined,
         image: '',
         startDate: '',
         endDate: '',
@@ -346,8 +348,27 @@ export default function EditCoursePage() {
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <FormField control={form.control} name="modality" render={({ field }) => (<FormItem><FormLabel>Modalidad</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl><SelectContent><SelectItem value="Online">Online</SelectItem><SelectItem value="Presencial">Presencial</SelectItem><SelectItem value="Mixta">Mixta</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-                                <FormField control={form.control} name="image" render={({ field }) => (<FormItem><FormLabel>URL de la Imagen</FormLabel><FormControl><Input type="url" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                <FormField control={form.control} name="capacity" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Plazas Disponibles</FormLabel>
+                                        <FormControl>
+                                            <Input 
+                                                type="number" 
+                                                placeholder="Ilimitadas" 
+                                                {...field} 
+                                                onChange={e => {
+                                                    const value = e.target.valueAsNumber;
+                                                    field.onChange(isNaN(value) ? undefined : value);
+                                                }}
+                                                value={field.value ?? ''}
+                                            />
+                                        </FormControl>
+                                        <FormDescription>Dejar en blanco o en 0 para plazas ilimitadas.</FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
                             </div>
+                            <FormField control={form.control} name="image" render={({ field }) => (<FormItem><FormLabel>URL de la Imagen</FormLabel><FormControl><Input type="url" {...field} /></FormControl><FormMessage /></FormItem>)} />
                             <FormField
                                 control={form.control}
                                 name="mandatoryForRoles"

@@ -29,6 +29,7 @@ const courseFormSchema = z.object({
   instructor: z.string().min(2, { message: "El nombre del instructor debe tener al menos 2 caracteres." }),
   duration: z.string().min(1, { message: "La duración es obligatoria." }),
   modality: z.enum(['Online', 'Presencial', 'Mixta'], { errorMap: () => ({ message: "Debes seleccionar una modalidad." }) }),
+  capacity: z.coerce.number().int().optional().transform(v => v === 0 ? undefined : v),
   image: z.string().url({ message: "Debe ser una URL válida." }).optional().default('https://placehold.co/600x400.png'),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
@@ -51,6 +52,7 @@ export default function NewCoursePage() {
         instructor: '',
         duration: '',
         modality: undefined,
+        capacity: undefined,
         image: 'https://placehold.co/600x400.png',
         startDate: '',
         endDate: '',
@@ -111,6 +113,28 @@ export default function NewCoursePage() {
                                 <FormField control={form.control} name="duration" render={({ field }) => (<FormItem><FormLabel>Duración</FormLabel><FormControl><Input placeholder="Ej: 16 horas" {...field} /></FormControl><FormMessage /></FormItem>)} />
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <FormField control={form.control} name="modality" render={({ field }) => (<FormItem><FormLabel>Modalidad</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selecciona una modalidad" /></SelectTrigger></FormControl><SelectContent><SelectItem value="Online">Online</SelectItem><SelectItem value="Presencial">Presencial</SelectItem><SelectItem value="Mixta">Mixta</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+                                <FormField control={form.control} name="capacity" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Plazas Disponibles</FormLabel>
+                                        <FormControl>
+                                            <Input 
+                                                type="number" 
+                                                placeholder="Ilimitadas" 
+                                                {...field} 
+                                                onChange={e => {
+                                                    const value = e.target.valueAsNumber;
+                                                    field.onChange(isNaN(value) ? undefined : value);
+                                                }}
+                                                value={field.value ?? ''}
+                                            />
+                                        </FormControl>
+                                        <FormDescription>Dejar en blanco o en 0 para plazas ilimitadas.</FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <FormField control={form.control} name="startDate" render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Fecha de Inicio</FormLabel>
@@ -130,10 +154,7 @@ export default function NewCoursePage() {
                                     </FormItem>
                                 )} />
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <FormField control={form.control} name="modality" render={({ field }) => (<FormItem><FormLabel>Modalidad</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selecciona una modalidad" /></SelectTrigger></FormControl><SelectContent><SelectItem value="Online">Online</SelectItem><SelectItem value="Presencial">Presencial</SelectItem><SelectItem value="Mixta">Mixta</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-                                <FormField control={form.control} name="image" render={({ field }) => (<FormItem><FormLabel>URL de la Imagen</FormLabel><FormControl><Input type="url" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                            </div>
+                             <FormField control={form.control} name="image" render={({ field }) => (<FormItem><FormLabel>URL de la Imagen</FormLabel><FormControl><Input type="url" {...field} /></FormControl><FormMessage /></FormItem>)} />
                             <FormField
                                 control={form.control}
                                 name="mandatoryForRoles"
