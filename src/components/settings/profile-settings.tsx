@@ -4,13 +4,25 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { roles } from '@/lib/data';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import React from 'react';
 
 export function ProfileSettings({ profile, setProfile }: { profile: any, setProfile: Function }) {
     if (!profile) return <Skeleton className="h-96 w-full" />
     
+    const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                // The result is a Data URL string
+                setProfile({ ...profile, avatar: reader.result as string });
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
     return (
         <Card>
             <CardHeader>
@@ -33,8 +45,14 @@ export function ProfileSettings({ profile, setProfile }: { profile: any, setProf
                     </div>
                 </div>
                  <div className="space-y-2">
-                    <Label htmlFor="avatar">URL del Avatar</Label>
-                    <Input id="avatar" value={profile.avatar} onChange={(e) => setProfile({ ...profile, avatar: e.target.value })} />
+                    <Label>Avatar</Label>
+                    <div className="flex items-center gap-4">
+                        <Avatar className="h-20 w-20">
+                            <AvatarImage src={profile.avatar} />
+                            <AvatarFallback>{profile.name.slice(0, 2)}</AvatarFallback>
+                        </Avatar>
+                        <Input id="avatar-upload" type="file" accept="image/*" onChange={handleAvatarChange} className="max-w-xs"/>
+                    </div>
                 </div>
                  <div className="space-y-2">
                     <Label htmlFor="role">Rol (No editable)</Label>
