@@ -63,7 +63,7 @@ export default function NewCoursePage() {
     mode: 'onChange'
   });
   
-  const { isSubmitting } = form.formState;
+  const { isSubmitting } = form.state;
   const imageValue = form.watch('image');
 
   const onSubmit = async (data: CourseFormValues) => {
@@ -141,7 +141,7 @@ export default function NewCoursePage() {
                                     <FormItem>
                                         <FormLabel>Fecha de Inicio</FormLabel>
                                         <FormControl>
-                                            <Input type="datetime-local" {...field} onChange={(e) => field.onChange(e.target.value || undefined)} />
+                                            <Input type="datetime-local" {...field} value={field.value || ''} />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -150,7 +150,7 @@ export default function NewCoursePage() {
                                     <FormItem>
                                         <FormLabel>Fecha de Fin</FormLabel>
                                         <FormControl>
-                                            <Input type="datetime-local" {...field} onChange={(e) => field.onChange(e.target.value || undefined)} />
+                                            <Input type="datetime-local" {...field} value={field.value || ''} />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>

@@ -397,10 +397,13 @@ export async function requestEnrollment(courseId: string, studentId: string): Pr
         throw new Error("El curso no existe.");
     }
     
+    // Check for an active or pending enrollment.
+    const activeEnrollmentStatuses: EnrollmentStatus[] = ['pending', 'approved', 'active', 'waitlisted', 'needs_review', 'completed'];
     const existingEnrollment = await db.enrollments
         .where({ studentId, courseId })
-        .filter(e => e.status !== 'rejected' && e.status !== 'cancelled' && e.status !== 'expired')
+        .filter(e => activeEnrollmentStatuses.includes(e.status))
         .first();
+
     if(existingEnrollment) {
         throw new Error("Ya tienes una solicitud para este curso.");
     }
@@ -1346,5 +1349,3 @@ export async function getSystemLogs(filterLevel?: LogLevel): Promise<SystemLog[]
 export async function clearAllSystemLogs(): Promise<void> {
     await db.systemLogs.clear();
 }
-
-    
