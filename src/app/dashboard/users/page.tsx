@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -36,14 +37,13 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { roles, departments } from '@/lib/data';
 import * as db from '@/lib/db';
-import type { Role, Department, User, PredictAbandonmentOutput, AIConfig, UserStatus } from '@/lib/types';
+import type { Role, Department, User, AIConfig } from '@/lib/types';
 import { useAuth } from '@/contexts/auth';
 import { useToast } from '@/hooks/use-toast';
-import { predictAbandonment } from '@/ai/flows/predict-abandonment';
-import { Switch } from '@/components/ui/switch';
+import { UserStatusSwitch } from '@/components/users/UserStatusSwitch';
+import { AbandonmentPrediction } from '@/components/users/AbandonmentPrediction';
 
 
 const roleBadgeVariant: Record<Role, 'default' | 'secondary' | 'outline' | 'destructive'> = {
@@ -64,9 +64,7 @@ export default function UsersPage() {
     const aiConfig = useLiveQuery<AIConfig | undefined>(() => db.getAIConfig());
     
     const [action, setAction] = useState<{ type: 'approve' | 'reject' | 'delete', user: User } | null>(null);
-    const [predictionLoading, setPredictionLoading] = useState<string | null>(null); // user.id
-    const [predictionResult, setPredictionResult] = useState<Record<string, PredictAbandonmentOutput | null>>({});
-
+    
     const [roleFilters, setRoleFilters] = useState<Record<Role, boolean>>(() => 
         Object.fromEntries(roles.map(r => [r, true])) as Record<Role, boolean>
     );
@@ -158,54 +156,7 @@ export default function UsersPage() {
     };
 
     const dialogContent = getDialogContent();
-
     
-    const handlePredictAbandonment = async (user: User) => {
-        if (predictionLoading === user.id) return;
-        
-        setPredictionLoading(user.id);
-        setPredictionResult(prev => ({...prev, [user.id]: null}));
-
-        try {
-            const simulatedData = {
-                userName: user.name,
-                lastLogin: "hace 2 semanas",
-                activeCoursesCount: (user.name.length % 3) + 1,
-                completedCoursesCount: (user.name.length % 5),
-                averageProgress: (user.email.length * 2) % 100,
-            };
-
-            const result = await predictAbandonment(simulatedData);
-            setPredictionResult(prev => ({...prev, [user.id]: result}));
-
-        } catch (error: any) {
-            console.error("Failed to get prediction", error);
-            const description = error.message?.includes('API no está configurada')
-                ? error.message
-                : "No se pudo obtener la predicción.";
-            toast({
-                title: "Error de IA",
-                description,
-                variant: "destructive",
-            });
-        } finally {
-            setPredictionLoading(null);
-        }
-    }
-    
-    const handleStatusToggle = async (userId: string, newStatus: boolean) => {
-        try {
-            const status: UserStatus = newStatus ? 'approved' : 'suspended';
-            await db.updateUserStatus(userId, status);
-            toast({
-                title: "Estado actualizado",
-                description: "El estado del usuario ha sido cambiado."
-            });
-        } catch (error) {
-            toast({ title: "Error", description: "No se pudo cambiar el estado del usuario.", variant: "destructive" });
-        }
-    }
-
     return (
         <div className="space-y-8">
             <div className="flex items-center justify-between">
@@ -375,61 +326,12 @@ export default function UsersPage() {
                                             </TableCell>
                                             <TableCell>{u.department || '-'}</TableCell>
                                              <TableCell>
-                                                <div className="flex items-center gap-2">
-                                                    <Switch
-                                                        id={`status-${u.id}`}
-                                                        checked={u.status === 'approved'}
-                                                        onCheckedChange={(checked) => handleStatusToggle(u.id, checked)}
-                                                        disabled={authUser.id === u.id}
-                                                    />
-                                                    <Badge variant={u.status === 'approved' ? 'default' : 'secondary'}>
-                                                        {u.status === 'approved' ? 'Activo' : 'Inactivo'}
-                                                    </Badge>
-                                                </div>
+                                                <UserStatusSwitch user={u} disabled={authUser.id === u.id} />
                                             </TableCell>
                                             {aiConfig?.enabledFeatures.abandonmentPrediction && (
                                                 <TableCell>
-                                                <Popover>
-                                                    <PopoverTrigger asChild>
-                                                        <Button variant="outline" size="sm" onClick={() => handlePredictAbandonment(u)} disabled={predictionLoading === u.id}>
-                                                            {predictionLoading === u.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <BrainCircuit className="h-4 w-4" />}
-                                                            <span className="ml-2 hidden sm:inline">Analizar</span>
-                                                        </Button>
-                                                    </PopoverTrigger>
-                                                    <PopoverContent className="w-80">
-                                                        {predictionLoading === u.id ? (
-                                                            <div className="flex items-center justify-center p-4">
-                                                                <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                                                            </div>
-                                                        ) : predictionResult[u.id] ? (
-                                                            <div className="grid gap-4">
-                                                                <div className="space-y-2">
-                                                                    <h4 className="font-medium leading-none flex items-center gap-2">
-                                                                        <Bot /> Predicción de Riesgo
-                                                                    </h4>
-                                                                    <p className="text-sm text-muted-foreground">
-                                                                        Análisis para <span className="font-semibold">{u.name}</span>.
-                                                                    </p>
-                                                                </div>
-                                                                <div className="grid gap-2">
-                                                                    <div className="flex items-center justify-between">
-                                                                        <span className="text-sm font-medium">Nivel de Riesgo:</span>
-                                                                        <Badge variant={predictionResult[u.id]!.riskLevel === 'Alto' ? 'destructive' : predictionResult[u.id]!.riskLevel === 'Medio' ? 'secondary' : 'default'}>
-                                                                            {predictionResult[u.id]!.riskLevel}
-                                                                        </Badge>
-                                                                    </div>
-                                                                        <div className="text-sm">
-                                                                        <p className="font-medium">Justificación:</p>
-                                                                        <p className="text-muted-foreground">{predictionResult[u.id]!.justification}</p>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        ) : (
-                                                            <p className="text-center text-sm text-muted-foreground p-4">Haz clic en "Analizar" para obtener una predicción de la IA.</p>
-                                                        )}
-                                                    </PopoverContent>
-                                                </Popover>
-                                            </TableCell>
+                                                    <AbandonmentPrediction user={u} />
+                                                </TableCell>
                                             )}
                                             <TableCell>
                                             <DropdownMenu>
@@ -480,3 +382,4 @@ export default function UsersPage() {
         </div>
     );
 }
+
