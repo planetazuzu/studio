@@ -353,10 +353,14 @@ export const defaultAIConfig: AIConfig = {
         feedback: true,
         abandonmentPrediction: true,
         emailGeneration: true,
-    }
+    },
+    defaultCertificateTemplate: 'Clásico',
 };
 
 
 
 
 
+
+
+    

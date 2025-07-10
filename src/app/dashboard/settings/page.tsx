@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useAuth } from '@/contexts/auth';
@@ -9,6 +10,7 @@ import { ApiSettings } from '@/components/settings/api-settings';
 import { SyncManager } from '@/components/settings/sync-manager';
 import { PermissionSettings } from '@/components/settings/permission-settings';
 import { AISettings } from '@/components/settings/ai-settings';
+import { GeneralSettings } from '@/components/settings/general-settings';
 
 
 export default function SettingsPage() {
@@ -27,6 +29,7 @@ export default function SettingsPage() {
     }
 
     const adminTabs = [
+        { value: 'general', label: 'General' },
         { value: 'permissions', label: 'Permisos' },
         { value: 'ai', label: 'Inteligencia Artificial' },
         { value: 'api', label: 'APIs & Sincronización' },
@@ -39,12 +42,15 @@ export default function SettingsPage() {
                 <p className="text-muted-foreground">Configuración global para administradores.</p>
             </div>
             <div className="grid grid-cols-1 gap-8">
-                <Tabs defaultValue="permissions" className="w-full">
-                    <TabsList className="grid w-full max-w-2xl grid-cols-1 sm:grid-cols-3">
+                <Tabs defaultValue="general" className="w-full">
+                    <TabsList className="grid w-full max-w-2xl grid-cols-1 sm:grid-cols-4">
                         {adminTabs.map(tab => (
                             <TabsTrigger key={tab.value} value={tab.value}>{tab.label}</TabsTrigger>
                         ))}
                     </TabsList>
+                    <TabsContent value="general" className="mt-4">
+                        <GeneralSettings />
+                    </TabsContent>
                     <TabsContent value="permissions" className="mt-4">
                         <PermissionSettings />
                     </TabsContent>
@@ -62,3 +68,5 @@ export default function SettingsPage() {
         </div>
     );
 }
+
+    

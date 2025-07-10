@@ -32,6 +32,7 @@ import * as db from '@/lib/db';
 import { useToast } from '@/hooks/use-toast';
 import { CertificateTemplate } from '@/components/certificate-template';
 import { CertificateTemplateModern } from '@/components/certificate-template-modern';
+import { CertificateTemplateProfessional } from '@/components/certificate-template-professional';
 import { Forum } from '@/components/forum';
 import type { Course, AIConfig } from '@/lib/types';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -107,12 +108,13 @@ export default function CourseDetailPage() {
   const [course, setCourse] = useState<Course | null>(null);
   const [loadingCourse, setLoadingCourse] = useState(true);
 
-  const [isDownloading, setIsDownloading] = useState<null | 'classic' | 'modern'>(null);
+  const [isDownloading, setIsDownloading] = useState<null | 'Clásico' | 'Moderno' | 'Profesional'>(null);
   const [isPublishing, setIsPublishing] = useState(false);
   const [isExportingScorm, setIsExportingScorm] = useState(false);
   
   const certificateClassicRef = useRef<HTMLDivElement>(null);
   const certificateModernRef = useRef<HTMLDivElement>(null);
+  const certificateProfessionalRef = useRef<HTMLDivElement>(null);
 
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
   
@@ -243,8 +245,19 @@ export default function CourseDetailPage() {
     }
   }
 
-  const handleDownloadCertificate = async (type: 'classic' | 'modern') => {
-      const certificateElement = type === 'classic' ? certificateClassicRef.current : certificateModernRef.current;
+  const handleDownloadCertificate = async (type: 'Clásico' | 'Moderno' | 'Profesional') => {
+      let certificateElement: HTMLDivElement | null = null;
+      switch(type) {
+        case 'Clásico':
+            certificateElement = certificateClassicRef.current;
+            break;
+        case 'Moderno':
+            certificateElement = certificateModernRef.current;
+            break;
+        case 'Profesional':
+             certificateElement = certificateProfessionalRef.current;
+            break;
+      }
       if (!certificateElement || !user) return;
       
       setIsDownloading(type);
@@ -335,6 +348,14 @@ export default function CourseDetailPage() {
               />
                <CertificateTemplateModern
                   ref={certificateModernRef}
+                  userName={user.name}
+                  courseName={course.title}
+                  completionDate={format(new Date(), 'dd/MM/yyyy')}
+                  instructorName={course.instructor}
+                  qrCodeDataUrl={qrCodeDataUrl}
+              />
+               <CertificateTemplateProfessional
+                  ref={certificateProfessionalRef}
                   userName={user.name}
                   courseName={course.title}
                   completionDate={format(new Date(), 'dd/MM/yyyy')}
@@ -580,18 +601,22 @@ export default function CourseDetailPage() {
                         disabled={progressPercentage < 100 || !!isDownloading}
                     >
                         {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
-                        {isDownloading ? 'Generando...' : 'Descargar Certificado'}
+                        {isDownloading ? `Generando ${isDownloading}...` : 'Descargar Certificado'}
                         <ChevronDown className="ml-2 h-4 w-4"/>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-[--radix-dropdown-menu-trigger-width]">
-                    <DropdownMenuItem onSelect={() => handleDownloadCertificate('classic')} disabled={isDownloading === 'classic'}>
-                        {isDownloading === 'classic' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Diseño Clásico
+                    <DropdownMenuItem onSelect={() => handleDownloadCertificate('Clásico')} disabled={isDownloading === 'Clásico'}>
+                        {isDownloading === 'Clásico' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Diseño Clásico {aiConfig?.defaultCertificateTemplate === 'Clásico' && <span className="text-xs text-muted-foreground ml-2">(Por defecto)</span>}
                     </DropdownMenuItem>
-                    <DropdownMenuItem onSelect={() => handleDownloadCertificate('modern')} disabled={isDownloading === 'modern'}>
-                         {isDownloading === 'modern' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Diseño Moderno
+                    <DropdownMenuItem onSelect={() => handleDownloadCertificate('Moderno')} disabled={isDownloading === 'Moderno'}>
+                         {isDownloading === 'Moderno' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Diseño Moderno {aiConfig?.defaultCertificateTemplate === 'Moderno' && <span className="text-xs text-muted-foreground ml-2">(Por defecto)</span>}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => handleDownloadCertificate('Profesional')} disabled={isDownloading === 'Profesional'}>
+                         {isDownloading === 'Profesional' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Diseño Profesional {aiConfig?.defaultCertificateTemplate === 'Profesional' && <span className="text-xs text-muted-foreground ml-2">(Por defecto)</span>}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
               </DropdownMenu>
@@ -636,3 +661,5 @@ export default function CourseDetailPage() {
     </div>
   );
 }
+
+    

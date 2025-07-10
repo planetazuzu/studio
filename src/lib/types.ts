@@ -308,7 +308,7 @@ export type UserBadge = {
 };
 
 
-// --- AI Management Types ---
+// --- AI & General App Management Types ---
 
 export const aiModels = ['Gemini', 'OpenAI', 'Claude', 'HuggingFace', 'Whisper'] as const;
 export type AIModel = typeof aiModels[number];
@@ -326,10 +326,15 @@ export const aiFeatures = [
 
 export type AIFeature = typeof aiFeatures[number]['id'];
 
+export const certificateTemplates = ['Clásico', 'Moderno', 'Profesional'] as const;
+export type CertificateTemplateType = typeof certificateTemplates[number];
+
+
 export type AIConfig = {
     id: 'singleton'; // Primary key for the single config object
     activeModel: AIModel;
     enabledFeatures: Record<AIFeature, boolean>;
+    defaultCertificateTemplate: CertificateTemplateType;
 };
 
 export type AIUsageLog = {
@@ -545,3 +550,5 @@ export const PredictAbandonmentOutputSchema = z.object({
   justification: z.string().describe('A brief, 2-3 sentence justification for the predicted risk level, explaining the key factors.'),
 });
 export type PredictAbandonmentOutput = z.infer<typeof PredictAbandonmentOutputSchema>;
+
+    
