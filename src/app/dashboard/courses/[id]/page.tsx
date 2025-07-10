@@ -10,13 +10,19 @@ import { es } from 'date-fns/locale';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { CheckCircle, Clock, Bot, Loader2, Sparkles, Send, PlusCircle, CheckCircle2, XCircle, MessageSquare, Book, File, Video, Link as LinkIcon, FilePenLine, AlertTriangle, Pencil, Rocket, EyeOff, Archive, Users, FileText, Star, CalendarDays, Users2 } from 'lucide-react';
+import { CheckCircle, Clock, Bot, Loader2, Sparkles, Send, PlusCircle, CheckCircle2, XCircle, MessageSquare, Book, File, Video, Link as LinkIcon, FilePenLine, AlertTriangle, Pencil, Rocket, EyeOff, Archive, Users, FileText, Star, CalendarDays, Users2, ChevronDown } from 'lucide-react';
 import QRCode from 'qrcode';
 import { cn } from '@/lib/utils';
 import { summarizeModuleContent } from '@/ai/flows/summarize-module-content';
 import { downloadCourseAsScormZip } from '@/lib/scorm-service';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -25,6 +31,7 @@ import { useAuth } from '@/contexts/auth';
 import * as db from '@/lib/db';
 import { useToast } from '@/hooks/use-toast';
 import { CertificateTemplate } from '@/components/certificate-template';
+import { CertificateTemplateModern } from '@/components/certificate-template-modern';
 import { Forum } from '@/components/forum';
 import type { Course, AIConfig } from '@/lib/types';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -100,10 +107,13 @@ export default function CourseDetailPage() {
   const [course, setCourse] = useState<Course | null>(null);
   const [loadingCourse, setLoadingCourse] = useState(true);
 
-  const [isDownloading, setIsDownloading] = useState(false);
+  const [isDownloading, setIsDownloading] = useState<null | 'classic' | 'modern'>(null);
   const [isPublishing, setIsPublishing] = useState(false);
   const [isExportingScorm, setIsExportingScorm] = useState(false);
-  const certificateRef = useRef<HTMLDivElement>(null);
+  
+  const certificateClassicRef = useRef<HTMLDivElement>(null);
+  const certificateModernRef = useRef<HTMLDivElement>(null);
+
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
   
   const [isEnrolled, setIsEnrolled] = useState(false);
@@ -233,12 +243,13 @@ export default function CourseDetailPage() {
     }
   }
 
-  const handleDownloadCertificate = async () => {
-      if (!certificateRef.current || !user) return;
+  const handleDownloadCertificate = async (type: 'classic' | 'modern') => {
+      const certificateElement = type === 'classic' ? certificateClassicRef.current : certificateModernRef.current;
+      if (!certificateElement || !user) return;
       
-      setIsDownloading(true);
+      setIsDownloading(type);
       try {
-          const canvas = await html2canvas(certificateRef.current, {
+          const canvas = await html2canvas(certificateElement, {
               scale: 2, // Higher scale for better quality
               useCORS: true,
               backgroundColor: null,
@@ -252,7 +263,7 @@ export default function CourseDetailPage() {
           });
           
           pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
-          pdf.save(`Certificado - ${course.title}.pdf`);
+          pdf.save(`Certificado (${type}) - ${course.title}.pdf`);
 
       } catch (error) {
           console.error("Error generating certificate", error);
@@ -262,7 +273,7 @@ export default function CourseDetailPage() {
               variant: "destructive",
           })
       } finally {
-          setIsDownloading(false);
+          setIsDownloading(null);
       }
   }
 
@@ -310,17 +321,27 @@ export default function CourseDetailPage() {
 
   return (
     <div className="space-y-8">
-      {/* Hidden component for PDF generation */}
+      {/* Hidden components for PDF generation */}
       <div className="absolute -z-10 -left-[9999px] top-0">
           {user && (
-            <CertificateTemplate 
-                ref={certificateRef}
-                userName={user.name}
-                courseName={course.title}
-                completionDate={format(new Date(), 'dd/MM/yyyy')}
-                instructorName={course.instructor}
-                qrCodeDataUrl={qrCodeDataUrl}
-            />
+            <>
+              <CertificateTemplate 
+                  ref={certificateClassicRef}
+                  userName={user.name}
+                  courseName={course.title}
+                  completionDate={format(new Date(), 'dd/MM/yyyy')}
+                  instructorName={course.instructor}
+                  qrCodeDataUrl={qrCodeDataUrl}
+              />
+               <CertificateTemplateModern
+                  ref={certificateModernRef}
+                  userName={user.name}
+                  courseName={course.title}
+                  completionDate={format(new Date(), 'dd/MM/yyyy')}
+                  instructorName={course.instructor}
+                  qrCodeDataUrl={qrCodeDataUrl}
+              />
+            </>
           )}
       </div>
 
@@ -552,18 +573,28 @@ export default function CourseDetailPage() {
                 <p className="text-center mt-2 text-sm text-muted-foreground">{progressPercentage}% completado</p>
             </CardContent>
             <CardFooter>
-              <Button 
-                  className="w-full" 
-                  disabled={progressPercentage < 100 || isDownloading}
-                  onClick={handleDownloadCertificate}
-                >
-                {isDownloading ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                    <FileText className="mr-2 h-4 w-4" />
-                )}
-                {isDownloading ? 'Generando...' : 'Descargar Certificado'}
-              </Button>
+              <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button 
+                        className="w-full" 
+                        disabled={progressPercentage < 100 || !!isDownloading}
+                    >
+                        {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
+                        {isDownloading ? 'Generando...' : 'Descargar Certificado'}
+                        <ChevronDown className="ml-2 h-4 w-4"/>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-[--radix-dropdown-menu-trigger-width]">
+                    <DropdownMenuItem onSelect={() => handleDownloadCertificate('classic')} disabled={isDownloading === 'classic'}>
+                        {isDownloading === 'classic' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Diseño Clásico
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => handleDownloadCertificate('modern')} disabled={isDownloading === 'modern'}>
+                         {isDownloading === 'modern' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Diseño Moderno
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+              </DropdownMenu>
             </CardFooter>
           </Card>
           {canManageCourse && (
