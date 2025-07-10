@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -121,3 +122,5 @@ export function CourseManagementTab({ course }: { course: Course }) {
         </div>
     );
 }
+
+    

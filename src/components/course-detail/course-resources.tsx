@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useLiveQuery } from 'dexie-react-hooks';
@@ -52,3 +53,5 @@ export function CourseResources({ courseId }: { courseId: string }) {
         </div>
     )
 }
+
+    

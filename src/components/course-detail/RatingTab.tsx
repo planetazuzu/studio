@@ -260,3 +260,5 @@ export function RatingTab({ course, user, progress }: { course: Course, user: Us
         </div>
     );
 }
+
+    

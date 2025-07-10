@@ -96,3 +96,5 @@ export function CourseChat({ courseTitle, courseContent }: { courseTitle: string
         </Card>
     );
 }
+
+    

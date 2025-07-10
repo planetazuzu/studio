@@ -28,3 +28,5 @@ export function ScormLaunchPanel({ course }: { course: Course }) {
     </Card>
   );
 }
+
+    
