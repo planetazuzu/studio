@@ -693,6 +693,7 @@ export async function addNotification(notification: Omit<Notification, 'id' | 'i
     }
     const newId = await db.notifications.add(newNotification);
 
+    // This block triggers the actual sending of external notifications
     const user = await db.users.get(notification.userId);
     if (user && user.notificationSettings?.consent) {
         const settings = user.notificationSettings;
@@ -700,19 +701,20 @@ export async function addNotification(notification: Omit<Notification, 'id' | 'i
         const body = notification.message;
         
         if (settings.channels.includes('email')) {
-            sendEmailNotification(user, subject, body).catch(console.error);
+            sendEmailNotification(user, subject, body).catch(e => logSystemEvent('ERROR', 'Failed to send email notification', { error: e.message, userId: user.id }));
         }
         if (settings.channels.includes('whatsapp') && user.phone) {
-             sendWhatsAppNotification(user, body).catch(console.error);
+             sendWhatsAppNotification(user, body).catch(e => logSystemEvent('ERROR', 'Failed to send WhatsApp notification', { error: e.message, userId: user.id }));
         }
         if (settings.channels.includes('app') && user.fcmToken) {
-            const title = 'Nueva Notificación de TalentOS'; // Generic title
-            sendPushNotification(user.id, title, body, notification.relatedUrl || '/dashboard').catch(console.error);
+            const title = 'Nueva Notificación de TalentOS';
+            sendPushNotification(user.id, title, body, notification.relatedUrl || '/dashboard').catch(e => logSystemEvent('ERROR', 'Failed to send Push notification', { error: e.message, userId: user.id }));
         }
     }
     
     return newId;
 }
+
 
 export async function getNotificationsForUser(userId: string): Promise<Notification[]> {
     return await db.notifications.where({ userId }).reverse().sortBy('timestamp');
