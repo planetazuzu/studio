@@ -277,7 +277,6 @@
   width: 100%;
   user-select: none;
   height: 100%;
-  overflow: hidden;
 }
 
 .rbc-month-header {
@@ -292,6 +291,7 @@
   flex: 1 0 0;
   flex-basis: 0px;
   overflow: hidden;
+  height: 100%;
 }
 .rbc-month-row + .rbc-month-row {
   border-top: 1px solid hsl(var(--border));

@@ -56,7 +56,7 @@ export function LearningPathPanel({ user }: { user: User }) {
   }
 
   return (
-    <Card className="col-span-1">
+    <Card className="col-span-1 lg:col-span-3">
       <CardHeader>
         <CardTitle>Planes de Carrera</CardTitle>
         <CardDescription>Tus rutas de aprendizaje asignadas.</CardDescription>

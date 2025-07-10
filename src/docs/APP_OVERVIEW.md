@@ -60,7 +60,7 @@ La IA no es un complemento, sino una parte integral de la plataforma, impulsada 
 
 ### Planes de Carrera
 -   **Rutas Guiadas:** Los administradores pueden crear "Planes de Carrera" que consisten en una secuencia ordenada de cursos asignados a un rol específico.
--   **Seguimiento Automático:** El panel principal del usuario muestra su progreso en el plan de carrera asignado, indicando cuál es el siguiente curso a realizar.
+-   **Seguimiento Automático:** El panel principal del usuario muestra su progreso en el plan de carrera asignado, indicando cuál es el siguiente curso a realizar de forma secuencial.
 
 ### Análisis y Reportes
 -   **Dashboard de Analíticas:** Una vista centralizada para los gestores con tres pestañas:
