@@ -18,8 +18,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { useAuth } from '@/contexts/auth';
 
 
 const externalTrainingSchema = z.object({
@@ -131,8 +132,14 @@ function ExternalTrainingDialog({
     );
 }
 
-export function ExternalTrainingSettings({ user }: { user: User }) {
+export function ExternalTrainingSettings() {
+    const { user } = useAuth();
     const { toast } = useToast();
+
+    if (!user) {
+        return <div className="flex h-full items-center justify-center"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>;
+    }
+    
     const trainings = useLiveQuery(() => db.getExternalTrainingsForUser(user.id), [user.id]);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [selectedTraining, setSelectedTraining] = useState<ExternalTraining | null>(null);
@@ -157,56 +164,58 @@ export function ExternalTrainingSettings({ user }: { user: User }) {
     }, [trainingToDelete, toast]);
 
     return (
-        <div className="space-y-4">
-            <div className="flex flex-row items-center justify-between">
-                 <div>
-                    <h3 className="text-xl font-semibold">Formación Externa</h3>
-                    <p className="text-sm text-muted-foreground">Registra y gestiona tus cursos y certificaciones externas.</p>
+        <AlertDialog>
+            <div className="space-y-4">
+                <div className="flex flex-row items-center justify-between">
+                    <div>
+                        <h3 className="text-xl font-semibold">Formación Externa</h3>
+                        <p className="text-sm text-muted-foreground">Registra y gestiona tus cursos y certificaciones externas.</p>
+                    </div>
+                    <Button onClick={() => { setSelectedTraining(null); setIsDialogOpen(true); }}>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Añadir Formación
+                    </Button>
                 </div>
-                <Button onClick={() => { setSelectedTraining(null); setIsDialogOpen(true); }}>
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Añadir Formación
-                </Button>
-            </div>
-            
-            {trainings === undefined ? (
-                <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
-            ) : trainings.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">No has registrado ninguna formación externa.</p>
-            ) : (
-                <div className="border rounded-lg">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Título</TableHead>
-                                <TableHead>Tipo</TableHead>
-                                <TableHead>Entidad</TableHead>
-                                <TableHead>Fecha</TableHead>
-                                <TableHead className="w-[100px] text-right">Acciones</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {trainings.map(t => (
-                                <TableRow key={t.id}>
-                                    <TableCell className="font-medium">{t.title}</TableCell>
-                                    <TableCell>{t.type}</TableCell>
-                                    <TableCell>{t.institution}</TableCell>
-                                    <TableCell>
-                                        {t.endDate ? format(parseISO(t.endDate), 'MMM yyyy') : 'En curso'}
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <Button variant="ghost" size="icon" onClick={() => handleEdit(t)}><FilePenLine className="h-4 w-4" /></Button>
-                                        <AlertDialogTrigger asChild>
-                                            <Button variant="ghost" size="icon" onClick={() => setTrainingToDelete(t)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                                        </AlertDialogTrigger>
-                                    </TableCell>
+                
+                {trainings === undefined ? (
+                    <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
+                ) : trainings.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-8">No has registrado ninguna formación externa.</p>
+                ) : (
+                    <div className="border rounded-lg">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Título</TableHead>
+                                    <TableHead>Tipo</TableHead>
+                                    <TableHead>Entidad</TableHead>
+                                    <TableHead>Fecha</TableHead>
+                                    <TableHead className="w-[100px] text-right">Acciones</TableHead>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </div>
-            )}
-            
+                            </TableHeader>
+                            <TableBody>
+                                {trainings.map(t => (
+                                    <TableRow key={t.id}>
+                                        <TableCell className="font-medium">{t.title}</TableCell>
+                                        <TableCell>{t.type}</TableCell>
+                                        <TableCell>{t.institution}</TableCell>
+                                        <TableCell>
+                                            {t.endDate ? format(parseISO(t.endDate), 'MMM yyyy') : 'En curso'}
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <Button variant="ghost" size="icon" onClick={() => handleEdit(t)}><FilePenLine className="h-4 w-4" /></Button>
+                                            <AlertDialogTrigger asChild>
+                                                <Button variant="ghost" size="icon" onClick={() => setTrainingToDelete(t)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                            </AlertDialogTrigger>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                )}
+            </div>
+
             <ExternalTrainingDialog
                 open={isDialogOpen}
                 onOpenChange={setIsDialogOpen}
@@ -214,20 +223,18 @@ export function ExternalTrainingSettings({ user }: { user: User }) {
                 userId={user.id}
             />
 
-            <AlertDialog open={!!trainingToDelete} onOpenChange={(open) => !open && setTrainingToDelete(null)}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>¿Confirmar eliminación?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Esta acción eliminará el registro de formación externa "{trainingToDelete?.title}". Esta acción no se puede deshacer.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">Eliminar</AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-        </div>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>¿Confirmar eliminación?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Esta acción eliminará el registro de formación externa "{trainingToDelete?.title}". Esta acción no se puede deshacer.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">Eliminar</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     );
 }

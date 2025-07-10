@@ -118,7 +118,7 @@ export default function ProfilePage() {
                         <AchievementsSettings user={user} />
                     </TabsContent>
                     <TabsContent value="training-history" className="mt-4">
-                        <TrainingHistory user={user} />
+                        <TrainingHistory />
                     </TabsContent>
                 </Tabs>
             </div>

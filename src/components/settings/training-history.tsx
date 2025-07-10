@@ -12,6 +12,7 @@ import Link from 'next/link';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Loader2 } from 'lucide-react';
+import { useAuth } from '@/contexts/auth';
 
 
 function InternalTrainingHistory({ user }: { user: User }) {
@@ -58,7 +59,12 @@ function InternalTrainingHistory({ user }: { user: User }) {
     );
 }
 
-export function TrainingHistory({ user }: { user: User }) {
+export function TrainingHistory() {
+    const { user } = useAuth();
+    if (!user) {
+        return <div className="flex h-full items-center justify-center"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>;
+    }
+
     return (
         <Card>
             <CardHeader>
