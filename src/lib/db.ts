@@ -696,17 +696,18 @@ export async function addNotification(notification: Omit<Notification, 'id' | 'i
     const user = await db.users.get(notification.userId);
     if (user && user.notificationSettings?.consent) {
         const settings = user.notificationSettings;
-        const subject = `Notificación de TalentOS`;
+        const subject = `Notificación de TalentOS: ${notification.type.replace(/_/g, ' ')}`;
         const body = notification.message;
         
         if (settings.channels.includes('email')) {
-            await sendEmailNotification(user, subject, body);
+            sendEmailNotification(user, subject, body).catch(console.error);
         }
         if (settings.channels.includes('whatsapp') && user.phone) {
-             await sendWhatsAppNotification(user, body);
+             sendWhatsAppNotification(user, body).catch(console.error);
         }
         if (settings.channels.includes('app') && user.fcmToken) {
-            await sendPushNotification(user.id, 'Nueva Notificación', body, notification.relatedUrl || '/dashboard');
+            const title = 'Nueva Notificación de TalentOS'; // Generic title
+            sendPushNotification(user.id, title, body, notification.relatedUrl || '/dashboard').catch(console.error);
         }
     }
     
