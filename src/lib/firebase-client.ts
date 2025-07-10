@@ -2,7 +2,7 @@
 'use client';
 
 import { initializeApp, getApp, getApps, type FirebaseApp } from 'firebase/app';
-import { getMessaging, getToken, isSupported } from 'firebase/messaging';
+import { getMessaging, getToken, isSupported, type Messaging } from 'firebase/messaging';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -13,7 +13,12 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
+let app: FirebaseApp | null = null;
+let messaging: Messaging | null = null;
+
 function initializeAppIfConfigured(): FirebaseApp | null {
+  if (app) return app;
+
   const isFirebaseConfigured =
     firebaseConfig.apiKey &&
     firebaseConfig.authDomain &&
@@ -22,27 +27,30 @@ function initializeAppIfConfigured(): FirebaseApp | null {
     firebaseConfig.appId;
 
   if (isFirebaseConfigured) {
-    return getApps().length ? getApp() : initializeApp(firebaseConfig);
+    app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+    return app;
   }
+
+  console.warn("Firebase no está configurado. Las funciones dependientes de Firebase estarán deshabilitadas.");
   return null;
 }
 
-const app = initializeAppIfConfigured();
-
-async function initializeMessaging() {
-    if (app && await isSupported()) {
-        return getMessaging(app);
-    }
-    return null;
-}
-
 export const getFirebaseMessagingToken = async () => {
-    const messaging = await initializeMessaging();
-    if (!messaging) {
-        console.warn("Firebase Messaging no está configurado o no es compatible con este navegador.");
+    const firebaseApp = initializeAppIfConfigured();
+    if (!firebaseApp) {
+        console.warn("No se puede obtener el token de mensajería porque Firebase no está configurado.");
         return null;
     }
     
+    if (messaging) {
+        // Use existing instance
+    } else if (await isSupported()) {
+        messaging = getMessaging(firebaseApp);
+    } else {
+        console.warn("Firebase Messaging no es compatible con este navegador.");
+        return null;
+    }
+
     try {
         const permission = await Notification.requestPermission();
         if (permission === 'granted') {
@@ -60,4 +68,7 @@ export const getFirebaseMessagingToken = async () => {
     }
 };
 
-export { app };
+// Export app instance for other potential Firebase services, initializing it on first access.
+export function getFirebaseApp(): FirebaseApp | null {
+    return initializeAppIfConfigured();
+}
