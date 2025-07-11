@@ -8,7 +8,6 @@ import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { AppLogo } from '@/components/icons';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal, Loader2 } from 'lucide-react';
@@ -20,6 +19,7 @@ import Link from 'next/link';
 import { roles } from '@/lib/data';
 import type { Role } from '@/lib/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 
 const registerSchema = z.object({
   name: z.string().min(2, { message: "El nombre es obligatorio." }),
@@ -78,7 +78,7 @@ export default function RegisterPage() {
         <CardHeader className="text-center">
            <Link href="/" className="flex items-center justify-center gap-2 mb-4">
             <AppLogo className="h-10 w-10 text-primary" />
-            <CardTitle className="text-3xl font-bold">Talentos</CardTitle>
+            <CardTitle className="text-3xl font-bold">TalentOS</CardTitle>
           </Link>
           <CardDescription>Crea una cuenta para acceder a la plataforma de formación.</CardDescription>
         </CardHeader>

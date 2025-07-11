@@ -9,6 +9,10 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  experimental: {
+    // This allows cross-origin requests in development, which is needed for Firebase Studio.
+    allowedDevOrigins: ['*'],
+  },
   images: {
     unoptimized: false,
     remotePatterns: [

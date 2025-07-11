@@ -26,7 +26,7 @@ export const getNavItems = (): NavItem[] => [
   { href: '/dashboard/leaderboard', icon: Trophy, label: 'Clasificación', roles: allRoles },
   {
     href: '/dashboard/learning-paths',
-    icon: GraduationCap,
+    icon: Route,
     label: 'Planes de Carrera',
     roles: managerRoles,
   },
