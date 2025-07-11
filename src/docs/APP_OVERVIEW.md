@@ -1,3 +1,4 @@
+
 # Resumen de la Aplicación: TalentOS
 
 Este documento proporciona una visión general de la arquitectura, funcionalidades y el flujo de desarrollo de TalentOS.
@@ -16,12 +17,12 @@ La aplicación prioriza la disponibilidad y la velocidad utilizando **Dexie.js**
 -   **Disponibilidad sin Conexión:** Los usuarios pueden continuar aprendiendo, completando módulos y participando en foros incluso sin conexión a internet.
 -   **Persistencia de Datos:** Todos los datos generados se guardan de forma segura en el navegador del usuario.
 
-### B. Backend Persistente y Sincronización con NocoDB
+### B. Backend Persistente y Sincronización con Airtable
 
 Aunque la aplicación funciona de manera autónoma en el cliente, necesita un punto central para la persistencia de datos a largo plazo, copias de seguridad y la colaboración entre diferentes dispositivos.
 
--   **NocoDB como Backend:** Se utiliza una instancia de NocoDB como base de datos remota. NocoDB expone automáticamente una API REST completa a partir de un esquema de base de datos.
--   **Sincronización Manual:** Desde el panel de `Ajustes`, un administrador puede iniciar un proceso de sincronización. Este proceso identifica los datos locales que no han sido subidos (marcados con `isSynced: false`) y los envía a NocoDB.
+-   **Airtable como Backend:** Se utiliza una base de Airtable como base de datos remota. Airtable expone automáticamente una API REST completa.
+-   **Sincronización Manual:** Desde el panel de `Ajustes`, un administrador puede iniciar un proceso de sincronización. Este proceso identifica los datos locales que no han sido subidos (marcados con `isSynced: false`) y los envía a Airtable.
 
 ### C. Inteligencia Artificial como Núcleo con Genkit
 
@@ -71,7 +72,7 @@ La IA no es un complemento, sino una parte integral de la plataforma, impulsada 
 
 ### Administración y Configuración
 -   **Gestión de Costes:** Una sección dedicada para que los administradores registren y categoricen todos los gastos relacionados con la formación (honorarios, materiales, licencias, etc.).
--   **Gestión de APIs y Sincronización:** Panel para configurar las credenciales de NocoDB, SendGrid (email) y Twilio (WhatsApp) e iniciar la sincronización manual.
+-   **Gestión de APIs y Sincronización:** Panel para configurar las credenciales de Airtable, SendGrid (email) y Twilio (WhatsApp) e iniciar la sincronización manual.
 -   **Configuración de IA:** Permite seleccionar el proveedor de IA (ej. Gemini) y activar o desactivar funcionalidades específicas.
 -   **Gestión de Notificaciones:** Sistema integrado que envía notificaciones por Email, WhatsApp o Push (si están configuradas) para eventos clave como aprobaciones o anuncios.
 -   **Chat Interno:** Un sistema de mensajería directa entre usuarios de la plataforma, respetando la jerarquía (un trabajador solo puede iniciar chats con roles de gestión). Los administradores pueden crear nuevos canales públicos.

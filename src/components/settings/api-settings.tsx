@@ -42,15 +42,15 @@ export function ApiSettings() {
             <CardContent className="space-y-6">
                 <form ref={formRef} action={formAction} className="space-y-6">
                     <div className="space-y-4 rounded-lg border p-4">
-                        <h3 className="text-lg font-semibold flex items-center gap-2"><Server />NocoDB (Base de Datos Remota)</h3>
+                        <h3 className="text-lg font-semibold flex items-center gap-2"><Server />Airtable (Base de Datos Remota)</h3>
                          <div className="space-y-4">
                             <div className="space-y-2">
-                                <Label htmlFor="nocodb_api_url">URL de la API de NocoDB</Label>
-                                <Input id="nocodb_api_url" name="nocodb_api_url" type="text" placeholder="https://mi.nocodb.instance/api/v2" />
+                                <Label htmlFor="airtable_api_key">Clave de API de Airtable</Label>
+                                <Input id="airtable_api_key" name="airtable_api_key" type="password" placeholder="Introduce tu clave API de Airtable" />
                             </div>
                              <div className="space-y-2">
-                                <Label htmlFor="nocodb_auth_token">Token de Autenticación (xc-token)</Label>
-                                <Input id="nocodb_auth_token" name="nocodb_auth_token" type="password" placeholder="Introduce tu token de API de NocoDB" />
+                                <Label htmlFor="airtable_base_id">ID de la Base de Airtable</Label>
+                                <Input id="airtable_base_id" name="airtable_base_id" type="text" placeholder="appXXXXXXXXXXXXXX" />
                             </div>
                         </div>
                     </div>
@@ -98,11 +98,11 @@ export function ApiSettings() {
 
                 <Alert className="mt-6 bg-blue-50 border-blue-200 text-blue-900">
                     <HelpCircle className="h-4 w-4 !text-blue-900" />
-                    <AlertTitle>¿Necesitas ayuda para configurar NocoDB?</AlertTitle>
+                    <AlertTitle>¿Necesitas ayuda para configurar Airtable?</AlertTitle>
                     <AlertDescription>
                         Hemos preparado una guía detallada que te explica paso a paso cómo obtener tus credenciales y crear las tablas necesarias.
                         <Button variant="link" asChild className="p-0 h-auto ml-1 text-blue-900 font-bold">
-                            <Link href="/docs/nocodb_setup.md" target="_blank">Consulta la guía de configuración aquí.</Link>
+                            <Link href="/docs/airtable_setup.md" target="_blank">Consulta la guía de configuración aquí.</Link>
                         </Button>
                     </AlertDescription>
                 </Alert>

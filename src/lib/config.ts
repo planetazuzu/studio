@@ -13,26 +13,26 @@ export function getGenAIKey(): string | undefined {
 }
 
 /**
- * Retrieves the NocoDB configuration from server-side cookies or environment variables.
+ * Retrieves the Airtable configuration from server-side cookies or environment variables.
  * Environment variables are prioritized for production deployments.
- * @returns An object containing the NocoDB API URL and Auth Token, or null if either is missing.
+ * @returns An object containing the Airtable API Key and Base ID, or null if either is missing.
  */
-export function getNocoDBConfig(): { apiUrl: string; authToken: string } | null {
+export function getAirtableConfig(): { apiKey: string; baseId: string; } | null {
   // Prioritize environment variables for production deployments
-  const apiUrlFromEnv = process.env.NOCODB_API_URL;
-  const authTokenFromEnv = process.env.NOCODB_AUTH_TOKEN;
+  const apiKeyFromEnv = process.env.AIRTABLE_API_KEY;
+  const baseIdFromEnv = process.env.AIRTABLE_BASE_ID;
 
-  if (apiUrlFromEnv && authTokenFromEnv) {
-    return { apiUrl: apiUrlFromEnv, authToken: authTokenFromEnv };
+  if (apiKeyFromEnv && baseIdFromEnv) {
+    return { apiKey: apiKeyFromEnv, baseId: baseIdFromEnv };
   }
 
   // Fallback to cookies for the in-app settings panel
   const cookieStore = cookies();
-  const apiUrlFromCookie = cookieStore.get('nocodb_api_url')?.value;
-  const authTokenFromCookie = cookieStore.get('nocodb_auth_token')?.value;
+  const apiKeyFromCookie = cookieStore.get('airtable_api_key')?.value;
+  const baseIdFromCookie = cookieStore.get('airtable_base_id')?.value;
 
-  if (apiUrlFromCookie && authTokenFromCookie) {
-    return { apiUrl: apiUrlFromCookie, authToken: authTokenFromCookie };
+  if (apiKeyFromCookie && baseIdFromCookie) {
+    return { apiKey: apiKeyFromCookie, baseId: baseIdFromCookie };
   }
   
   return null;

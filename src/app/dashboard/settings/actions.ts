@@ -1,10 +1,11 @@
+
 'use server';
 
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
-import { getNocoDBConfig } from '@/lib/config';
+import { getAirtableConfig } from '@/lib/config';
 import type { User, Course, AIConfig, AIModel } from '@/lib/types';
-import { createNocoUser, createNocoCourse } from '@/lib/noco';
+import { createAirtableUser, createAirtableCourse } from '@/lib/airtable';
 import { useAuth } from '@/contexts/auth';
 import * as db from '@/lib/db';
 import { sendPushNotification } from '@/lib/notification-service';
@@ -20,7 +21,7 @@ const cookieOptions = {
 export async function saveApiKeysAction(prevState: any, formData: FormData) {
   try {
     const fieldsToSet = [
-      'nocodb_api_url', 'nocodb_auth_token',
+      'airtable_api_key', 'airtable_base_id',
       'sendgrid_api_key', 'sendgrid_from_email',
       'twilio_account_sid', 'twilio_auth_token', 'twilio_whatsapp_from', 'twilio_whatsapp_to_test',
     ];
@@ -95,12 +96,12 @@ export async function syncAllDataAction(data: {
     log.push("Recibida solicitud de sincronización en el servidor.");
 
     try {
-        const nocoConfig = getNocoDBConfig();
-        if (!nocoConfig?.apiUrl || !nocoConfig?.authToken) {
-            throw new Error("La configuración de NocoDB no es válida. Ve a Ajustes > APIs para configurarla.");
+        const airtableConfig = getAirtableConfig();
+        if (!airtableConfig?.apiKey || !airtableConfig?.baseId) {
+            throw new Error("La configuración de Airtable no es válida. Ve a Ajustes > APIs para configurarla.");
         }
         
-        log.push("Configuración de NocoDB encontrada y válida.");
+        log.push("Configuración de Airtable encontrada y válida.");
 
         const { users: unsyncedUsers, courses: unsyncedCourses } = data;
 
@@ -114,8 +115,8 @@ export async function syncAllDataAction(data: {
             log.push(`--- Sincronizando ${unsyncedUsers.length} usuarios ---`);
             for (const user of unsyncedUsers) {
                 try {
-                    log.push(`Enviando POST a NocoDB para el usuario: ${user.name} (${user.email})`);
-                    await createNocoUser(user);
+                    log.push(`Enviando POST a Airtable para el usuario: ${user.name} (${user.email})`);
+                    await createAirtableUser(user);
                     syncedIds.users.push(user.id);
                     log.push(`-> Éxito para ${user.name}. Será marcado como sincronizado en el cliente.`);
                 } catch (error: any) {
@@ -131,8 +132,8 @@ export async function syncAllDataAction(data: {
             log.push(`--- Sincronizando ${unsyncedCourses.length} cursos ---`);
             for (const course of unsyncedCourses) {
                 try {
-                    log.push(`Enviando POST a NocoDB para el curso: ${course.title}`);
-                    await createNocoCourse(course);
+                    log.push(`Enviando POST a Airtable para el curso: ${course.title}`);
+                    await createAirtableCourse(course);
                     syncedIds.courses.push(course.id);
                     log.push(`-> Éxito para ${course.title}. Será marcado como sincronizado en el cliente.`);
                 } catch (error: any) {

@@ -76,9 +76,9 @@ export function SyncManager() {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Sincronización con NocoDB</CardTitle>
+                <CardTitle>Sincronización con Airtable</CardTitle>
                 <CardDescription>
-                    Sincroniza los datos locales (nuevos usuarios, cursos modificados, etc.) con la base de datos remota de NocoDB.
+                    Sincroniza los datos locales (nuevos usuarios, cursos modificados, etc.) con la base de datos remota de Airtable.
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
