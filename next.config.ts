@@ -1,3 +1,4 @@
+
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
@@ -9,6 +10,7 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
   images: {
+    unoptimized: false,
     remotePatterns: [
       {
         protocol: 'https',
@@ -23,8 +25,6 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
     ],
-    // Allow loading images from the same origin (for local files in /public)
-    domains: ['localhost'],
   },
 };
 
