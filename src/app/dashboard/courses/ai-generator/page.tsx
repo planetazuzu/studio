@@ -106,7 +106,7 @@ export default function AIGeneratorPage() {
     try {
         const newCourseData = {
             ...generatedCourse,
-            image: '/images/courses/default.png',
+            image: '/images/default.png',
             aiHint: generatedCourse.title.toLowerCase().split(' ').slice(0, 2).join(' '),
             modules: generatedCourse.modules.map((m: any, i: number) => ({...m, id: `mod_${Date.now()}_${i}`})),
         };

@@ -205,7 +205,7 @@ export default function EditCoursePage() {
         duration: '',
         modality: undefined,
         capacity: undefined,
-        image: '/images/courses/default.png',
+        image: '/images/default.png',
         startDate: '',
         endDate: '',
         mandatoryForRoles: [],

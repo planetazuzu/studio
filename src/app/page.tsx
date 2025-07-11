@@ -72,7 +72,7 @@ export default function LandingPage() {
           </div>
           <div className="relative">
             <Image
-              src="/images/Sección Principal (Hero).png"
+              src="/images/hero-section.png"
               alt="Dashboard de TalentOS"
               width={600}
               height={400}

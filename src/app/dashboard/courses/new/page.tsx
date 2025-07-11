@@ -31,7 +31,7 @@ const courseFormSchema = z.object({
   duration: z.string().min(1, { message: "La duración es obligatoria." }),
   modality: z.enum(['Online', 'Presencial', 'Mixta'], { errorMap: () => ({ message: "Debes seleccionar una modalidad." }) }),
   capacity: z.coerce.number().int().optional().transform(v => v === 0 ? undefined : v),
-  image: z.string().optional().default('/images/courses/default.png'),
+  image: z.string().optional().default('/images/default.png'),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
   mandatoryForRoles: z.array(z.string()).optional(),
@@ -54,7 +54,7 @@ export default function NewCoursePage() {
         duration: '',
         modality: undefined,
         capacity: undefined,
-        image: '/images/courses/default.png',
+        image: '/images/default.png',
         startDate: '',
         endDate: '',
         mandatoryForRoles: [],
@@ -183,7 +183,7 @@ export default function NewCoursePage() {
                                         }}
                                     />
                                     </FormControl>
-                                    {imageValue && imageValue !== '/images/courses/default.png' && (
+                                    {imageValue && imageValue !== '/images/default.png' && (
                                         <div className="mt-4 relative w-full h-48 rounded-lg overflow-hidden">
                                             <Image src={imageValue} alt="Vista previa de la imagen del curso" layout="fill" objectFit="cover" />
                                         </div>
