@@ -40,6 +40,12 @@ export default function RegisterPage() {
 
   const form = useForm<RegisterFormValues>({
       resolver: zodResolver(registerSchema),
+      defaultValues: {
+        name: '',
+        email: '',
+        password: '',
+        role: undefined,
+      }
   });
 
 
@@ -131,7 +137,7 @@ export default function RegisterPage() {
                 render={({ field, fieldState }) => (
                     <div className="space-y-2">
                          <Label htmlFor="role">¿Cómo quieres registrarte?</Label>
-                        <Select onValueChange={field.onChange} defaultValue={field.value} disabled={formIsDisabled}>
+                        <Select onValueChange={field.onChange} value={field.value} disabled={formIsDisabled}>
                             <SelectTrigger id="role">
                                 <SelectValue placeholder="Selecciona un rol..." />
                             </SelectTrigger>
