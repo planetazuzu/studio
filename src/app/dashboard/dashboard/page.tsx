@@ -339,7 +339,6 @@ function StudentDashboardView({ user }: { user: User }) {
   }, [allCosts]);
   
   const isManager = ['Gestor de RRHH', 'Jefe de Formación', 'Administrador General'].includes(user.role);
-  const canViewCosts = isManager;
   const aiConfig = useLiveQuery<AIConfig | undefined>(() => db.getAIConfig());
 
   return (
@@ -352,7 +351,7 @@ function StudentDashboardView({ user }: { user: User }) {
         <StatCard title="Cursos Activos" value={activeCoursesCount.toString()} icon={Activity} />
         <StatCard title="Formaciones Completadas" value={completedCoursesCount.toString()} icon={BookCheck} description="Año actual" />
         <StatCard title="Certificados Obtenidos" value={completedCoursesCount.toString()} icon={GraduationCap} />
-        {canViewCosts && <StatCard title="Coste Total" value={`${totalCost.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}`} icon={Wallet} description="Presupuesto: 25,000€" />}
+        {isManager && <StatCard title="Coste Total" value={`${totalCost.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}`} icon={Wallet} description="Presupuesto: 25,000€" />}
       </div>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <MandatoryCoursesPanel user={user} />
