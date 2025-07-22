@@ -1,30 +1,39 @@
 
-// src/lib/auth-providers/dexie.ts
-import type { User } from '../types';
-import type { AuthService } from '../authService';
-import * as db from '../db';
+import type { User } from '@/lib/types';
+import * as db from '@/lib/db';
 
-/**
- * Implements the AuthService interface using the local Dexie.js database.
- * This is suitable for development, testing, and offline-first prototypes.
- * NOT recommended for production environments with public access.
- */
-class DexieAuthService implements AuthService {
-  async login(email: string, password?: string): Promise<User | null> {
+let currentUser: User | null = null;
+const listeners = new Set<(user: User | null) => void>();
+
+// Check initial state
+db.getLoggedInUser().then(user => {
+  currentUser = user;
+  listeners.forEach(l => l(currentUser));
+});
+
+export async function login(email: string, password?: string): Promise<User | null> {
     if (!password) {
       throw new Error("La contraseña es obligatoria para el inicio de sesión local.");
     }
-    return db.login(email, password);
-  }
-
-  async logout(): Promise<void> {
-    db.logout();
-    return Promise.resolve();
-  }
-
-  async getCurrentUser(): Promise<User | null> {
-    return db.getLoggedInUser();
-  }
+    const user = await db.login(email, password);
+    currentUser = user;
+    listeners.forEach(l => l(currentUser));
+    return user;
 }
 
-export const dexieAuthService = new DexieAuthService();
+export async function logout(): Promise<void> {
+    db.logout();
+    currentUser = null;
+    listeners.forEach(l => l(null));
+}
+
+export function subscribe(listener: (user: User | null) => void): () => void {
+    // Immediately call listener with current state
+    listener(currentUser);
+    
+    listeners.add(listener);
+    
+    return () => {
+        listeners.delete(listener);
+    };
+}

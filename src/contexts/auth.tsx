@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { User } from '@/lib/types';
 import * as db from '@/lib/db';
 import { Loader2 } from 'lucide-react';
-import { getAuthService } from '@/lib/authService';
+import { authProvider } from '@/lib/auth-providers';
 
 interface AuthContextType {
   user: User | null;
@@ -22,26 +22,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
-  const authService = getAuthService();
-
-  useEffect(() => {
-    const initializeApp = async () => {
-      try {
-        await db.populateDatabase();
-        const loggedInUser = await authService.getCurrentUser();
-        setUser(loggedInUser);
-      } catch (error) {
-        console.error("Failed to initialize app", error);
-        setUser(null);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    initializeApp();
-  }, [authService]);
   
   useEffect(() => {
-      if (!isLoading && !user && !['/', '/login', '/register'].includes(pathname)) {
+    // Populate the database on initial load.
+    db.populateDatabase().then(() => {
+      // Once populated, subscribe to auth changes.
+      const unsubscribe = authProvider.subscribe((loggedInUser) => {
+        setUser(loggedInUser);
+        setIsLoading(false);
+      });
+      // Clean up subscription on unmount
+      return () => unsubscribe();
+    });
+  }, []);
+  
+  useEffect(() => {
+      if (!isLoading && !user && !['/', '/login', '/register', '/pending-approval'].includes(pathname)) {
           router.push('/login');
       }
   }, [user, isLoading, router, pathname]);
@@ -49,8 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password?: string) => {
     setIsLoading(true);
     try {
-        const loggedInUser = await authService.login(email, password);
-        setUser(loggedInUser);
+        const loggedInUser = await authProvider.login(email, password);
         return loggedInUser;
     } catch(error) {
         // Propagate error to be caught in the form
@@ -61,8 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
-    await authService.logout();
-    setUser(null);
+    await authProvider.logout();
     router.push('/');
   };
 
