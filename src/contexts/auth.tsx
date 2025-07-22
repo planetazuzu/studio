@@ -24,16 +24,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   
   useEffect(() => {
-    // Populate the database on initial load.
-    db.populateDatabase().then(() => {
-      // Once populated, subscribe to auth changes.
-      const unsubscribe = authProvider.subscribe((loggedInUser) => {
-        setUser(loggedInUser);
-        setIsLoading(false);
-      });
-      // Clean up subscription on unmount
-      return () => unsubscribe();
+    // We don't need to call populate here anymore,
+    // it's handled on first import of the dexie provider.
+    const unsubscribe = authProvider.subscribe((loggedInUser) => {
+      setUser(loggedInUser);
+      setIsLoading(false);
     });
+    // Clean up subscription on unmount
+    return () => unsubscribe();
   }, []);
   
   useEffect(() => {
