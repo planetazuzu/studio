@@ -72,7 +72,7 @@ export default function LandingPage() {
           </div>
           <div className="relative">
             <Image
-              src="/images/hero-section.png"
+              src="https://placehold.co/600x400.png"
               alt="Dashboard de TalentOS"
               width={600}
               height={400}
@@ -124,7 +124,7 @@ export default function LandingPage() {
           <div className="container grid max-w-7xl items-center gap-12 md:grid-cols-2">
              <div>
                <Image
-                src="/images/dashboard.png"
+                src="https://placehold.co/500x500.png"
                 alt="Gráficas de analíticas"
                 width={500}
                 height={500}
