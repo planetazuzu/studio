@@ -20,23 +20,11 @@ export async function courseTutor(input: CourseTutorInput): Promise<CourseTutorO
   return courseTutorFlow(input);
 }
 
-const courseTutorFlow = ai.defineFlow(
-  {
-    name: 'courseTutorFlow',
+const prompt = ai.definePrompt({
+    name: 'courseTutorPrompt',
     inputSchema: CourseTutorInputSchema,
     outputSchema: CourseTutorOutputSchema,
-  },
-  async (input) => {
-    const { llm, plugins } = await getActiveAIProvider();
-    
-    const { output } = await ai.generate({
-      model: llm,
-      plugins: plugins,
-      input: input,
-      output: {
-        schema: CourseTutorOutputSchema,
-      },
-      prompt: `You are an expert AI tutor for a corporate training platform called TalentOS. Your role is to answer student questions based *only* on the provided course content. Be helpful, clear, and concise. If the answer is not in the content, state that you cannot answer the question with the provided information.
+    prompt: `You are an expert AI tutor for a corporate training platform called TalentOS. Your role is to answer student questions based *only* on the provided course content. Be helpful, clear, and concise. If the answer is not in the content, state that you cannot answer the question with the provided information.
 
       Course Content:
       ---
@@ -54,7 +42,24 @@ const courseTutorFlow = ai.defineFlow(
 
       Your Answer (based on the course content and conversation history):
       `,
-    });
+}, async (input) => {
+    const { llm, plugins } = await getActiveAIProvider();
+    return {
+        model: llm,
+        plugins,
+        output: { schema: CourseTutorOutputSchema }
+    }
+});
+
+
+const courseTutorFlow = ai.defineFlow(
+  {
+    name: 'courseTutorFlow',
+    inputSchema: CourseTutorInputSchema,
+    outputSchema: CourseTutorOutputSchema,
+  },
+  async (input) => {
+    const { output } = await prompt(input);
     return output!;
   }
 );

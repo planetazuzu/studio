@@ -22,23 +22,12 @@ export async function generateAnnouncementEmail(
   return generateAnnouncementEmailFlow(input);
 }
 
-const generateAnnouncementEmailFlow = ai.defineFlow(
+const prompt = ai.definePrompt(
   {
-    name: 'generateAnnouncementEmailFlow',
+    name: 'announcementEmailPrompt',
     inputSchema: GenerateAnnouncementEmailInputSchema,
     outputSchema: GenerateAnnouncementEmailOutputSchema,
-  },
-  async (input) => {
-    const { llm, plugins } = await getActiveAIProvider();
-    
-    const { output } = await ai.generate({
-      model: llm,
-      plugins: plugins,
-      input: input,
-      output: {
-        schema: GenerateAnnouncementEmailOutputSchema,
-      },
-      prompt: `You are an AI assistant for a corporate training platform called TalentOS. Your task is to generate a professional email based on an internal announcement.
+    prompt: `You are an AI assistant for a corporate training platform called TalentOS. Your task is to generate a professional email based on an internal announcement.
 
       Recipient Name: {{{recipientName}}}
       Announcement Title: {{{announcementTitle}}}
@@ -47,7 +36,28 @@ const generateAnnouncementEmailFlow = ai.defineFlow(
       Based on this, generate an appropriate subject and body for an email notification. Address the recipient by their name. Keep the tone friendly but professional.
       The body should be formatted nicely for an email.
       `,
-    });
+  },
+  async (input) => {
+    const { llm, plugins } = await getActiveAIProvider();
+    return {
+      model: llm,
+      plugins: plugins,
+      output: {
+        schema: GenerateAnnouncementEmailOutputSchema,
+      },
+    };
+  }
+);
+
+
+const generateAnnouncementEmailFlow = ai.defineFlow(
+  {
+    name: 'generateAnnouncementEmailFlow',
+    inputSchema: GenerateAnnouncementEmailInputSchema,
+    outputSchema: GenerateAnnouncementEmailOutputSchema,
+  },
+  async (input) => {
+    const { output } = await prompt(input);
     return output!;
   }
 );

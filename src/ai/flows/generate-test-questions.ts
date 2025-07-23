@@ -21,23 +21,12 @@ export async function generateTestQuestions(input: GenerateTestQuestionsInput): 
   return generateTestQuestionsFlow(input);
 }
 
-const generateTestQuestionsFlow = ai.defineFlow(
-  {
-    name: 'generateTestQuestionsFlow',
+
+const prompt = ai.definePrompt({
+    name: 'generateTestQuestionsPrompt',
     inputSchema: GenerateTestQuestionsInputSchema,
     outputSchema: GenerateTestQuestionsOutputSchema,
-  },
-  async (input) => {
-    const { llm, plugins } = await getActiveAIProvider();
-    
-    const { output } = await ai.generate({
-      model: llm,
-      plugins: plugins,
-      input,
-      output: {
-        schema: GenerateTestQuestionsOutputSchema,
-      },
-      prompt: `You are an expert medical educator specializing in creating tests and quizzes for emergency personnel (EMTs, dispatchers).
+    prompt: `You are an expert medical educator specializing in creating tests and quizzes for emergency personnel (EMTs, dispatchers).
 
       You will use the provided course content to generate {{numberOfQuestions}} test questions of {{difficulty}} difficulty.
 
@@ -47,7 +36,24 @@ const generateTestQuestionsFlow = ai.defineFlow(
 
       Output the questions in JSON format adhering to the schema.
       `,
-    });
+}, async (input) => {
+    const { llm, plugins } = await getActiveAIProvider();
+    return {
+        model: llm,
+        plugins,
+        output: { schema: GenerateTestQuestionsOutputSchema }
+    }
+});
+
+
+const generateTestQuestionsFlow = ai.defineFlow(
+  {
+    name: 'generateTestQuestionsFlow',
+    inputSchema: GenerateTestQuestionsInputSchema,
+    outputSchema: GenerateTestQuestionsOutputSchema,
+  },
+  async (input) => {
+    const { output } = await prompt(input);
     return output!;
   }
 );

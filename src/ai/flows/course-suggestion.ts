@@ -22,23 +22,11 @@ export async function personalizedCourseRecommendations(
   return personalizedCourseRecommendationsFlow(input);
 }
 
-const personalizedCourseRecommendationsFlow = ai.defineFlow(
-  {
-    name: 'personalizedCourseRecommendationsFlow',
+const prompt = ai.definePrompt({
+    name: 'courseSuggestionPrompt',
     inputSchema: PersonalizedCourseRecommendationsInputSchema,
     outputSchema: PersonalizedCourseRecommendationsOutputSchema,
-  },
-  async (input) => {
-    const { llm, plugins } = await getActiveAIProvider();
-    
-    const { output } = await ai.generate({
-      model: llm,
-      plugins: plugins,
-      input: input,
-      output: {
-        schema: PersonalizedCourseRecommendationsOutputSchema,
-      },
-      prompt: `You are an expert career advisor for an emergency services training platform. Your task is to recommend relevant internal courses to a user based on their profile.
+    prompt: `You are an expert career advisor for an emergency services training platform. Your task is to recommend relevant internal courses to a user based on their profile.
 
       Analyze the user's data:
       - Role: {{{userRole}}}
@@ -56,8 +44,24 @@ const personalizedCourseRecommendationsFlow = ai.defineFlow(
       - If there are no clear links, suggest courses that are highly relevant to their role.
       - For each suggestion, provide a short, encouraging reason in Spanish.
 
-      Return the suggestions in the specified JSON format.`,
-    });
+      Return the suggestions in the specified JSON format.`
+}, async (input) => {
+    const { llm, plugins } = await getActiveAIProvider();
+    return {
+        model: llm,
+        plugins,
+        output: { schema: PersonalizedCourseRecommendationsOutputSchema }
+    }
+});
+
+const personalizedCourseRecommendationsFlow = ai.defineFlow(
+  {
+    name: 'personalizedCourseRecommendationsFlow',
+    inputSchema: PersonalizedCourseRecommendationsInputSchema,
+    outputSchema: PersonalizedCourseRecommendationsOutputSchema,
+  },
+  async (input) => {
+    const { output } = await prompt(input);
     return output!;
   }
 );

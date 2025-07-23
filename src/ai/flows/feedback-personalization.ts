@@ -20,23 +20,12 @@ export async function personalizedFeedback(input: PersonalizedFeedbackInput): Pr
   return personalizedFeedbackFlow(input);
 }
 
-const personalizedFeedbackFlow = ai.defineFlow(
-  {
-    name: 'personalizedFeedbackFlow',
+
+const prompt = ai.definePrompt({
+    name: 'personalizedFeedbackPrompt',
     inputSchema: PersonalizedFeedbackInputSchema,
     outputSchema: PersonalizedFeedbackOutputSchema,
-  },
-  async (input) => {
-    const { llm, plugins } = await getActiveAIProvider();
-    
-    const { output } = await ai.generate({
-      model: llm,
-      plugins: plugins,
-      input: input,
-      output: {
-        schema: PersonalizedFeedbackOutputSchema,
-      },
-      prompt: `You are an AI assistant providing personalized, encouraging feedback to students on their test results.
+    prompt: `You are an AI assistant providing personalized, encouraging feedback to students on their test results.
 
       Student Name: {{{studentName}}}
       Assignment Name: {{{assignmentName}}}
@@ -55,7 +44,23 @@ const personalizedFeedbackFlow = ai.defineFlow(
       - If they struggled, gently point out one area for improvement based on a specific incorrect answer. Do not be discouraging.
       - Keep the feedback concise and encouraging, around 3-4 sentences.
       - Address the student by name.`,
-    });
+}, async (input) => {
+    const { llm, plugins } = await getActiveAIProvider();
+    return {
+        model: llm,
+        plugins,
+        output: { schema: PersonalizedFeedbackOutputSchema }
+    }
+});
+
+const personalizedFeedbackFlow = ai.defineFlow(
+  {
+    name: 'personalizedFeedbackFlow',
+    inputSchema: PersonalizedFeedbackInputSchema,
+    outputSchema: PersonalizedFeedbackOutputSchema,
+  },
+  async (input) => {
+    const { output } = await prompt(input);
     return output!;
   }
 );

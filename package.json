@@ -47,6 +47,7 @@
     "dotenv": "^16.5.0",
     "firebase": "^10.12.3",
     "genkit": "^1.8.0",
+    "genkitx-openai": "^0.5.1",
     "google-auth-library": "^9.11.0",
     "html2canvas": "^1.4.1",
     "jest-environment-jsdom": "^29.7.0",

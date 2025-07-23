@@ -1,10 +1,10 @@
+
 'use server';
 
 import { cookies } from 'next/headers';
 import { googleAI } from '@genkit-ai/googleai';
+import { openAI } from 'genkitx-openai';
 import { genkitPlugin, ModelReference } from 'genkit';
-// In a real app, you would uncomment this when adding OpenAI support
-// import { openAI } from '@genkit-ai/openai'; 
 
 /**
  * Gets the active AI model and its corresponding Genkit plugin based on the
@@ -28,11 +28,9 @@ export async function getActiveAIProvider(): Promise<{
     case 'OpenAI':
       apiKey = cookieStore.get('openai_api_key')?.value;
       if (!apiKey) throw new Error("La clave API para OpenAI no está configurada.");
-      // Dummy implementation until openai plugin is added
-      // llm = openAI.model('gpt-4-turbo');
-      // plugins = [openAI({ apiKey })];
-      // For now, we'll just throw an error if this is selected.
-      throw new Error("El proveedor de OpenAI aún no está implementado.");
+      llm = openAI.model('gpt-4-turbo');
+      plugins = [openAI({ apiKey })];
+      break;
 
     case 'Claude':
     case 'HuggingFace':
@@ -41,7 +39,7 @@ export async function getActiveAIProvider(): Promise<{
 
     case 'Gemini':
     default:
-      apiKey = cookieStore.get('gemini_api_key')?.value;
+      apiKey = cookieStore.get('gemini_api_key')?.value || process.env.GOOGLE_API_KEY;
       if (!apiKey) {
         throw new Error('La clave API para Gemini no está configurada. Por favor, configúrala en Ajustes > Inteligencia Artificial.');
       }

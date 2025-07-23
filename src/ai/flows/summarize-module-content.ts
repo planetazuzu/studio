@@ -21,23 +21,11 @@ export async function summarizeModuleContent(input: SummarizeModuleContentInput)
   return summarizeModuleContentFlow(input);
 }
 
-const summarizeModuleContentFlow = ai.defineFlow(
-  {
-    name: 'summarizeModuleContentFlow',
+const prompt = ai.definePrompt({
+    name: 'summarizeModuleContentPrompt',
     inputSchema: SummarizeModuleContentInputSchema,
     outputSchema: SummarizeModuleContentOutputSchema,
-  },
-  async (input) => {
-    const { llm, plugins } = await getActiveAIProvider();
-    
-    const { output } = await ai.generate({
-      model: llm,
-      plugins: plugins,
-      input,
-      output: {
-        schema: SummarizeModuleContentOutputSchema,
-      },
-      prompt: `You are an expert AI assistant specializing in creating educational materials for emergency medical personnel.
+    prompt: `You are an expert AI assistant specializing in creating educational materials for emergency medical personnel.
       Your task is to summarize the following course module content. The summary should be concise, clear, and focus on the most critical learning objectives and key takeaways for a student.
 
       Keep the tone professional and direct.
@@ -47,7 +35,23 @@ const summarizeModuleContentFlow = ai.defineFlow(
       {{{input}}}
       ---
       `,
-    });
+}, async (input) => {
+    const { llm, plugins } = await getActiveAIProvider();
+    return {
+        model: llm,
+        plugins,
+        output: { schema: SummarizeModuleContentOutputSchema }
+    }
+});
+
+const summarizeModuleContentFlow = ai.defineFlow(
+  {
+    name: 'summarizeModuleContentFlow',
+    inputSchema: SummarizeModuleContentInputSchema,
+    outputSchema: SummarizeModuleContentOutputSchema,
+  },
+  async (input) => {
+    const { output } = await prompt(input);
     return output!;
   }
 );

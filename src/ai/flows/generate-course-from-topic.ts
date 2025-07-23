@@ -20,23 +20,11 @@ export async function generateCourseFromTopic(input: GenerateCourseFromTopicInpu
   return generateCourseFromTopicFlow(input);
 }
 
-const generateCourseFromTopicFlow = ai.defineFlow(
-  {
-    name: 'generateCourseFromTopicFlow',
+const prompt = ai.definePrompt({
+    name: 'generateCourseFromTopicPrompt',
     inputSchema: GenerateCourseFromTopicInputSchema,
     outputSchema: GenerateCourseFromTopicOutputSchema,
-  },
-  async (input) => {
-    const { llm, plugins } = await getActiveAIProvider();
-    
-    const { output } = await ai.generate({
-      model: llm,
-      plugins: plugins,
-      input,
-      output: {
-        schema: GenerateCourseFromTopicOutputSchema,
-      },
-      prompt: `You are an expert instructional designer for a corporate training platform specializing in emergency services (paramedics, dispatchers, etc.). Your task is to generate a complete, well-structured course outline based on a given topic. The target audience is Spanish-speaking emergency personnel.
+    prompt: `You are an expert instructional designer for a corporate training platform specializing in emergency services (paramedics, dispatchers, etc.). Your task is to generate a complete, well-structured course outline based on a given topic. The target audience is Spanish-speaking emergency personnel.
 
       Topic: "{{{input}}}"
 
@@ -53,7 +41,24 @@ const generateCourseFromTopicFlow = ai.defineFlow(
 
       Ensure the output is in Spanish and conforms strictly to the provided JSON schema.
       `,
-    });
+}, async (input) => {
+    const { llm, plugins } = await getActiveAIProvider();
+    return {
+        model: llm,
+        plugins,
+        output: { schema: GenerateCourseFromTopicOutputSchema }
+    }
+});
+
+
+const generateCourseFromTopicFlow = ai.defineFlow(
+  {
+    name: 'generateCourseFromTopicFlow',
+    inputSchema: GenerateCourseFromTopicInputSchema,
+    outputSchema: GenerateCourseFromTopicOutputSchema,
+  },
+  async (input) => {
+    const { output } = await prompt(input);
     return output!;
   }
 );

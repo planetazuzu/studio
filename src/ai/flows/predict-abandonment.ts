@@ -20,23 +20,12 @@ export async function predictAbandonment(input: PredictAbandonmentInput): Promis
   return predictAbandonmentFlow(input);
 }
 
-const predictAbandonmentFlow = ai.defineFlow(
-  {
-    name: 'predictAbandonmentFlow',
+
+const prompt = ai.definePrompt({
+    name: 'predictAbandonmentPrompt',
     inputSchema: PredictAbandonmentInputSchema,
     outputSchema: PredictAbandonmentOutputSchema,
-  },
-  async (input) => {
-    const { llm, plugins } = await getActiveAIProvider();
-    
-    const { output } = await ai.generate({
-      model: llm,
-      plugins: plugins,
-      input,
-      output: {
-        schema: PredictAbandonmentOutputSchema,
-      },
-      prompt: `You are an expert student success advisor for a corporate training platform. Your task is to analyze student data and predict their risk of abandonment (Bajo, Medio, Alto).
+    prompt: `You are an expert student success advisor for a corporate training platform. Your task is to analyze student data and predict their risk of abandonment (Bajo, Medio, Alto).
 
       Analyze the following student data:
       - Student Name: {{{userName}}}
@@ -53,7 +42,23 @@ const predictAbandonmentFlow = ai.defineFlow(
 
       Provide a brief justification for your prediction, highlighting the key indicators. Keep it concise and actionable for a training manager.
       `,
-    });
+}, async (input) => {
+    const { llm, plugins } = await getActiveAIProvider();
+    return {
+        model: llm,
+        plugins,
+        output: { schema: PredictAbandonmentOutputSchema }
+    }
+});
+
+const predictAbandonmentFlow = ai.defineFlow(
+  {
+    name: 'predictAbandonmentFlow',
+    inputSchema: PredictAbandonmentInputSchema,
+    outputSchema: PredictAbandonmentOutputSchema,
+  },
+  async (input) => {
+    const { output } = await prompt(input);
     return output!;
   }
 );

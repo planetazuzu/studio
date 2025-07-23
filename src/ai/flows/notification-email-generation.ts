@@ -22,23 +22,11 @@ export async function generateNotificationEmail(
   return generateNotificationEmailFlow(input);
 }
 
-const generateNotificationEmailFlow = ai.defineFlow(
-  {
-    name: 'generateNotificationEmailFlow',
+const prompt = ai.definePrompt({
+    name: 'notificationEmailPrompt',
     inputSchema: GenerateNotificationEmailInputSchema,
     outputSchema: GenerateNotificationEmailOutputSchema,
-  },
-  async (input) => {
-    const { llm, plugins } = await getActiveAIProvider();
-    
-    const { output } = await ai.generate({
-      model: llm,
-      plugins: plugins,
-      input,
-      output: {
-        schema: GenerateNotificationEmailOutputSchema,
-      },
-      prompt: `You are an AI assistant for a corporate training platform called TalentOS. Your task is to generate a personalized and professional email notification.
+    prompt: `You are an AI assistant for a corporate training platform called TalentOS. Your task is to generate a personalized and professional email notification.
 
       Recipient Name: {{{recipientName}}}
       Course Name: {{{courseName}}}
@@ -50,7 +38,23 @@ const generateNotificationEmailFlow = ai.defineFlow(
       - If the type is 'new_course_available', announce the new course and encourage them to enroll.
       - If the type is 'feedback_ready', let them know their feedback on a recent test is available.
       `,
-    });
+}, async (input) => {
+    const { llm, plugins } = await getActiveAIProvider();
+    return {
+        model: llm,
+        plugins,
+        output: { schema: GenerateNotificationEmailOutputSchema }
+    }
+});
+
+const generateNotificationEmailFlow = ai.defineFlow(
+  {
+    name: 'generateNotificationEmailFlow',
+    inputSchema: GenerateNotificationEmailInputSchema,
+    outputSchema: GenerateNotificationEmailOutputSchema,
+  },
+  async (input) => {
+    const { output } = await prompt(input);
     return output!;
   }
 );
