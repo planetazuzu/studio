@@ -42,22 +42,22 @@ export default function SettingsPage() {
                 <p className="text-muted-foreground">Configuración global para administradores.</p>
             </div>
             <div className="grid grid-cols-1 gap-8">
-                <Tabs defaultValue="general" className="w-full">
-                    <TabsList className="grid w-full max-w-2xl grid-cols-1 sm:grid-cols-4">
+                <Tabs defaultValue="general" className="w-full" orientation="vertical">
+                    <TabsList className="grid w-full max-w-xs grid-cols-1 h-auto">
                         {adminTabs.map(tab => (
-                            <TabsTrigger key={tab.value} value={tab.value}>{tab.label}</TabsTrigger>
+                            <TabsTrigger key={tab.value} value={tab.value} className="justify-start">{tab.label}</TabsTrigger>
                         ))}
                     </TabsList>
-                    <TabsContent value="general" className="mt-4">
+                    <TabsContent value="general" className="mt-4 md:mt-0">
                         <GeneralSettings />
                     </TabsContent>
-                    <TabsContent value="permissions" className="mt-4">
+                    <TabsContent value="permissions" className="mt-4 md:mt-0">
                         <PermissionSettings />
                     </TabsContent>
-                    <TabsContent value="ai" className="mt-4">
+                    <TabsContent value="ai" className="mt-4 md:mt-0">
                         <AISettings />
                     </TabsContent>
-                    <TabsContent value="api" className="mt-4">
+                    <TabsContent value="api" className="mt-4 md:mt-0">
                         <div className="space-y-6">
                             <ApiSettings />
                             <SyncManager />
@@ -68,5 +68,3 @@ export default function SettingsPage() {
         </div>
     );
 }
-
-    
