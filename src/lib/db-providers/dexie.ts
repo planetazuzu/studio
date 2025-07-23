@@ -1,3 +1,4 @@
+
 // src/lib/db-providers/dexie.ts
 
 /**
@@ -47,7 +48,7 @@ class AcademiaAIDB extends Dexie {
 
   constructor() {
     super('AcademiaAIDB');
-    this.version(32).stores({
+    this.version(33).stores({
       courses: 'id, instructor, status, isScorm, isSynced, *mandatoryForRoles',
       users: 'id, &email, status, points, isSynced',
       enrollments: '++id, studentId, courseId, status, [studentId+status]',
@@ -78,64 +79,76 @@ class AcademiaAIDB extends Dexie {
 
 const dbInstance = new AcademiaAIDB();
 
+// Populate the database if it's empty
+dbInstance.on('populate', async () => {
+    console.log("Database is being populated for the first time.");
+    await populateDatabase();
+});
+
+// --- Population Logic (extracted to be called by 'populate' event) ---
+async function populateDatabase() {
+    console.warn("Populating database with initial data...");
+    
+    await Promise.all([
+    dbInstance.courses.clear(),
+    dbInstance.users.clear(),
+    dbInstance.enrollments.clear(),
+    dbInstance.userProgress.clear(),
+    dbInstance.forumMessages.clear(),
+    dbInstance.notifications.clear(),
+    dbInstance.resources.clear(),
+    dbInstance.courseResources.clear(),
+    dbInstance.announcements.clear(),
+    dbInstance.chatChannels.clear(),
+    dbInstance.chatMessages.clear(),
+    dbInstance.calendarEvents.clear(),
+    dbInstance.externalTrainings.clear(),
+    dbInstance.costs.clear(),
+    dbInstance.aiConfig.clear(),
+    dbInstance.aiUsageLog.clear(),
+    dbInstance.badges.clear(),
+    dbInstance.userBadges.clear(),
+    dbInstance.costCategories.clear(),
+    dbInstance.learningPaths.clear(),
+    dbInstance.userLearningPathProgress.clear(),
+    dbInstance.courseRatings.clear(),
+    dbInstance.rolePermissions.clear(),
+    dbInstance.systemLogs.clear(),
+    ]);
+
+    console.log("Tables cleared. Repopulating with initial data...");
+
+    const initialPermissions: RolePermission[] = roles.map(role => {
+        const visibleNavs = getNavItems()
+            .filter(item => item.roles.includes(role))
+            .map(item => item.href);
+        return { role, visibleNavs };
+    });
+
+    await dbInstance.courses.bulkAdd(initialCourses.map(c => ({...c, isSynced: true})));
+    await dbInstance.users.bulkAdd(initialUsers.map(u => ({...u, isSynced: true})));
+    await dbInstance.chatChannels.bulkAdd(initialChatChannels);
+    await dbInstance.costs.bulkAdd(initialCosts.map(c => ({...c, isSynced: true})));
+    await dbInstance.aiConfig.add(defaultAIConfig);
+    await dbInstance.badges.bulkAdd(initialBadges);
+    await dbInstance.costCategories.bulkAdd(initialCostCategories.map(name => ({ name })));
+    await dbInstance.rolePermissions.bulkAdd(initialPermissions);
+
+    console.log("Database population complete.");
+}
+
+
 // --- DEXIE PROVIDER IMPLEMENTATION ---
 
 export const dexieProvider: DBProvider = {
   db: dbInstance,
   
+  // This is a placeholder now, as the on('populate') event handles the real work.
+  // We keep it in the interface for potential future manual-repopulation features.
   async populateDatabase() {
-      const adminUser = await dbInstance.users.get('user_1');
-
-    if (!adminUser || adminUser.status !== 'approved') {
-        console.warn("Main admin user not found or has incorrect status. Resetting and populating database with initial data...");
-        
-        await Promise.all([
-        dbInstance.courses.clear(),
-        dbInstance.users.clear(),
-        dbInstance.enrollments.clear(),
-        dbInstance.userProgress.clear(),
-        dbInstance.forumMessages.clear(),
-        dbInstance.notifications.clear(),
-        dbInstance.resources.clear(),
-        dbInstance.courseResources.clear(),
-        dbInstance.announcements.clear(),
-        dbInstance.chatChannels.clear(),
-        dbInstance.chatMessages.clear(),
-        dbInstance.calendarEvents.clear(),
-        dbInstance.externalTrainings.clear(),
-        dbInstance.costs.clear(),
-        dbInstance.aiConfig.clear(),
-        dbInstance.aiUsageLog.clear(),
-        dbInstance.badges.clear(),
-        dbInstance.userBadges.clear(),
-        dbInstance.costCategories.clear(),
-        dbInstance.learningPaths.clear(),
-        dbInstance.userLearningPathProgress.clear(),
-        dbInstance.courseRatings.clear(),
-        dbInstance.rolePermissions.clear(),
-        dbInstance.systemLogs.clear(),
-        ]);
-
-        console.log("Tables cleared. Repopulating with initial data...");
-
-        const initialPermissions: RolePermission[] = roles.map(role => {
-            const visibleNavs = getNavItems()
-                .filter(item => item.roles.includes(role))
-                .map(item => item.href);
-            return { role, visibleNavs };
-        });
-
-        await dbInstance.courses.bulkAdd(initialCourses.map(c => ({...c, isSynced: true})));
-        await dbInstance.users.bulkAdd(initialUsers.map(u => ({...u, isSynced: true})));
-        await dbInstance.chatChannels.bulkAdd(initialChatChannels);
-        await dbInstance.costs.bulkAdd(initialCosts.map(c => ({...c, isSynced: true})));
-        await dbInstance.aiConfig.add(defaultAIConfig);
-        await dbInstance.badges.bulkAdd(initialBadges);
-        await dbInstance.costCategories.bulkAdd(initialCostCategories.map(name => ({ name })));
-        await dbInstance.rolePermissions.bulkAdd(initialPermissions);
-
-        console.log("Database population complete.");
-    }
+    console.log("Manual population trigger called, but Dexie's 'populate' event handles the initial setup.");
+    // We can manually trigger a repopulation if needed by calling the standalone function
+    // await populateDatabase();
   },
 
   async login(email: string, password?: string): Promise<User | null> {
@@ -903,7 +916,7 @@ export const dexieProvider: DBProvider = {
     return paths.map(path => ({ ...path, progress: progressMap.get(path.id!) }));
   },
 
-  async addCourseRating(rating: Omit<CourseRating, 'id'>): Promise<number> {
+  async addCourseRating(rating: Omit<CourseRating, 'id' | 'isPublic'>): Promise<number> {
     const newRating: CourseRating = { ...rating, isPublic: false };
     return await dbInstance.courseRatings.add(newRating);
   },
@@ -993,3 +1006,8 @@ export const dexieProvider: DBProvider = {
     });
   },
 };
+
+// Open the database. This will also trigger the 'populate' event if it's the first time.
+dbInstance.open().catch(function (err) {
+  console.error('Failed to open db: ' + (err.stack || err));
+});

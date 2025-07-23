@@ -1,3 +1,4 @@
+
 // src/lib/db-providers/types.ts
 import type {
     Course, User, Enrollment, UserProgress, PendingEnrollmentDetails, ForumMessage,
@@ -143,7 +144,7 @@ export interface DBProvider {
   getLearningPathsForUser(user: User): Promise<(LearningPath & { progress: UserLearningPathProgress | undefined })[]>;
 
   // Ratings
-  addCourseRating(rating: Omit<CourseRating, 'id'>): Promise<number>;
+  addCourseRating(rating: Omit<CourseRating, 'id' | 'isPublic'>): Promise<number>;
   getRatingByUserAndCourse(userId: string, courseId: string): Promise<CourseRating | undefined>;
   getRatingsForCourse(courseId: string): Promise<CourseRating[]>;
   getRatingsForInstructor(instructorName: string): Promise<CourseRating[]>;
