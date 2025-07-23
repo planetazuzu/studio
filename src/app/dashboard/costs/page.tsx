@@ -7,9 +7,9 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
-import { PlusCircle, Trash2, FilePenLine, Loader2, List, Download } from 'lucide-react';
+import { PlusCircle, Trash2, FilePenLine, Loader2, List, Download, Settings } from 'lucide-react';
 import * as db from '@/lib/db';
-import type { Cost, Course, CustomCostCategory } from '@/lib/types';
+import type { Cost, Course } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import Link from 'next/link';
 
 
 const costSchema = z.object({
@@ -108,86 +109,6 @@ function CostDialog({
     );
 }
 
-function CategoryManager() {
-    const { toast } = useToast();
-    const categories = useLiveQuery(() => db.getAllCostCategories(), []);
-    const [newCategory, setNewCategory] = useState('');
-    const [categoryToDelete, setCategoryToDelete] = useState<CustomCostCategory | null>(null);
-
-    const handleAddCategory = async () => {
-        if (!newCategory.trim()) return;
-        try {
-            await db.addCostCategory({ name: newCategory.trim() });
-            toast({ title: 'Categoría añadida' });
-            setNewCategory('');
-        } catch (error: any) {
-            if (error.name === 'ConstraintError') {
-                toast({ title: 'Error', description: 'Esa categoría ya existe.', variant: 'destructive' });
-            } else {
-                console.error(error);
-                toast({ title: 'Error', description: 'No se pudo añadir la categoría.', variant: 'destructive' });
-            }
-        }
-    };
-    
-    const handleDeleteCategory = async () => {
-        if (!categoryToDelete?.id) return;
-        try {
-            await db.deleteCostCategory(categoryToDelete.id);
-            toast({ title: 'Categoría eliminada' });
-        } catch (error) {
-             toast({ title: 'Error', description: 'No se pudo eliminar la categoría.', variant: 'destructive' });
-        } finally {
-            setCategoryToDelete(null);
-        }
-    }
-    
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2"><List /> Gestionar Categorías</CardTitle>
-                <CardDescription>Añade o elimina categorías de costes para toda la aplicación.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <div className="space-y-4">
-                    <div className="flex gap-2">
-                        <Input 
-                            placeholder="Nombre de la nueva categoría"
-                            value={newCategory}
-                            onChange={(e) => setNewCategory(e.target.value)}
-                        />
-                        <Button onClick={handleAddCategory}>Añadir</Button>
-                    </div>
-                    <div className="border rounded-lg p-2 space-y-1 max-h-48 overflow-y-auto">
-                        {categories?.map(cat => (
-                            <div key={cat.id} className="flex items-center justify-between p-1.5 hover:bg-muted/50 rounded-md">
-                                <span className="text-sm">{cat.name}</span>
-                                <AlertDialogTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setCategoryToDelete(cat)}>
-                                        <Trash2 className="h-4 w-4"/>
-                                    </Button>
-                                </AlertDialogTrigger>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-                 <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>¿Confirmar eliminación?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Se eliminará la categoría "{categoryToDelete?.name}". Esto no afectará a los gastos ya existentes con esta categoría.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel onClick={() => setCategoryToDelete(null)}>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDeleteCategory} className="bg-destructive hover:bg-destructive/90">Eliminar</AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </CardContent>
-        </Card>
-    );
-}
-
 export default function CostsPage() {
     const { toast } = useToast();
     const costs = useLiveQuery(() => db.getAllCosts(), []);
@@ -257,12 +178,18 @@ export default function CostsPage() {
 
     return (
         <div className="space-y-8">
-            <div className="flex items-center justify-between">
+            <div className="flex items-start justify-between">
                 <div>
                     <h1 className="text-3xl font-bold">Gestión de Costes</h1>
                     <p className="text-muted-foreground">Registra y supervisa todos los gastos relacionados con la formación.</p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2">
+                    <Button asChild variant="outline">
+                        <Link href="/dashboard/costs/categories">
+                            <Settings className="mr-2 h-4 w-4" />
+                            Gestionar Categorías
+                        </Link>
+                    </Button>
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="outline"><Download className="mr-2 h-4 w-4" /> Exportar</Button>
@@ -281,56 +208,49 @@ export default function CostsPage() {
             </div>
 
             <AlertDialog>
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <div className="lg:col-span-2">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Historial de Gastos</CardTitle>
-                                <CardDescription>Lista de todas las transacciones de costes registradas.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                {!costs ? (
-                                    <div className="flex justify-center items-center h-48"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
-                                ) : costs.length === 0 ? (
-                                    <div className="text-center py-12 text-muted-foreground"><p>No hay gastos registrados todavía.</p></div>
-                                ) : (
-                                <div className="border rounded-lg">
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                            <TableHead>Concepto</TableHead>
-                                            <TableHead>Categoría</TableHead>
-                                            <TableHead>Curso Asociado</TableHead>
-                                            <TableHead>Fecha</TableHead>
-                                            <TableHead className="text-right">Importe</TableHead>
-                                            <TableHead className="w-[100px] text-right">Acciones</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {costs.map((item) => (
-                                                <TableRow key={item.id}>
-                                                    <TableCell className="font-medium">{item.item}</TableCell>
-                                                    <TableCell>{item.category}</TableCell>
-                                                    <TableCell className="text-muted-foreground">{item.courseId ? courseMap.get(item.courseId) || 'N/A' : '-'}</TableCell>
-                                                    <TableCell>{format(new Date(item.date), 'dd/MM/yyyy')}</TableCell>
-                                                    <TableCell className="text-right font-mono">{item.amount.toFixed(2)}€</TableCell>
-                                                    <TableCell className="text-right space-x-1">
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(item)}><FilePenLine className="h-4 w-4" /></Button>
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setItemToDelete(item)}><Trash2 className="h-4 w-4" /></Button>
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
-                                </div>
-                                )}
-                            </CardContent>
-                        </Card>
-                    </div>
-                    <div className="lg:col-span-1">
-                        <CategoryManager />
-                    </div>
-                </div>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Historial de Gastos</CardTitle>
+                        <CardDescription>Lista de todas las transacciones de costes registradas.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {!costs ? (
+                            <div className="flex justify-center items-center h-48"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+                        ) : costs.length === 0 ? (
+                            <div className="text-center py-12 text-muted-foreground"><p>No hay gastos registrados todavía.</p></div>
+                        ) : (
+                        <div className="border rounded-lg">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                    <TableHead>Concepto</TableHead>
+                                    <TableHead>Categoría</TableHead>
+                                    <TableHead>Curso Asociado</TableHead>
+                                    <TableHead>Fecha</TableHead>
+                                    <TableHead className="text-right">Importe</TableHead>
+                                    <TableHead className="w-[100px] text-right">Acciones</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {costs.map((item) => (
+                                        <TableRow key={item.id}>
+                                            <TableCell className="font-medium">{item.item}</TableCell>
+                                            <TableCell>{item.category}</TableCell>
+                                            <TableCell className="text-muted-foreground">{item.courseId ? courseMap.get(item.courseId) || 'N/A' : '-'}</TableCell>
+                                            <TableCell>{format(new Date(item.date), 'dd/MM/yyyy')}</TableCell>
+                                            <TableCell className="text-right font-mono">{item.amount.toFixed(2)}€</TableCell>
+                                            <TableCell className="text-right space-x-1">
+                                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(item)}><FilePenLine className="h-4 w-4" /></Button>
+                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setItemToDelete(item)}><Trash2 className="h-4 w-4" /></Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                        )}
+                    </CardContent>
+                </Card>
 
                 <AlertDialogContent>
                     <AlertDialogHeader>

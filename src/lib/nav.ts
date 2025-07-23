@@ -67,6 +67,12 @@ export const getNavItems = (): NavItem[] => [
     roles: managerRoles,
   },
   {
+    href: '/dashboard/costs/categories',
+    icon: Settings,
+    label: 'Categorías de Costes',
+    roles: managerRoles,
+  },
+  {
     href: '/dashboard/analytics',
     icon: AreaChart,
     label: 'Análisis',
@@ -78,3 +84,4 @@ export const getNavItems = (): NavItem[] => [
   { href: '/dashboard/logs', icon: ShieldAlert, label: 'Registro del Sistema', roles: ['Administrador General'] },
   { href: '/dashboard/settings', icon: Settings, label: 'Ajustes', roles: ['Administrador General'] },
 ];
+
