@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -187,5 +186,3 @@ export function TestGenerator({ courseTitle, courseContent, studentName, aiConfi
     </Card>
   );
 }
-
-    

@@ -847,7 +847,7 @@ export const dexieProvider: DBProvider = {
         await dbInstance.userBadges.add({ userId, badgeId, earnedAt: new Date().toISOString(), isSynced: false, updatedAt: new Date().toISOString() });
         const badge = await dbInstance.badges.get(badgeId);
         if(badge) {
-            await this.addNotification({ userId: userId, message: `¡Insignia desbloqueada: ${badge.name}!`, type: 'badge_unlocked', relatedUrl: '/dashboard/settings', isRead: false, timestamp: new Date().toISOString() });
+            await this.addNotification({ userId: userId, message: `¡Insignia desbloqueada: ${badge.name}!`, type: 'badge_unlocked', relatedUrl: '/dashboard/profile', isRead: false, timestamp: new Date().toISOString() });
         }
     });
   },
