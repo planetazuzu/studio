@@ -158,10 +158,15 @@ export const dexieProvider: DBProvider = {
   },
 
   logout(): void {
-    localStorage.removeItem(LOGGED_IN_USER_KEY);
+    if (typeof window !== 'undefined') {
+        localStorage.removeItem(LOGGED_IN_USER_KEY);
+    }
   },
 
   async getLoggedInUser(): Promise<User | null> {
+    if (typeof window === 'undefined') {
+      return null; // Avoid accessing localStorage on the server
+    }
     const userId = localStorage.getItem(LOGGED_IN_USER_KEY);
     if (!userId) return null;
     const user = await dbInstance.users.get(userId);
