@@ -71,7 +71,7 @@ export default function LandingPage() {
           </div>
           <div className="relative">
             <Image
-              src="https://placehold.co/600x400.png"
+              src="https://images.unsplash.com/photo-1556740738-b6a63e27c4df?q=80&w=2070&auto=format&fit=crop"
               alt="Dashboard de TalentOS"
               width={600}
               height={400}
@@ -123,7 +123,7 @@ export default function LandingPage() {
           <div className="container grid max-w-7xl items-center gap-12 md:grid-cols-2">
              <div>
                <Image
-                src="https://placehold.co/500x500.png"
+                src="https://images.unsplash.com/photo-1516321497487-e288fb19713f?q=80&w=2070&auto=format&fit=crop"
                 alt="Gráficas de analíticas"
                 width={500}
                 height={500}
@@ -179,7 +179,7 @@ export default function LandingPage() {
                 <p>&copy; {new Date().getFullYear()} TalentOS. Todos los derechos reservados.</p>
             </div>
             <div className="flex items-center gap-4">
-                <Link href="#" className="hover:text-primary">Términos de Servicio</Link>
+                <Link href="/terms" className="hover:text-primary">Términos de Servicio</Link>
                 <Link href="#" className="hover:text-primary">Política de Privacidad</Link>
             </div>
         </div>
