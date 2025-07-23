@@ -508,15 +508,7 @@ export default function CourseDetailPage() {
                 </Card>
               </TabsContent>
                <TabsContent value="resources" className="mt-4">
-                <Card className="shadow-lg">
-                  <CardHeader>
-                    <CardTitle>Recursos de Apoyo</CardTitle>
-                    <CardDescription>Materiales de estudio y enlaces de interés para el curso.</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                     <CourseResources courseId={courseId} />
-                  </CardContent>
-                </Card>
+                <CourseResources courseId={courseId} />
               </TabsContent>
               <TabsContent value="ratings" className="mt-4">
                 <RatingTab course={course} user={user!} progress={progressPercentage} />

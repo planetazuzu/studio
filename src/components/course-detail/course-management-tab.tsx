@@ -122,5 +122,3 @@ export function CourseManagementTab({ course }: { course: Course }) {
         </div>
     );
 }
-
-    
