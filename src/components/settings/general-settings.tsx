@@ -64,7 +64,9 @@ export function GeneralSettings() {
                             value={localConfig.defaultCertificateTemplate}
                             onValueChange={(value: CertificateTemplateType) => setLocalConfig(prev => ({...prev!, defaultCertificateTemplate: value}))}
                         >
-                            <SelectTrigger id="default-certificate"><SelectValue /></SelectTrigger>
+                            <SelectTrigger id="default-certificate">
+                                <SelectValue placeholder="Selecciona una plantilla..." />
+                            </SelectTrigger>
                             <SelectContent>
                                 {certificateTemplates.map(template => (
                                     <SelectItem key={template} value={template}>{template}</SelectItem>
