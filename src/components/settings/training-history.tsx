@@ -73,7 +73,7 @@ export function TrainingHistory() {
             </CardHeader>
             <CardContent className="space-y-8">
                 <InternalTrainingHistory user={user} />
-                <ExternalTrainingSettings user={user} />
+                <ExternalTrainingSettings />
             </CardContent>
         </Card>
     );
