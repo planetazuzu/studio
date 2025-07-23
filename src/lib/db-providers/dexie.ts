@@ -53,7 +53,7 @@ class AcademiaAIDB extends Dexie {
       enrollments: '++id, studentId, courseId, status, [studentId+status]',
       userProgress: '++id, [userId+courseId], userId, courseId',
       forumMessages: '++id, courseId, parentId, timestamp',
-      notifications: '++id, userId, isRead, timestamp, [userId+timestamp]',
+      notifications: '++id, userId, isRead, timestamp, [userId+timestamp], [userId+type+relatedUrl]',
       resources: '++id, name',
       courseResources: '++id, [courseId+resourceId]',
       announcements: '++id, timestamp',
@@ -726,7 +726,7 @@ export const dexieProvider: DBProvider = {
     allProgress.forEach(p => progressMap.set(`${p.userId}-${p.courseId}`, p));
     const report: ComplianceReportData[] = [];
     for (const user of usersToReport) {
-        const mandatoryCourses = allCourses.filter(c => c.mandatoryForRoles?.includes(user.role));
+        const mandatoryCourses = allCourses.filter(c => c.status === 'published' && c.mandatoryForRoles?.includes(user.role));
         if (mandatoryCourses.length === 0) {
             report.push({ userId: user.id, userName: user.name, userRole: user.role, mandatoryCoursesCount: 0, completedCoursesCount: 0, complianceRate: 100 });
             continue;
