@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo } from 'react';
@@ -10,6 +9,8 @@ import type { User, Course } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { cn } from '@/lib/utils';
+import { Separator } from '../ui/separator';
 
 export function LearningPathPanel({ user }: { user: User }) {
   const learningPaths = useLiveQuery(() => db.getLearningPathsForUser(user), [user.id]);
@@ -22,7 +23,7 @@ export function LearningPathPanel({ user }: { user: User }) {
 
   if (learningPaths === undefined) {
     return (
-      <Card className="col-span-1">
+      <Card className="col-span-1 lg:col-span-3">
         <CardHeader>
           <CardTitle>Planes de Carrera</CardTitle>
           <CardDescription>Tus rutas de aprendizaje asignadas.</CardDescription>
@@ -41,7 +42,7 @@ export function LearningPathPanel({ user }: { user: User }) {
 
   if (activePaths.length === 0) {
     return (
-      <Card className="col-span-1">
+      <Card className="col-span-1 lg:col-span-3">
         <CardHeader>
           <CardTitle>Planes de Carrera</CardTitle>
           <CardDescription>Tus rutas de aprendizaje asignadas.</CardDescription>
@@ -67,42 +68,56 @@ export function LearningPathPanel({ user }: { user: User }) {
           const totalSteps = path.courseIds.length;
           const completedSteps = path.courseIds.filter(id => completedIds.has(id)).length;
           const progressPercentage = totalSteps > 0 ? (completedSteps / totalSteps) * 100 : 0;
-          
-          let nextCourseId: string | null = null;
-          for (const courseId of path.courseIds) {
-            if (!completedIds.has(courseId)) {
-              nextCourseId = courseId;
-              break;
-            }
-          }
-          const nextCourse = nextCourseId ? courseMap.get(nextCourseId) : null;
+          let nextCourseFound = false;
 
           return (
-            <div key={path.id} className="space-y-3">
-              <h3 className="font-semibold">{path.title}</h3>
-              <Progress value={progressPercentage} />
-              <p className="text-sm text-muted-foreground">
-                Paso {completedSteps + 1} de {totalSteps}.
-              </p>
-              {nextCourse ? (
-                <div className="flex items-center justify-between rounded-lg border bg-muted/50 p-3">
-                  <div className="space-y-1">
-                    <p className="text-xs font-semibold text-primary">SIGUIENTE CURSO</p>
-                    <p className="font-medium">{nextCourse.title}</p>
-                  </div>
-                  <Button asChild size="sm">
-                    <Link href={`/dashboard/courses/${nextCourse.id}`}>
-                      <PlayCircle className="mr-2 h-4 w-4" />
-                      Empezar
-                    </Link>
-                  </Button>
+            <div key={path.id} className="space-y-4 p-4 border rounded-lg">
+                <div>
+                    <h3 className="font-semibold">{path.title}</h3>
+                    <Progress value={progressPercentage} className="mt-2 h-2" />
+                    <p className="text-sm text-muted-foreground mt-1">
+                        Completados {completedSteps} de {totalSteps} cursos.
+                    </p>
                 </div>
-              ) : (
-                 <div className="flex items-center justify-between rounded-lg border bg-green-100 p-3 text-green-800">
-                   <p className="font-medium">¡Plan de carrera completado!</p>
-                   <Check className="h-5 w-5"/>
-                 </div>
-              )}
+                <Separator />
+                <div className="space-y-3">
+                   {path.courseIds.map((courseId, index) => {
+                        const course = courseMap.get(courseId);
+                        if (!course) return null;
+
+                        let status: 'completed' | 'active' | 'locked' = 'locked';
+                        if (completedIds.has(courseId)) {
+                            status = 'completed';
+                        } else if (!nextCourseFound) {
+                            status = 'active';
+                            nextCourseFound = true;
+                        }
+
+                        const Icon = status === 'completed' ? Check : status === 'active' ? PlayCircle : Lock;
+                        const iconColor = status === 'completed' ? 'bg-green-100 text-green-600' : status === 'active' ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground';
+
+                        return (
+                            <div key={course.id} className="flex items-center gap-4">
+                                <div className={cn("flex h-8 w-8 items-center justify-center rounded-full", iconColor)}>
+                                    <Icon className="h-5 w-5"/>
+                                </div>
+                                <div className="flex-grow">
+                                    <p className={cn("font-medium", status === 'locked' && 'text-muted-foreground')}>
+                                        {course.title}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">Paso {index + 1}</p>
+                                </div>
+                                {status === 'active' && (
+                                    <Button asChild size="sm">
+                                        <Link href={`/dashboard/courses/${course.id}`}>
+                                            Empezar
+                                        </Link>
+                                    </Button>
+                                )}
+                            </div>
+                        )
+                   })}
+                </div>
             </div>
           );
         })}
