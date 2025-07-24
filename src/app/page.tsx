@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect } from 'react';
@@ -42,7 +43,7 @@ export default function LandingPage() {
                       <Link href="/login">Iniciar Sesión</Link>
                     </Button>
                     <Button asChild>
-                      <Link href="/register">Solicitar una Demo</Link>
+                      <Link href="/request-demo">Solicitar una Demo</Link>
                     </Button>
                 </>
             )}
@@ -62,10 +63,10 @@ export default function LandingPage() {
             </p>
             <div className="flex flex-col gap-4 sm:flex-row sm:justify-center md:justify-start">
               <Button asChild size="lg">
-                <Link href="/register">Solicitar una Demo <ArrowRight className="ml-2 h-5 w-5" /></Link>
+                <Link href="/request-demo">Solicitar una Demo <ArrowRight className="ml-2 h-5 w-5" /></Link>
               </Button>
               <Button asChild size="lg" variant="outline">
-                <Link href="#features">Ver Funcionalidades</Link>
+                <Link href="/features">Ver Funcionalidades</Link>
               </Button>
             </div>
           </div>
@@ -167,7 +168,7 @@ export default function LandingPage() {
             Descubre cómo las empresas líderes están utilizando TalentOS para construir equipos más competentes, motivados y preparados para el futuro. Agenda una demo personalizada hoy mismo.
           </p>
           <Button asChild size="lg" className="mt-8">
-            <Link href="/register">Solicitar una Demo</Link>
+            <Link href="/request-demo">Solicitar una Demo</Link>
           </Button>
         </section>
       </main>
@@ -180,7 +181,7 @@ export default function LandingPage() {
             </div>
             <div className="flex items-center gap-4">
                 <Link href="/terms" className="hover:text-primary">Términos de Servicio</Link>
-                <Link href="#" className="hover:text-primary">Política de Privacidad</Link>
+                <Link href="/privacy-policy" className="hover:text-primary">Política de Privacidad</Link>
             </div>
         </div>
       </footer>
