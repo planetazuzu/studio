@@ -5,6 +5,8 @@ import { cookies } from 'next/headers';
 import { googleAI } from '@genkit-ai/googleai';
 import { openAI } from 'genkitx-openai';
 import { genkitPlugin, ModelReference } from 'genkit';
+import type { AIModel } from '@/lib/types';
+import * as db from '@/lib/db';
 
 /**
  * Gets the active AI model and its corresponding Genkit plugin based on the
@@ -18,7 +20,8 @@ export async function getActiveAIProvider(): Promise<{
   plugins: genkitPlugin[];
 }> {
   const cookieStore = cookies();
-  const activeModel = cookieStore.get('ai_active_model')?.value || 'Gemini';
+  const config = await db.getAIConfig(); // This call is problematic on the server.
+  const activeModel = config.activeModel;
   
   let llm: ModelReference<any>;
   let plugins: genkitPlugin[] = [];

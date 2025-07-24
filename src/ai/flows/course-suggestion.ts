@@ -4,11 +4,11 @@
 /**
  * @fileOverview Provides personalized course recommendations based on a user's comprehensive profile.
  *
- * - personalizedCourseRecommendations - A function that returns personalized course recommendations.
+ * - personalizedCourseRecommendations - a function that returns personalized course recommendations.
  */
 
 import { ai } from '@/ai/genkit';
-import { getActiveAIProvider } from '@/ai/provider';
+import { googleAI } from '@genkit-ai/googleai';
 import {
   PersonalizedCourseRecommendationsInput,
   PersonalizedCourseRecommendationsInputSchema,
@@ -45,13 +45,6 @@ const prompt = ai.definePrompt({
       - For each suggestion, provide a short, encouraging reason in Spanish.
 
       Return the suggestions in the specified JSON format.`
-}, async (input) => {
-    const { llm, plugins } = await getActiveAIProvider();
-    return {
-        model: llm,
-        plugins,
-        output: { schema: PersonalizedCourseRecommendationsOutputSchema }
-    }
 });
 
 const personalizedCourseRecommendationsFlow = ai.defineFlow(
@@ -59,6 +52,7 @@ const personalizedCourseRecommendationsFlow = ai.defineFlow(
     name: 'personalizedCourseRecommendationsFlow',
     inputSchema: PersonalizedCourseRecommendationsInputSchema,
     outputSchema: PersonalizedCourseRecommendationsOutputSchema,
+    plugins: [googleAI()],
   },
   async (input) => {
     const { output } = await prompt(input);

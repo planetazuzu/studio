@@ -8,7 +8,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { getActiveAIProvider } from '@/ai/provider';
+import { googleAI } from '@genkit-ai/googleai';
 import {
   GenerateNotificationEmailInput,
   GenerateNotificationEmailInputSchema,
@@ -38,13 +38,6 @@ const prompt = ai.definePrompt({
       - If the type is 'new_course_available', announce the new course and encourage them to enroll.
       - If the type is 'feedback_ready', let them know their feedback on a recent test is available.
       `,
-}, async (input) => {
-    const { llm, plugins } = await getActiveAIProvider();
-    return {
-        model: llm,
-        plugins,
-        output: { schema: GenerateNotificationEmailOutputSchema }
-    }
 });
 
 const generateNotificationEmailFlow = ai.defineFlow(
@@ -52,6 +45,7 @@ const generateNotificationEmailFlow = ai.defineFlow(
     name: 'generateNotificationEmailFlow',
     inputSchema: GenerateNotificationEmailInputSchema,
     outputSchema: GenerateNotificationEmailOutputSchema,
+    plugins: [googleAI()],
   },
   async (input) => {
     const { output } = await prompt(input);

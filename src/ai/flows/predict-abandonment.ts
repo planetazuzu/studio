@@ -8,7 +8,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { getActiveAIProvider } from '@/ai/provider';
+import { googleAI } from '@genkit-ai/googleai';
 import {
   PredictAbandonmentInput,
   PredictAbandonmentInputSchema,
@@ -42,13 +42,6 @@ const prompt = ai.definePrompt({
 
       Provide a brief justification for your prediction, highlighting the key indicators. Keep it concise and actionable for a training manager.
       `,
-}, async (input) => {
-    const { llm, plugins } = await getActiveAIProvider();
-    return {
-        model: llm,
-        plugins,
-        output: { schema: PredictAbandonmentOutputSchema }
-    }
 });
 
 const predictAbandonmentFlow = ai.defineFlow(
@@ -56,6 +49,7 @@ const predictAbandonmentFlow = ai.defineFlow(
     name: 'predictAbandonmentFlow',
     inputSchema: PredictAbandonmentInputSchema,
     outputSchema: PredictAbandonmentOutputSchema,
+    plugins: [googleAI()],
   },
   async (input) => {
     const { output } = await prompt(input);

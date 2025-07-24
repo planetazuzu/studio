@@ -8,7 +8,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { getActiveAIProvider } from '@/ai/provider';
+import { googleAI } from '@genkit-ai/googleai';
 import {
   GenerateTestQuestionsInput,
   GenerateTestQuestionsInputSchema,
@@ -36,13 +36,6 @@ const prompt = ai.definePrompt({
 
       Output the questions in JSON format adhering to the schema.
       `,
-}, async (input) => {
-    const { llm, plugins } = await getActiveAIProvider();
-    return {
-        model: llm,
-        plugins,
-        output: { schema: GenerateTestQuestionsOutputSchema }
-    }
 });
 
 
@@ -51,6 +44,7 @@ const generateTestQuestionsFlow = ai.defineFlow(
     name: 'generateTestQuestionsFlow',
     inputSchema: GenerateTestQuestionsInputSchema,
     outputSchema: GenerateTestQuestionsOutputSchema,
+    plugins: [googleAI()],
   },
   async (input) => {
     const { output } = await prompt(input);

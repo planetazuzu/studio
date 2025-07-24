@@ -8,7 +8,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { getActiveAIProvider } from '@/ai/provider';
+import { googleAI } from '@genkit-ai/googleai';
 import {
   PersonalizedFeedbackInput,
   PersonalizedFeedbackInputSchema,
@@ -44,13 +44,6 @@ const prompt = ai.definePrompt({
       - If they struggled, gently point out one area for improvement based on a specific incorrect answer. Do not be discouraging.
       - Keep the feedback concise and encouraging, around 3-4 sentences.
       - Address the student by name.`,
-}, async (input) => {
-    const { llm, plugins } = await getActiveAIProvider();
-    return {
-        model: llm,
-        plugins,
-        output: { schema: PersonalizedFeedbackOutputSchema }
-    }
 });
 
 const personalizedFeedbackFlow = ai.defineFlow(
@@ -58,6 +51,7 @@ const personalizedFeedbackFlow = ai.defineFlow(
     name: 'personalizedFeedbackFlow',
     inputSchema: PersonalizedFeedbackInputSchema,
     outputSchema: PersonalizedFeedbackOutputSchema,
+    plugins: [googleAI()],
   },
   async (input) => {
     const { output } = await prompt(input);

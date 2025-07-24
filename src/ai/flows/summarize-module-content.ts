@@ -8,7 +8,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { getActiveAIProvider } from '@/ai/provider';
+import { googleAI } from '@genkit-ai/googleai';
 import {
   SummarizeModuleContentInput,
   SummarizeModuleContentInputSchema,
@@ -35,13 +35,6 @@ const prompt = ai.definePrompt({
       {{{input}}}
       ---
       `,
-}, async (input) => {
-    const { llm, plugins } = await getActiveAIProvider();
-    return {
-        model: llm,
-        plugins,
-        output: { schema: SummarizeModuleContentOutputSchema }
-    }
 });
 
 const summarizeModuleContentFlow = ai.defineFlow(
@@ -49,6 +42,7 @@ const summarizeModuleContentFlow = ai.defineFlow(
     name: 'summarizeModuleContentFlow',
     inputSchema: SummarizeModuleContentInputSchema,
     outputSchema: SummarizeModuleContentOutputSchema,
+    plugins: [googleAI()],
   },
   async (input) => {
     const { output } = await prompt(input);

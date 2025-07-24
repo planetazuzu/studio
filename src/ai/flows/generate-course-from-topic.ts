@@ -8,7 +8,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { getActiveAIProvider } from '@/ai/provider';
+import { googleAI } from '@genkit-ai/googleai';
 import {
   GenerateCourseFromTopicInput,
   GenerateCourseFromTopicInputSchema,
@@ -41,13 +41,6 @@ const prompt = ai.definePrompt({
 
       Ensure the output is in Spanish and conforms strictly to the provided JSON schema.
       `,
-}, async (input) => {
-    const { llm, plugins } = await getActiveAIProvider();
-    return {
-        model: llm,
-        plugins,
-        output: { schema: GenerateCourseFromTopicOutputSchema }
-    }
 });
 
 
@@ -56,6 +49,7 @@ const generateCourseFromTopicFlow = ai.defineFlow(
     name: 'generateCourseFromTopicFlow',
     inputSchema: GenerateCourseFromTopicInputSchema,
     outputSchema: GenerateCourseFromTopicOutputSchema,
+    plugins: [googleAI()],
   },
   async (input) => {
     const { output } = await prompt(input);

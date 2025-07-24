@@ -8,7 +8,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { getActiveAIProvider } from '@/ai/provider';
+import { googleAI } from '@genkit-ai/googleai';
 import {
   CourseTutorInput,
   CourseTutorInputSchema,
@@ -42,13 +42,6 @@ const prompt = ai.definePrompt({
 
       Your Answer (based on the course content and conversation history):
       `,
-}, async (input) => {
-    const { llm, plugins } = await getActiveAIProvider();
-    return {
-        model: llm,
-        plugins,
-        output: { schema: CourseTutorOutputSchema }
-    }
 });
 
 
@@ -57,6 +50,7 @@ const courseTutorFlow = ai.defineFlow(
     name: 'courseTutorFlow',
     inputSchema: CourseTutorInputSchema,
     outputSchema: CourseTutorOutputSchema,
+    plugins: [googleAI()],
   },
   async (input) => {
     const { output } = await prompt(input);

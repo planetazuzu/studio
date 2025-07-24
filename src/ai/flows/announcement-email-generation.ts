@@ -1,4 +1,3 @@
-
 'use server';
 
 /**
@@ -8,7 +7,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { getActiveAIProvider } from '@/ai/provider';
+import { googleAI } from '@genkit-ai/googleai';
 import {
   GenerateAnnouncementEmailInput,
   GenerateAnnouncementEmailInputSchema,
@@ -37,16 +36,6 @@ const prompt = ai.definePrompt(
       The body should be formatted nicely for an email.
       `,
   },
-  async (input) => {
-    const { llm, plugins } = await getActiveAIProvider();
-    return {
-      model: llm,
-      plugins: plugins,
-      output: {
-        schema: GenerateAnnouncementEmailOutputSchema,
-      },
-    };
-  }
 );
 
 
@@ -55,6 +44,7 @@ const generateAnnouncementEmailFlow = ai.defineFlow(
     name: 'generateAnnouncementEmailFlow',
     inputSchema: GenerateAnnouncementEmailInputSchema,
     outputSchema: GenerateAnnouncementEmailOutputSchema,
+    plugins: [googleAI()],
   },
   async (input) => {
     const { output } = await prompt(input);
