@@ -12,6 +12,16 @@ function getConfigValue(cookieName: string, envVarName: string): string | undefi
     return cookies().get(cookieName)?.value || process.env[envVarName];
 }
 
+async function getFirebaseCredentials(): Promise<{ projectId?: string; clientEmail?: string; privateKey?: string; }> {
+    const cookieStore = cookies();
+    return {
+        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+        clientEmail: cookieStore.get('firebase_client_email')?.value || process.env.FIREBASE_CLIENT_EMAIL,
+        privateKey: cookieStore.get('firebase_private_key')?.value || process.env.FIREBASE_PRIVATE_KEY,
+    };
+}
+
+
 // --- Email Service (SendGrid) ---
 export async function sendEmailNotification(user: User, subject: string, body: string): Promise<void> {
     const apiKey = getConfigValue('sendgrid_api_key', 'SENDGRID_API_KEY');
@@ -77,10 +87,16 @@ export async function sendWhatsAppNotification(user: User, message: string): Pro
 
 async function getFirebaseAccessToken() {
     const scopes = ['https://www.googleapis.com/auth/firebase.messaging'];
+    const { clientEmail, privateKey } = await getFirebaseCredentials();
+    
+    if (!clientEmail || !privateKey) {
+        throw new Error('Firebase server credentials (client email, private key) are not configured.');
+    }
+
     const auth = new GoogleAuth({
         credentials: {
-            client_email: process.env.FIREBASE_CLIENT_EMAIL,
-            private_key: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+            client_email: clientEmail,
+            private_key: privateKey.replace(/\\n/g, '\n'),
         },
         scopes,
     });
@@ -88,9 +104,9 @@ async function getFirebaseAccessToken() {
 }
 
 export async function sendPushNotification(userId: string, title: string, body: string, url: string): Promise<void> {
-    const { FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY } = process.env;
+    const { projectId, clientEmail, privateKey } = await getFirebaseCredentials();
 
-    if (!FIREBASE_PROJECT_ID || !FIREBASE_CLIENT_EMAIL || !FIREBASE_PRIVATE_KEY) {
+    if (!projectId || !clientEmail || !privateKey) {
         console.warn('--- [PUSH SIMULATION] ---');
         console.warn('Firebase server environment variables not set. Simulating push notification.');
         console.log(`To User ID: ${userId}`);
@@ -109,7 +125,7 @@ export async function sendPushNotification(userId: string, title: string, body: 
 
     try {
         const accessToken = await getFirebaseAccessToken();
-        const fcmEndpoint = `https://fcm.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/messages:send`;
+        const fcmEndpoint = `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`;
         
         const message = {
             message: {

@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { saveApiKeysAction } from '@/app/dashboard/settings/actions';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { Server, HelpCircle, Mail, MessageSquare } from 'lucide-react';
+import { Server, HelpCircle, Mail, MessageSquare, Bell } from 'lucide-react';
 import Link from 'next/link';
 
 
@@ -54,6 +54,22 @@ export function ApiSettings() {
                             </div>
                         </div>
                     </div>
+                    
+                    <div className="space-y-4 rounded-lg border p-4">
+                        <h3 className="text-lg font-semibold flex items-center gap-2"><Bell />Firebase (Notificaciones Push)</h3>
+                        <p className="text-sm text-muted-foreground">Necesario para enviar notificaciones push. Consulta la guía de despliegue para obtener estas credenciales de tu cuenta de servicio de Firebase.</p>
+                         <div className="space-y-4">
+                             <div className="space-y-2">
+                                <Label htmlFor="firebase_client_email">Email del Cliente de Firebase</Label>
+                                <Input id="firebase_client_email" name="firebase_client_email" type="email" placeholder="firebase-adminsdk-...@...iam.gserviceaccount.com" />
+                            </div>
+                             <div className="space-y-2">
+                                <Label htmlFor="firebase_private_key">Clave Privada de Firebase</Label>
+                                <Input id="firebase_private_key" name="firebase_private_key" type="password" placeholder="Introduce la clave privada (comienza con -----BEGIN PRIVATE KEY-----)" />
+                            </div>
+                        </div>
+                    </div>
+
 
                      <div className="space-y-4 rounded-lg border p-4">
                         <h3 className="text-lg font-semibold flex items-center gap-2"><Mail/>SendGrid (Email)</h3>
