@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useFormState } from 'react-dom';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -16,6 +16,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+import { sendDemoRequestEmail } from './actions';
 
 const demoRequestSchema = z.object({
   name: z.string().min(2, { message: "El nombre es obligatorio." }),
@@ -29,7 +31,8 @@ type DemoRequestFormValues = z.infer<typeof demoRequestSchema>;
 export default function RequestDemoPage() {
     const { toast } = useToast();
     const router = useRouter();
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    
+    const [state, formAction] = useFormState(sendDemoRequestEmail, { success: false, message: '' });
 
     const form = useForm<DemoRequestFormValues>({
         resolver: zodResolver(demoRequestSchema),
@@ -41,23 +44,23 @@ export default function RequestDemoPage() {
         }
     });
 
-    const onSubmit = async (data: DemoRequestFormValues) => {
-        setIsSubmitting(true);
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        console.log('Demo Request Data:', data);
+    const { formState } = form;
 
-        toast({
-            title: "¡Solicitud Enviada!",
-            description: "Gracias por tu interés. Nos pondremos en contacto contigo pronto.",
-        });
+    useEffect(() => {
+        if (state.message) {
+            toast({
+                title: state.success ? "¡Solicitud Enviada!" : "Error",
+                description: state.message,
+                variant: state.success ? "default" : "destructive",
+            });
+            if (state.success) {
+                form.reset();
+                router.push('/');
+            }
+        }
+    }, [state, toast, form, router]);
 
-        setIsSubmitting(false);
-        form.reset();
-        router.push('/');
-    };
-
-  return (
+    return (
     <div className="flex min-h-screen flex-col bg-muted/40">
       <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur-sm">
         <div className="container flex h-16 max-w-7xl items-center justify-between">
@@ -85,7 +88,7 @@ export default function RequestDemoPage() {
             </CardHeader>
             <CardContent>
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                    <form action={formAction} className="space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Nombre Completo</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )}/>
                             <FormField control={form.control} name="company" render={({ field }) => ( <FormItem><FormLabel>Empresa</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )}/>
@@ -94,8 +97,8 @@ export default function RequestDemoPage() {
                         <FormField control={form.control} name="message" render={({ field }) => ( <FormItem><FormLabel>Mensaje (Opcional)</FormLabel><FormControl><Textarea placeholder="Cuéntanos un poco sobre tus necesidades..." {...field} /></FormControl><FormMessage /></FormItem> )}/>
 
                         <div className="flex justify-end pt-2">
-                            <Button type="submit" disabled={isSubmitting}>
-                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            <Button type="submit" disabled={formState.isSubmitting}>
+                                {formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 Enviar Solicitud
                             </Button>
                         </div>

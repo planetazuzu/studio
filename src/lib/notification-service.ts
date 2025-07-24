@@ -21,15 +21,24 @@ async function getFirebaseCredentials(): Promise<{ projectId?: string; clientEma
     };
 }
 
-
-// --- Email Service (SendGrid) ---
-export async function sendEmailNotification(user: User, subject: string, body: string): Promise<void> {
+/**
+ * Sends an email using SendGrid. Can be used for user notifications or system emails like form submissions.
+ * @param options - Email options.
+ * @param options.to - Optional recipient email. If not provided, sends to the configured admin/from email.
+ * @param options.subject - The email subject.
+ * @param options.body - The email body content (can be HTML).
+ * @param options.replyTo - Optional email address to set as the reply-to header.
+ */
+export async function sendEmail({ to, subject, body, replyTo }: { to?: string; subject: string; body: string; replyTo?: string }): Promise<void> {
     const apiKey = getConfigValue('sendgrid_api_key', 'SENDGRID_API_KEY');
     const fromEmail = getConfigValue('sendgrid_from_email', 'SENDGRID_FROM_EMAIL');
 
     if (!apiKey || !fromEmail) {
-        console.warn(`--- [EMAIL SIMULATION to ${user.email}] ---`);
+        console.warn(`--- [EMAIL SIMULATION] ---`);
         console.warn('SendGrid API Key or From Email not set. Simulating email send.');
+        console.log(`To: ${to || fromEmail}`);
+        console.log(`From: ${fromEmail}`);
+        console.log(`Reply-To: ${replyTo || 'N/A'}`);
         console.log(`Subject: ${subject}`);
         console.log(`Body: ${body}`);
         console.log('---------------------------');
@@ -38,19 +47,26 @@ export async function sendEmailNotification(user: User, subject: string, body: s
 
     sgMail.setApiKey(apiKey);
     const msg = {
-        to: user.email,
+        to: to || fromEmail, // If 'to' is not specified, sends to the admin email itself
         from: fromEmail,
+        replyTo: replyTo,
         subject,
-        text: body,
         html: `<p>${body.replace(/\n/g, '<br>')}</p>`,
     };
 
     try {
         await sgMail.send(msg);
-        console.log(`Email sent successfully to ${user.email}`);
+        console.log(`Email sent successfully to ${msg.to}`);
     } catch (error) {
         console.error('Error sending email via SendGrid:', error);
+        throw error; // Re-throw to be handled by the calling action
     }
+}
+
+
+// --- Email Service (SendGrid) ---
+export async function sendEmailNotification(user: User, subject: string, body: string): Promise<void> {
+   await sendEmail({ to: user.email, subject, body });
 }
 
 // --- WhatsApp Service (Twilio) ---
