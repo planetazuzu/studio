@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useFormState } from 'react-dom';
+import { useActionState } from 'react';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -32,7 +32,7 @@ export default function RequestDemoPage() {
     const { toast } = useToast();
     const router = useRouter();
     
-    const [state, formAction] = useFormState(sendDemoRequestEmail, { success: false, message: '' });
+    const [state, formAction] = useActionState(sendDemoRequestEmail, { success: false, message: '' });
 
     const form = useForm<DemoRequestFormValues>({
         resolver: zodResolver(demoRequestSchema),
