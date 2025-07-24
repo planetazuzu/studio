@@ -1,4 +1,3 @@
-
 // src/lib/db-providers/dexie.ts
 
 /**
@@ -166,7 +165,9 @@ export const dexieProvider: DBProvider = {
          throw new Error('Esta cuenta está pendiente de aprobación por un administrador.');
     }
     
-    localStorage.setItem(LOGGED_IN_USER_KEY, user.id);
+    if (typeof window !== 'undefined') {
+        localStorage.setItem(LOGGED_IN_USER_KEY, user.id);
+    }
     return user;
   },
 
@@ -392,7 +393,8 @@ export const dexieProvider: DBProvider = {
     const newEnrollment: Enrollment = {
         studentId, courseId, requestDate: new Date().toISOString(), status: 'pending', isSynced: false, updatedAt: new Date().toISOString(),
     };
-    return await dbInstance.enrollments.add(newEnrollment);
+    const newId = await dbInstance.enrollments.add(newEnrollment);
+    return newId as number;
   },
 
   async getApprovedEnrollmentCount(courseId: string): Promise<number> {
@@ -537,20 +539,24 @@ export const dexieProvider: DBProvider = {
         if (userMessageCount === 1) await this.awardBadge(user.id, 'forum_first_post');
         if (userMessageCount === 5) await this.awardBadge(user.id, 'forum_collaborator');
     });
-    return newId;
+    return newId as number;
   },
 
   async getForumMessages(courseId: string): Promise<ForumMessageWithReplies[]> {
     const messages = await dbInstance.forumMessages.where('courseId').equals(courseId).sortBy('timestamp');
     const messageMap = new Map<number, ForumMessageWithReplies>();
     const rootMessages: ForumMessageWithReplies[] = [];
-    messages.forEach(msg => messageMap.set(msg.id!, { ...msg, replies: [] }));
     messages.forEach(msg => {
+      if(msg.id) messageMap.set(msg.id, { ...msg, replies: [] })
+    });
+    messages.forEach(msg => {
+      if(msg.id) {
         if (msg.parentId && messageMap.has(msg.parentId)) {
-            messageMap.get(msg.parentId)!.replies.push(messageMap.get(msg.id!)!);
+            messageMap.get(msg.parentId)!.replies.push(messageMap.get(msg.id)!);
         } else {
-            rootMessages.push(messageMap.get(msg.id!)!);
+            rootMessages.push(messageMap.get(msg.id)!);
         }
+      }
     });
     return rootMessages.reverse();
   },
@@ -563,8 +569,10 @@ export const dexieProvider: DBProvider = {
             const parentId = queue.shift()!;
             const children = await dbInstance.forumMessages.where('parentId').equals(parentId).toArray();
             for (const child of children) {
-                messagesToDelete.push(child.id!);
-                queue.push(child.id!);
+                if(child.id) {
+                  messagesToDelete.push(child.id);
+                  queue.push(child.id);
+                }
             }
         }
         await dbInstance.forumMessages.bulkDelete(messagesToDelete);
@@ -579,14 +587,14 @@ export const dexieProvider: DBProvider = {
         const settings = user.notificationSettings;
         const subject = `Notificación de TalentOS: ${notification.type.replace(/_/g, ' ')}`;
         const body = notification.message;
-        if (settings.channels.includes('email')) sendEmailNotification(user, subject, body).catch(e => this.logSystemEvent('ERROR', 'Failed to send email notification', { error: e.message, userId: user.id }));
-        if (settings.channels.includes('whatsapp') && user.phone) sendWhatsAppNotification(user, body).catch(e => this.logSystemEvent('ERROR', 'Failed to send WhatsApp notification', { error: e.message, userId: user.id }));
+        if (settings.channels.includes('email')) sendEmailNotification(user, subject, body).catch(e => this.logSystemEvent('ERROR', 'Failed to send email notification', { error: (e as Error).message, userId: user.id }));
+        if (settings.channels.includes('whatsapp') && user.phone) sendWhatsAppNotification(user, body).catch(e => this.logSystemEvent('ERROR', 'Failed to send WhatsApp notification', { error: (e as Error).message, userId: user.id }));
         if (settings.channels.includes('app') && user.fcmToken) {
             const title = 'Nueva Notificación de TalentOS';
-            sendPushNotification(user.id, title, body, notification.relatedUrl || '/dashboard').catch(e => this.logSystemEvent('ERROR', 'Failed to send Push notification', { error: e.message, userId: user.id }));
+            sendPushNotification(user.id, title, body, notification.relatedUrl || '/dashboard').catch(e => this.logSystemEvent('ERROR', 'Failed to send Push notification', { error: (e as Error).message, userId: user.id }));
         }
     }
-    return newId;
+    return newId as number;
   },
 
   async getNotificationsForUser(userId: string): Promise<Notification[]> {
@@ -632,7 +640,8 @@ export const dexieProvider: DBProvider = {
 
   async addResource(resource: Omit<Resource, 'id' | 'isSynced' | 'updatedAt'>): Promise<number> {
     const newResource: Resource = { ...resource, isSynced: false, updatedAt: new Date().toISOString() };
-    return await dbInstance.resources.add(newResource);
+    const newId = await dbInstance.resources.add(newResource);
+    return newId as number;
   },
 
   async getAllResources(): Promise<Resource[]> {
@@ -669,7 +678,8 @@ export const dexieProvider: DBProvider = {
 
   async addAnnouncement(announcement: Omit<Announcement, 'id' | 'isSynced' | 'updatedAt'>): Promise<number> {
     const newAnnouncement: Announcement = { ...announcement, isSynced: false, updatedAt: new Date().toISOString() };
-    return await dbInstance.announcements.add(newAnnouncement);
+    const newId = await dbInstance.announcements.add(newAnnouncement);
+    return newId as number;
   },
 
   async deleteAnnouncement(id: number): Promise<void> {
@@ -688,7 +698,8 @@ export const dexieProvider: DBProvider = {
   async addChatMessage(message: Omit<ChatMessage, 'id' | 'isSynced' | 'updatedAt'>): Promise<number> {
     const newChatMessage: ChatMessage = { ...message, isSynced: false, updatedAt: new Date().toISOString() };
     await dbInstance.chatChannels.update(message.channelId, { updatedAt: new Date().toISOString() });
-    return await dbInstance.chatMessages.add(newChatMessage);
+    const newId = await dbInstance.chatMessages.add(newChatMessage);
+    return newId as number;
   },
 
   async getChatMessages(channelId: string): Promise<ChatMessage[]> {
@@ -699,7 +710,7 @@ export const dexieProvider: DBProvider = {
     return await dbInstance.chatChannels.where('type').equals('public').sortBy('name');
   },
 
-  async addPublicChatChannel(name: string, description: string): Promise<number> {
+  async addPublicChatChannel(name: string, description: string): Promise<string> {
     const newChannel: ChatChannel = { id: `channel_${name.toLowerCase().replace(/\s+/g, '-')}`, name, description, type: 'public', isSynced: false, updatedAt: new Date().toISOString() };
     return await dbInstance.chatChannels.add(newChannel);
   },
@@ -770,7 +781,8 @@ export const dexieProvider: DBProvider = {
 
   async addCalendarEvent(event: Omit<CalendarEvent, 'id' | 'isSynced' | 'updatedAt'>): Promise<number> {
     const newEvent: CalendarEvent = { ...event, isSynced: false, updatedAt: new Date().toISOString() };
-    return await dbInstance.calendarEvents.add(newEvent);
+    const newId = await dbInstance.calendarEvents.add(newEvent);
+    return newId as number;
   },
 
   async updateCalendarEvent(id: number, data: Partial<Omit<CalendarEvent, 'id' | 'isSynced'>>): Promise<number> {
@@ -787,7 +799,8 @@ export const dexieProvider: DBProvider = {
 
   async addExternalTraining(training: Omit<ExternalTraining, 'id' | 'isSynced' | 'updatedAt'>): Promise<number> {
     const newTraining: ExternalTraining = { ...training, isSynced: false, updatedAt: new Date().toISOString() };
-    return await dbInstance.externalTrainings.add(newTraining);
+    const newId = await dbInstance.externalTrainings.add(newTraining);
+    return newId as number;
   },
 
   async updateExternalTraining(id: number, data: Partial<Omit<ExternalTraining, 'id'>>): Promise<number> {
@@ -804,7 +817,8 @@ export const dexieProvider: DBProvider = {
 
   async addCost(cost: Omit<Cost, 'id' | 'isSynced' | 'updatedAt'>): Promise<number> {
     const newCost: Cost = { ...cost, isSynced: false, updatedAt: new Date().toISOString() };
-    return await dbInstance.costs.add(newCost);
+    const newId = await dbInstance.costs.add(newCost);
+    return newId as number;
   },
 
   async updateCost(id: number, data: Partial<Omit<Cost, 'id'>>): Promise<number> {
@@ -820,7 +834,8 @@ export const dexieProvider: DBProvider = {
   },
 
   async addCostCategory(category: { name: string }): Promise<number> {
-    return await dbInstance.costCategories.add(category);
+    const newId = await dbInstance.costCategories.add(category);
+    return newId as number;
   },
 
   async deleteCostCategory(id: number): Promise<void> {
@@ -881,7 +896,8 @@ export const dexieProvider: DBProvider = {
 
   async logAIUsage(log: Omit<AIUsageLog, 'id' | 'timestamp'>): Promise<number> {
     const newLog: AIUsageLog = { ...log, timestamp: new Date().toISOString() };
-    return await dbInstance.aiUsageLog.add(newLog);
+    const newId = await dbInstance.aiUsageLog.add(newLog);
+    return newId as number;
   },
 
   async getAllLearningPaths(): Promise<LearningPath[]> {
@@ -893,7 +909,8 @@ export const dexieProvider: DBProvider = {
   },
 
   async addLearningPath(path: Omit<LearningPath, 'id' | 'isSynced' | 'updatedAt'>): Promise<number> {
-    return await dbInstance.learningPaths.add({ ...path, isSynced: false, updatedAt: new Date().toISOString() });
+    const newId = await dbInstance.learningPaths.add({ ...path, isSynced: false, updatedAt: new Date().toISOString() });
+    return newId as number;
   },
 
   async updateLearningPath(id: number, data: Partial<Omit<LearningPath, 'id'>>): Promise<number> {
@@ -918,7 +935,8 @@ export const dexieProvider: DBProvider = {
 
   async addCourseRating(rating: Omit<CourseRating, 'id' | 'isPublic'>): Promise<number> {
     const newRating: CourseRating = { ...rating, isPublic: false };
-    return await dbInstance.courseRatings.add(newRating);
+    const newId = await dbInstance.courseRatings.add(newRating);
+    return newId as number;
   },
 
   async getRatingByUserAndCourse(userId: string, courseId: string): Promise<CourseRating | undefined> {
