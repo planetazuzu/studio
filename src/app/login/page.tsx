@@ -75,7 +75,7 @@ export default function LoginPage() {
           <CardDescription>La plataforma de formación impulsada por IA para tu equipo.</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleLogin} className="space-y-6">
+          <form onSubmit={handleLogin} className="space-y-4">
              {error && (
                 <Alert variant="destructive">
                     <Terminal className="h-4 w-4" />
@@ -96,7 +96,12 @@ export default function LoginPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Contraseña</Label>
+                <div className="flex items-center justify-between">
+                    <Label htmlFor="password">Contraseña</Label>
+                    <Link href="/forgot-password" className={`text-sm text-primary hover:underline ${formIsDisabled ? 'pointer-events-none opacity-50' : ''}`}>
+                        ¿Has olvidado tu contraseña?
+                    </Link>
+                </div>
               <Input 
                 id="password" 
                 type="password" 
