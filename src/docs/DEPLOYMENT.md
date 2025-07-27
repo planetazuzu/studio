@@ -11,58 +11,19 @@ Esta aplicación es un proyecto estándar de Next.js y puede ser desplegada en c
 
 Antes de desplegar, necesitas configurar las variables de entorno. Estas son claves secretas y configuraciones que no deben guardarse en el código. En tu plataforma de hosting (Vercel, Netlify, etc.), busca una sección de "Environment Variables" en la configuración de tu proyecto y añade las siguientes:
 
-### Proveedor de Autenticación (¡Elegir uno!)
-La aplicación está preparada para usar diferentes sistemas de autenticación. Debes elegir uno y configurar sus variables.
--   `NEXT_PUBLIC_AUTH_PROVIDER`: Define qué sistema usar. Opciones: `dexie`, `firebase`, `auth0`, `supabase`.
-    -   `dexie`: Usa el sistema de login local (solo para prototipos, no para producción).
-    -   `firebase`: Usa Firebase Authentication.
-    -   `auth0`: Usa Auth0.
-    -   `supabase`: Usa Supabase Auth.
+### Variables de Supabase (Obligatorio)
 
----
-
-#### Opción A: Variables de Firebase (Recomendado para Producción)
-Copia estas variables desde la configuración de tu proyecto en la consola de Firebase.
-
-> **⚠️ Nota Importante sobre la Base de Datos:**
-> La configuración de Firebase es **exclusivamente para la autenticación de usuarios**. La base de datos principal de la aplicación sigue siendo **Dexie.js** en el navegador, con sincronización a **Airtable**. Esta aplicación **no utiliza Firestore** ni Firebase Realtime Database.
-
--   `NEXT_PUBLIC_FIREBASE_API_KEY`: Tu clave de API.
--   `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`: Tu dominio de autenticación.
--   `NEXT_PUBLIC_FIREBASE_PROJECT_ID`: El ID de tu proyecto.
--   `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`: Tu bucket de almacenamiento.
--   `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`: ID del remitente de mensajería.
--   `NEXT_PUBLIC_FIREBASE_APP_ID`: ID de tu aplicación.
--   `NEXT_PUBLIC_FIREBASE_VAPID_KEY`: La clave VAPID de Cloud Messaging para notificaciones push.
--   `FIREBASE_CLIENT_EMAIL`: Email de la cuenta de servicio (para notificaciones del servidor).
--   `FIREBASE_PRIVATE_KEY`: Clave privada de la cuenta de servicio (para notificaciones del servidor).
-
----
-
-#### Opción B: Variables de Auth0
-Copia estas variables desde la configuración de tu aplicación en el panel de Auth0.
-
--   `AUTH0_SECRET`: Una cadena larga y aleatoria para firmar cookies.
--   `AUTH0_BASE_URL`: La URL de tu aplicación desplegada (ej. `https://mi-app.vercel.app`).
--   `AUTH0_ISSUER_BASE_URL`: El dominio de tu tenant de Auth0 (ej. `https://tu-tenant.us.auth0.com`).
--   `AUTH0_CLIENT_ID`: El Client ID de tu aplicación.
--   `AUTH0_CLIENT_SECRET`: El Client Secret de tu aplicación.
-
----
-
-#### Opción C: Variables de Supabase
-Copia estas variables desde la configuración de API de tu proyecto en Supabase.
+Tu aplicación necesita conectarse a tu base de Supabase para la sincronización de datos y la autenticación (si se usa).
 
 -   `NEXT_PUBLIC_SUPABASE_URL`: La URL de tu proyecto Supabase.
 -   `NEXT_PUBLIC_SUPABASE_ANON_KEY`: La clave anónima (public) de tu proyecto.
+-   `SUPABASE_SERVICE_ROLE_KEY`: Tu clave de 'service_role'. **Es secreta y nunca debe ser expuesta en el lado del cliente.**
 
----
-
-### Variables de Airtable (Obligatorio)
-Tu aplicación necesita conectarse a tu base de Airtable para la sincronización de datos.
-
--   `AIRTABLE_API_KEY`: Tu clave de API personal de Airtable.
--   `AIRTABLE_BASE_ID`: El ID de tu base de Airtable (empieza con `app...`).
+### Proveedor de Autenticación (¡Elegir uno!)
+La aplicación está preparada para usar diferentes sistemas de autenticación. Debes elegir uno y configurar sus variables.
+-   `NEXT_PUBLIC_AUTH_PROVIDER`: Define qué sistema usar. Opciones: `dexie`, `supabase`.
+    -   `dexie`: Usa el sistema de login local (solo para prototipos, no para producción).
+    -   `supabase`: Usa Supabase Auth. (Recomendado para producción)
 
 ---
 
@@ -82,6 +43,10 @@ Si deseas que el envío de notificaciones por email o WhatsApp funcione, configu
 -   `TWILIO_AUTH_TOKEN`: El token de autenticación de tu cuenta de Twilio.
 -   `TWILIO_WHATSAPP_FROM`: Tu número de teléfono de WhatsApp de Twilio (formato: `+14155238886`).
 -   `TWILIO_WHATSAPP_TO_TEST`: Un número de teléfono para pruebas (formato: `+34123456789`).
+-   `NEXT_PUBLIC_FIREBASE_VAPID_KEY`: La clave VAPID de Cloud Messaging para notificaciones push.
+-   `FIREBASE_CLIENT_EMAIL`: Email de la cuenta de servicio (para notificaciones del servidor).
+-   `FIREBASE_PRIVATE_KEY`: Clave privada de la cuenta de servicio (para notificaciones del servidor).
+
 
 ---
 

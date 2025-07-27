@@ -1,20 +1,10 @@
+
 // src/lib/db-providers/index.ts
 
 import type { DBProvider } from './types';
 import { dexieProvider } from './dexie';
-import { supabaseProvider } from './supabase';
 
-const providers: Record<string, DBProvider> = {
-  dexie:  dexieProvider,
-  supabase: supabaseProvider,
-};
-
-// The auth provider now determines the DB provider.
-// If using Supabase for auth, use it for DB as well.
-const key = process.env.NEXT_PUBLIC_AUTH_PROVIDER || 'dexie';
-
-if (!providers[key]) {
-  throw new Error(`DB Provider "${key}" is not registered.`);
-}
-
-export const dbProvider: DBProvider = providers[key];
+// We always use the Dexie provider for the application logic.
+// The synchronization to a cloud backend (like Supabase) is handled
+// as a separate process and does not change the primary DB provider.
+export const dbProvider: DBProvider = dexieProvider;

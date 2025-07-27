@@ -1,3 +1,4 @@
+
 # Esquema de Tablas para Supabase
 
 > **Nota sobre la Arquitectura:** Este archivo define el esquema para la base de datos en **Supabase**, que actúa como el backend persistente.

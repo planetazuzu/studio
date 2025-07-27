@@ -6,7 +6,6 @@ import { usePathname, useRouter } from 'next/navigation';
 import { User } from '@/lib/types';
 import * as db from '@/lib/db';
 import { Loader2 } from 'lucide-react';
-import { authProvider } from '@/lib/auth-providers';
 
 interface AuthContextType {
   user: User | null;
@@ -26,12 +25,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // We don't need to call populate here anymore,
     // it's handled on first import of the dexie provider.
-    const unsubscribe = authProvider.subscribe((loggedInUser) => {
-      setUser(loggedInUser);
-      setIsLoading(false);
-    });
-    // Clean up subscription on unmount
-    return () => unsubscribe();
+    checkUserStatus();
   }, []);
   
   useEffect(() => {
@@ -40,10 +34,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
   }, [user, isLoading, router, pathname]);
 
+  const checkUserStatus = async () => {
+    setIsLoading(true);
+    const loggedInUser = await db.getLoggedInUser();
+    setUser(loggedInUser);
+    setIsLoading(false);
+  };
+
   const login = async (email: string, password?: string) => {
     setIsLoading(true);
     try {
-        const loggedInUser = await authProvider.login(email, password);
+        const loggedInUser = await db.login(email, password);
+        setUser(loggedInUser);
         return loggedInUser;
     } catch(error) {
         // Propagate error to be caught in the form
@@ -53,8 +55,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const logout = async () => {
-    await authProvider.logout();
+  const logout = () => {
+    db.logout();
+    setUser(null);
     router.push('/');
   };
 

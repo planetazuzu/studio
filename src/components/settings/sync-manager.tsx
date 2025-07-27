@@ -5,11 +5,12 @@ import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import * as db from '@/lib/db';
 import { Loader2, ServerCog } from 'lucide-react';
-import { syncAllDataAction } from '@/app/dashboard/settings/actions';
+import { syncWithSupabase } from '@/lib/supabase-sync';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { syncAllDataAction } from '@/app/dashboard/settings/actions';
 
 export function SyncManager() {
     const { toast } = useToast();
@@ -28,38 +29,39 @@ export function SyncManager() {
         }
 
         setIsLoading(true);
-        setLog(['Iniciando sincronización desde el cliente...']);
+        setLog(['Iniciando sincronización con Supabase...']);
         
         try {
-            // 1. Get unsynced data from client-side Dexie
-            // Switched from .where().equals() to .filter() to avoid potential indexing issues
-            // with boolean values, which was causing a crash. This is safer.
             const unsyncedUsers = await db.db.users.filter(user => user.isSynced === false).toArray();
             const unsyncedCourses = await db.db.courses.filter(course => course.isSynced === false).toArray();
             
             setLog(prev => [...prev, `Encontrados ${unsyncedUsers.length} usuarios y ${unsyncedCourses.length} cursos para sincronizar.`]);
 
-            // 2. Call server action with the data
+            if (unsyncedUsers.length === 0 && unsyncedCourses.length === 0) {
+                toast({ title: 'Todo al día', description: 'No hay datos nuevos para sincronizar.' });
+                setLog(prev => [...prev, 'No hay datos nuevos para sincronizar.']);
+                setIsLoading(false);
+                return;
+            }
+
             const result = await syncAllDataAction({ users: unsyncedUsers, courses: unsyncedCourses });
             
-            // Append server logs to client log
             setLog(prev => [...prev, ...result.log]);
 
             if (result.success) {
-                toast({ title: 'Sincronización Completa', description: result.message });
+                toast({ title: 'Sincronización Completa', description: 'Los datos se han guardado en Supabase.' });
                 
-                // 3. Mark synced items in local Dexie
-                if (result.syncedIds.users.length > 0) {
-                    await db.db.users.where('id').anyOf(result.syncedIds.users).modify({ isSynced: true });
-                     setLog(prev => [...prev, `Cliente: Marcados ${result.syncedIds.users.length} usuarios como sincronizados.`]);
+                if (result.syncedUserIds.length > 0) {
+                    await db.db.users.where('id').anyOf(result.syncedUserIds).modify({ isSynced: true, updatedAt: new Date().toISOString() });
+                    setLog(prev => [...prev, `Cliente: Marcados ${result.syncedUserIds.length} usuarios como sincronizados.`]);
                 }
-                if (result.syncedIds.courses.length > 0) {
-                    await db.db.courses.where('id').anyOf(result.syncedIds.courses).modify({ isSynced: true });
-                    setLog(prev => [...prev, `Cliente: Marcados ${result.syncedIds.courses.length} cursos como sincronizados.`]);
+                if (result.syncedCourseIds.length > 0) {
+                    await db.db.courses.where('id').anyOf(result.syncedCourseIds).modify({ isSynced: true, updatedAt: new Date().toISOString() });
+                     setLog(prev => [...prev, `Cliente: Marcados ${result.syncedCourseIds.length} cursos como sincronizados.`]);
                 }
 
             } else {
-                 toast({ title: 'Error de Sincronización', description: result.message, variant: 'destructive' });
+                 toast({ title: 'Error de Sincronización', description: 'Hubo un problema al contactar con Supabase.', variant: 'destructive' });
             }
 
         } catch (error: any) {
@@ -76,9 +78,9 @@ export function SyncManager() {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Sincronización con Airtable</CardTitle>
+                <CardTitle>Sincronización con Supabase</CardTitle>
                 <CardDescription>
-                    Sincroniza los datos locales (nuevos usuarios, cursos modificados, etc.) con la base de datos remota de Airtable.
+                    Sincroniza los datos locales (nuevos usuarios, cursos, etc.) con la base de datos remota en Supabase.
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">

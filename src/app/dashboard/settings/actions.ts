@@ -3,12 +3,10 @@
 
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
-import { getAirtableConfig } from '@/lib/config';
 import type { User, Course, AIConfig, AIModel } from '@/lib/types';
-import { createAirtableUser, createAirtableCourse } from '@/lib/airtable';
-import { useAuth } from '@/contexts/auth';
 import * as db from '@/lib/db';
 import { sendPushNotification } from '@/lib/notification-service';
+import { syncWithSupabase } from '@/lib/supabase-sync';
 
 const cookieOptions = {
   httpOnly: true,
@@ -21,7 +19,6 @@ const cookieOptions = {
 export async function saveApiKeysAction(prevState: any, formData: FormData) {
   try {
     const fieldsToSet = [
-      'airtable_api_key', 'airtable_base_id',
       'sendgrid_api_key', 'sendgrid_from_email',
       'twilio_account_sid', 'twilio_auth_token', 'twilio_whatsapp_from', 'twilio_whatsapp_to_test',
       'firebase_client_email', 'firebase_private_key',
@@ -31,10 +28,6 @@ export async function saveApiKeysAction(prevState: any, formData: FormData) {
         const value = formData.get(field) as string;
         if (value) {
             cookies().set(field, value, cookieOptions);
-        } else {
-            // No se elimina la cookie si el campo está vacío, 
-            // para no borrar credenciales existentes si el usuario solo quiere actualizar una.
-            // Para borrar, se debería implementar un botón específico o una lógica de campo vacío explícita.
         }
     }
     
@@ -88,69 +81,20 @@ export async function syncAllDataAction(data: {
 }): Promise<{
   success: boolean;
   log: string[];
-  syncedIds: { users: string[], courses: string[] };
-  message: string;
+  syncedUserIds: string[];
+  syncedCourseIds: string[];
 }> {
-    const log: string[] = [];
-    const syncedIds: { users: string[], courses: string[] } = { users: [], courses: [] };
+    const log: string[] = ["Recibida solicitud de sincronización en el servidor."];
     
-    log.push("Recibida solicitud de sincronización en el servidor.");
-
     try {
-        const airtableConfig = getAirtableConfig();
-        if (!airtableConfig?.apiKey || !airtableConfig?.baseId) {
-            throw new Error("La configuración de Airtable no es válida. Ve a Ajustes > APIs para configurarla.");
-        }
-        
-        log.push("Configuración de Airtable encontrada y válida.");
-
-        const { users: unsyncedUsers, courses: unsyncedCourses } = data;
-
-        if (unsyncedUsers.length === 0 && unsyncedCourses.length === 0) {
-            log.push("¡Todo está al día! No hay datos nuevos para sincronizar desde el cliente.");
-            return { success: true, log, syncedIds, message: 'No hay datos nuevos para sincronizar.' };
-        }
-
-        // --- Sync Users ---
-        if (unsyncedUsers.length > 0) {
-            log.push(`--- Sincronizando ${unsyncedUsers.length} usuarios ---`);
-            for (const user of unsyncedUsers) {
-                try {
-                    log.push(`Enviando POST a Airtable para el usuario: ${user.name} (${user.email})`);
-                    await createAirtableUser(user);
-                    syncedIds.users.push(user.id);
-                    log.push(`-> Éxito para ${user.name}. Será marcado como sincronizado en el cliente.`);
-                } catch (error: any) {
-                    log.push(`-> ERROR al sincronizar a ${user.name}: ${error.message}`);
-                }
-            }
-        } else {
-            log.push("No hay usuarios nuevos o modificados para sincronizar.");
-        }
-        
-        // --- Sync Courses ---
-        if (unsyncedCourses.length > 0) {
-            log.push(`--- Sincronizando ${unsyncedCourses.length} cursos ---`);
-            for (const course of unsyncedCourses) {
-                try {
-                    log.push(`Enviando POST a Airtable para el curso: ${course.title}`);
-                    await createAirtableCourse(course);
-                    syncedIds.courses.push(course.id);
-                    log.push(`-> Éxito para ${course.title}. Será marcado como sincronizado en el cliente.`);
-                } catch (error: any) {
-                    log.push(`-> ERROR al sincronizar a ${course.title}: ${error.message}`);
-                }
-            }
-        } else {
-            log.push("No hay cursos nuevos o modificados para sincronizar.");
-        }
-
-        log.push("Proceso de sincronización finalizado.");
-        return { success: true, log, syncedIds, message: 'Sincronización completada.' };
-
+        const result = await syncWithSupabase(data);
+        return {
+            ...result,
+            log: [log[0], ...result.log],
+        };
     } catch (e: any) {
         log.push(`ERROR FATAL: ${e.message}`);
-        return { success: false, log, syncedIds, message: e.message };
+        return { success: false, log, syncedUserIds: [], syncedCourseIds: [] };
     }
 }
 

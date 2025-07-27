@@ -11,7 +11,7 @@ TalentOS es una plataforma de aprendizaje (LMS) moderna, diseñada para empresas
 -   **Gestión de Usuarios Avanzada:** Roles y permisos personalizables, flujo de aprobación para nuevos usuarios e importación masiva desde CSV.
 -   **Planes de Carrera:** Define rutas de aprendizaje guiadas y secuenciales para roles específicos.
 -   **Análisis y Reportes:** Dashboards visuales para analizar el progreso de la formación, los costes asociados y el cumplimiento de los cursos obligatorios.
--   **Administración Centralizada:** Sincronización con bases de datos externas (Airtable), gestión de APIs y configuración granular de las funcionalidades de IA.
+-   **Administración Centralizada:** Sincronización con bases de datos en la nube (Supabase), gestión de APIs y configuración granular de las funcionalidades de IA.
 -   **Comunicación Integrada:** Chat interno entre usuarios, sistema de anuncios y notificaciones multicanal (Email, WhatsApp, Push).
 
 ## Documentación del Proyecto
@@ -23,8 +23,7 @@ Para entender completamente la aplicación, su arquitectura y cómo ponerla en m
 | 📄 **[Resumen de la Aplicación](./docs/APP_OVERVIEW.md)** | Detalla la arquitectura, la filosofía y el desglose completo de todas las funcionalidades. **¡Empieza aquí!** |
 | 🚀 **[Guía de Configuración](./docs/SETUP_GUIDE.md)**     | Pasos para clonar, instalar y configurar el entorno de desarrollo local.                         |
 | ☁️ **[Guía de Despliegue](./docs/DEPLOYMENT.md)**         | Instrucciones para desplegar la aplicación en producción y configurar las variables de entorno.    |
-| 🗃️ **[Esquema de Airtable](./docs/airtable_schema.md)**       | Define la estructura de las tablas necesarias en tu base de Airtable para la sincronización.   |
-| 🔧 **[Conexión con Airtable](./docs/airtable_setup.md)**     | Guía para obtener las credenciales de Airtable y conectar la aplicación para la sincronización.    |
+| 🗃️ **[Esquema de Supabase](./docs/supabase_schema.md)**       | Define la estructura de las tablas necesarias en tu base de Supabase para la sincronización.   |
 
 ## Tech Stack
 
@@ -35,4 +34,4 @@ Para entender completamente la aplicación, su arquitectura y cómo ponerla en m
 -   **Base de Datos Local:** [Dexie.js](https://dexie.org/) (wrapper de IndexedDB)
 -   **Inteligencia Artificial:** [Genkit](https://firebase.google.com/docs/genkit) (con modelos de Google Gemini)
 -   **Autenticación:** Sistema local basado en Dexie.js (modularizado para soportar otros proveedores).
--   **Backend Externo (Opcional):** [Airtable](https://www.airtable.com/)
+-   **Backend en la Nube:** [Supabase](https://supabase.com/)
