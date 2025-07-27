@@ -15,7 +15,14 @@ export default function LandingPage() {
   const { user, isLoading } = useAuth();
   const router = useRouter();
 
-  if (isLoading) {
+  useEffect(() => {
+    // Redirect to dashboard if user is already logged in
+    if (!isLoading && user) {
+      router.push('/dashboard');
+    }
+  }, [user, isLoading, router]);
+
+  if (isLoading || user) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
         <Loader2 className="h-16 w-16 animate-spin" />

@@ -2,17 +2,16 @@
 
 import type { DBProvider } from './types';
 import { dexieProvider } from './dexie';
-// import { restProvider } from './rest'; // Future implementation
+import { supabaseProvider } from './supabase';
 
 const providers: Record<string, DBProvider> = {
   dexie:  dexieProvider,
-  // rest:  restProvider, // Future implementation
+  supabase: supabaseProvider,
 };
 
-// For this project, we hard-code the Dexie provider as it's the core
-// of the offline-first architecture. An environment variable could be
-// used here to switch to a different provider (e.g., a REST API wrapper).
-const key = process.env.NEXT_PUBLIC_DB_PROVIDER || 'dexie';
+// The auth provider now determines the DB provider.
+// If using Supabase for auth, use it for DB as well.
+const key = process.env.NEXT_PUBLIC_AUTH_PROVIDER || 'dexie';
 
 if (!providers[key]) {
   throw new Error(`DB Provider "${key}" is not registered.`);

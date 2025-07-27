@@ -16,6 +16,7 @@ Por seguridad, es **crucial** que actives "Row Level Security" (RLS) para cada t
 - **Policy Name:** `Allow authenticated read access`
 - **Target Roles:** `authenticated`
 - **USING expression:** `true`
+- **WITH CHECK expression:** `true` (Para INSERT y UPDATE)
 
 ---
 
