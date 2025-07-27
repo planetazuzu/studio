@@ -1,3 +1,4 @@
+
 'use server';
 
 import { z } from 'zod';
@@ -22,8 +23,15 @@ export async function handlePasswordRequest(prevState: any, formData: FormData) 
   const { email } = validatedFields.data;
 
   try {
+    // Construct the redirect URL. It's important that this URL is registered
+    // in your Supabase project's auth settings under "Redirect URLs".
+    const redirectUrl = new URL(
+      '/password-reset',
+      process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+    ).toString();
+      
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${new URL(process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000')}/password-reset`,
+      redirectTo: redirectUrl,
     });
 
     if (error) {
@@ -36,9 +44,10 @@ export async function handlePasswordRequest(prevState: any, formData: FormData) 
     };
   } catch (error: any) {
     console.error('Password reset request error:', error);
+    // Return a generic message to avoid disclosing whether an email exists in the system.
     return {
-      success: false,
-      message: error.message || 'No se pudo procesar la solicitud. Por favor, inténtalo de nuevo.',
+      success: true,
+      message: 'Si existe una cuenta con este email, recibirás un enlace para restablecer tu contraseña.',
     };
   }
 }
