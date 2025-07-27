@@ -11,19 +11,19 @@ Esta aplicación es un proyecto estándar de Next.js y puede ser desplegada en c
 
 Antes de desplegar, necesitas configurar las variables de entorno. Estas son claves secretas y configuraciones que no deben guardarse en el código. En tu plataforma de hosting (Vercel, Netlify, etc.), busca una sección de "Environment Variables" en la configuración de tu proyecto y añade las siguientes:
 
-### Variables de Supabase (Obligatorio)
+### Variables de Supabase (Obligatorio para Sincronización)
 
-Tu aplicación necesita conectarse a tu base de Supabase para la sincronización de datos y la autenticación (si se usa).
+Tu aplicación necesita conectarse a tu base de Supabase para la sincronización de datos y la autenticación.
 
 -   `NEXT_PUBLIC_SUPABASE_URL`: La URL de tu proyecto Supabase.
 -   `NEXT_PUBLIC_SUPABASE_ANON_KEY`: La clave anónima (public) de tu proyecto.
--   `SUPABASE_SERVICE_ROLE_KEY`: Tu clave de 'service_role'. **Es secreta y nunca debe ser expuesta en el lado del cliente.**
+-   `SUPABASE_SERVICE_ROLE_KEY`: Tu clave de 'service_role'. **Es secreta y nunca debe ser expuesta en el lado del cliente.** Se usa en el servidor para la sincronización.
 
-### Proveedor de Autenticación (¡Elegir uno!)
-La aplicación está preparada para usar diferentes sistemas de autenticación. Debes elegir uno y configurar sus variables.
+### Configuración del Proveedor de Autenticación (Opcional, por defecto Dexie)
+La aplicación está preparada para usar diferentes sistemas de autenticación.
 -   `NEXT_PUBLIC_AUTH_PROVIDER`: Define qué sistema usar. Opciones: `dexie`, `supabase`.
-    -   `dexie`: Usa el sistema de login local (solo para prototipos, no para producción).
-    -   `supabase`: Usa Supabase Auth. (Recomendado para producción)
+    -   `dexie`: Usa el sistema de login local (por defecto).
+    -   `supabase`: Usa Supabase Auth.
 
 ---
 

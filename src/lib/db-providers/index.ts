@@ -4,7 +4,14 @@
 import type { DBProvider } from './types';
 import { dexieProvider } from './dexie';
 
-// We always use the Dexie provider for the application logic.
-// The synchronization to a cloud backend (like Supabase) is handled
-// as a separate process and does not change the primary DB provider.
-export const dbProvider: DBProvider = dexieProvider;
+const providers: Record<string, DBProvider> = {
+  dexie: dexieProvider,
+};
+
+const key = process.env.DB_PROVIDER || 'dexie';
+
+if (!providers[key]) {
+  console.warn(`DB provider "${key}" is not fully implemented. Falling back to 'dexie'.`);
+}
+
+export const dbProvider: DBProvider = providers[key] || providers['dexie'];

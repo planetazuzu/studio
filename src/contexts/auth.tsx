@@ -29,7 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
   
   useEffect(() => {
-      if (!isLoading && !user && !['/', '/login', '/register', '/pending-approval', '/terms', '/privacy-policy'].includes(pathname)) {
+      if (!isLoading && !user && !['/login', '/register', '/pending-approval', '/forgot-password', '/password-reset', '/features', '/terms', '/privacy-policy', '/request-demo', '/'].includes(pathname)) {
           router.push('/login');
       }
   }, [user, isLoading, router, pathname]);
@@ -63,7 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value = { user, isLoading, login, logout };
 
-  const isPublicPage = ['/', '/login', '/register', '/pending-approval', '/terms', '/privacy-policy'].includes(pathname);
+  const isPublicPage = ['/login', '/register', '/pending-approval', '/forgot-password', '/password-reset', '/features', '/terms', '/privacy-policy', '/request-demo', '/'].includes(pathname);
   if (isLoading && !isPublicPage) {
       return (
           <div className="flex h-screen w-full items-center justify-center">

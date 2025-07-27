@@ -1,9 +1,13 @@
 
+// src/lib/auth-providers/index.ts
+
 import type { AuthProvider } from './types';
-import * as dexie from './dexie';
+import { dexieAuthProvider } from './dexie';
+import { supabaseAuthProvider } from './supabase';
 
 const providers: Record<string, AuthProvider> = {
-  dexie,
+  dexie: dexieAuthProvider,
+  supabase: supabaseAuthProvider,
 };
 
 const key = process.env.NEXT_PUBLIC_AUTH_PROVIDER || 'dexie';

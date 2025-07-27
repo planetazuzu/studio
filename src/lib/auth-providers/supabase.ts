@@ -88,3 +88,21 @@ export function subscribe(listener: (user: User | null) => void): () => void {
         listeners.delete(listener);
     };
 }
+
+export async function register(name: string, email: string, password?: string): Promise<{user: any, error: any}> {
+    if (!supabase || !password) {
+        return { user: null, error: { message: "Supabase client not initialized or password missing." } };
+    };
+
+    const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+            data: {
+                full_name: name,
+            }
+        }
+    });
+
+    return { user: data.user, error };
+}

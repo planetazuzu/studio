@@ -7,22 +7,22 @@ Este documento proporciona una visión general de la arquitectura, funcionalidad
 
 ## 1. Arquitectura y Filosofía
 
-TalentOS está construida sobre tres pilares fundamentales que garantizan una experiencia de usuario moderna, rápida y adaptable.
+TalentOS está construida sobre dos pilares fundamentales que garantizan una experiencia de usuario moderna, rápida y adaptable.
 
 ### A. Offline-First con Dexie.js (Base de Datos Principal)
 
 La aplicación prioriza la disponibilidad y la velocidad utilizando **Dexie.js**, una capa sobre IndexedDB, como su **base de datos principal en el navegador**.
 
--   **Rendimiento Instantáneo:** Todas las operaciones (leer, escribir, actualizar) se realizan localmente, eliminando la latencia de la red. La aplicación **no** se conecta directamente a una base de datos en la nube para sus operaciones diarias.
+-   **Rendimiento Instantáneo:** Todas las operaciones (leer, escribir, actualizar) se realizan localmente, eliminando la latencia de la red.
 -   **Disponibilidad sin Conexión:** Los usuarios pueden continuar aprendiendo, completando módulos y participando en foros incluso sin conexión a internet.
 -   **Persistencia de Datos:** Todos los datos generados se guardan de forma segura en el navegador del usuario.
 
 ### B. Backend Persistente y Sincronización con Supabase
 
-Aunque la aplicación funciona de manera autónoma en el cliente, necesita un punto central para la persistencia de datos a largo plazo y la colaboración.
+Aunque la aplicación funciona de manera autónoma en el cliente, necesita un punto central para la persistencia de datos a largo plazo, copias de seguridad y la colaboración entre diferentes dispositivos.
 
--   **Supabase como Backend:** Se utiliza una base de datos de Supabase como el backend en la nube.
--   **Sincronización Manual:** Desde el panel de `Ajustes`, un administrador puede iniciar un proceso de sincronización. Este proceso identifica los datos locales que no han sido subidos (marcados con `isSynced: false`) y los envía a Supabase.
+-   **Supabase como Backend:** Se utiliza una base de datos PostgreSQL gestionada por Supabase como el backend remoto.
+-   **Sincronización Manual:** Desde el panel de `Ajustes`, un administrador puede iniciar un proceso de sincronización. Este proceso identifica los datos locales que no han sido subidos (marcados con `isSynced: false`) y los envía a las tablas correspondientes en Supabase.
 
 ### C. Inteligencia Artificial como Núcleo con Genkit
 
@@ -72,7 +72,7 @@ La IA no es un complemento, sino una parte integral de la plataforma, impulsada 
 
 ### Administración y Configuración
 -   **Gestión de Costes:** Una sección dedicada para que los administradores registren y categoricen todos los gastos relacionados con la formación (honorarios, materiales, licencias, etc.).
--   **Gestión de APIs y Sincronización:** Panel para configurar las credenciales de los servicios externos e iniciar la sincronización manual con Supabase.
+-   **Gestión de APIs y Sincronización:** Panel para configurar las credenciales de servicios externos e iniciar la sincronización manual con Supabase.
 -   **Configuración de IA:** Permite seleccionar el proveedor de IA (ej. Gemini) y activar o desactivar funcionalidades específicas.
 -   **Gestión de Notificaciones:** Sistema integrado que envía notificaciones por Email, WhatsApp o Push (si están configuradas) para eventos clave como aprobaciones o anuncios.
 -   **Chat Interno:** Un sistema de mensajería directa entre usuarios de la plataforma, respetando la jerarquía (un trabajador solo puede iniciar chats con roles de gestión). Los administradores pueden crear nuevos canales públicos.
@@ -106,7 +106,7 @@ Este proyecto se construyó de forma iterativa, añadiendo capas de funcionalida
     -   Añadir el **Chat Interno**, los **Foros** y el **Calendario**.
     -   Configurar el servicio de notificaciones para automatizar las comunicaciones.
 
-6.  **Fase 6: Estabilización y Limpieza:**
-    -   Refactorizar el código para eliminar dependencias innecesarias (como `next-intl`).
-    -   Asegurar que la estructura de archivos y rutas sea coherente y no presente conflictos.
+6.  **Fase 6: Sincronización y Estabilización:**
+    -   Implementar la lógica de sincronización con Supabase.
+    -   Refactorizar el código para asegurar que la estructura de archivos sea coherente.
     -   Crear la documentación final (`README`, guías, etc.).

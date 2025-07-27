@@ -3,10 +3,9 @@
 
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
-import type { User, Course, AIConfig, AIModel } from '@/lib/types';
+import type { AIConfig, AIModel } from '@/lib/types';
 import * as db from '@/lib/db';
 import { sendPushNotification } from '@/lib/notification-service';
-import { syncWithSupabase } from '@/lib/supabase-sync';
 
 const cookieOptions = {
   httpOnly: true,
@@ -22,6 +21,7 @@ export async function saveApiKeysAction(prevState: any, formData: FormData) {
       'sendgrid_api_key', 'sendgrid_from_email',
       'twilio_account_sid', 'twilio_auth_token', 'twilio_whatsapp_from', 'twilio_whatsapp_to_test',
       'firebase_client_email', 'firebase_private_key',
+      'supabase_service_role_key',
     ];
 
     for (const field of fieldsToSet) {
@@ -74,37 +74,13 @@ export async function saveAIConfigAction(prevState: any, formData: FormData) {
   }
 }
 
-
-export async function syncAllDataAction(data: {
-  users: User[];
-  courses: Course[];
-}): Promise<{
-  success: boolean;
-  log: string[];
-  syncedUserIds: string[];
-  syncedCourseIds: string[];
-}> {
-    const log: string[] = ["Recibida solicitud de sincronización en el servidor."];
-    
-    try {
-        const result = await syncWithSupabase(data);
-        return {
-            ...result,
-            log: [log[0], ...result.log],
-        };
-    } catch (e: any) {
-        log.push(`ERROR FATAL: ${e.message}`);
-        return { success: false, log, syncedUserIds: [], syncedCourseIds: [] };
-    }
-}
-
 export async function saveFcmTokenAction(token: string) {
     const user = await db.getLoggedInUser();
     if (!user) {
         return { success: false, message: 'Usuario no autenticado.' };
     }
     try {
-        await db.saveFcmToken(user.id, token);
+        await db.saveFcmToken(user.id!, token);
         return { success: true, message: 'Token guardado correctamente.' };
     } catch (error) {
         console.error('Failed to save FCM token', error);
@@ -119,7 +95,7 @@ export async function sendTestPushNotificationAction() {
     }
     try {
         await sendPushNotification(
-            user.id,
+            user.id!,
             'Notificación de Prueba',
             '¡La configuración funciona correctamente!',
             '/dashboard'
@@ -128,5 +104,16 @@ export async function sendTestPushNotificationAction() {
     } catch (error) {
         console.error('Failed to send test push notification', error);
         return { success: false, message: 'No se pudo enviar la notificación.' };
+    }
+}
+
+export async function runSyncAction() {
+    console.log("Starting synchronization action...");
+    try {
+        const result = await db.syncWithSupabase();
+        return result;
+    } catch(e: any) {
+        console.error("Sync failed in action:", e);
+        return { success: false, message: e.message || "An unknown error occurred during sync." };
     }
 }

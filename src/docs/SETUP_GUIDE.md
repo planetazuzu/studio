@@ -61,11 +61,11 @@ La aplicación necesita claves secretas para conectarse a servicios externos. Es
 2.  **Añade las variables:** Abre el archivo y pega las siguientes variables, reemplazando los valores de ejemplo con tus propias credenciales.
 
     ```env
-    # --- Configuración de Supabase (Obligatorio) ---
+    # --- Configuración de Supabase (Obligatorio para la sincronización) ---
     # Obtenidas en el paso 3 de la sección de Project Settings > API en Supabase
     NEXT_PUBLIC_SUPABASE_URL="URL_DE_TU_PROYECTO_SUPABASE"
     NEXT_PUBLIC_SUPABASE_ANON_KEY="TU_CLAVE_ANON_PUBLICA"
-    SUPABASE_SERVICE_ROLE_KEY="TU_CLAVE_SERVICE_ROLE_SECRETA" # Se usa para la sincronización
+    SUPABASE_SERVICE_ROLE_KEY="TU_CLAVE_SERVICE_ROLE_SECRETA"
 
     # --- Configuración de IA (Opcional pero Recomendado) ---
     # Clave de API para Google Gemini (para las funciones de IA)
@@ -101,10 +101,10 @@ La aplicación debería estar disponible en `http://localhost:3000` (o el puerto
 
 La primera vez que ejecutes la aplicación, la base de datos local (Dexie.js) estará vacía. Para facilitar el desarrollo, el sistema la poblará automáticamente con datos de ejemplo.
 
--   **¿Cómo funciona?:** El archivo `src/lib/db.ts` contiene una función `populateDatabase()` que se ejecuta al inicio. Si no detecta un usuario administrador (`user_1`), borra todas las tablas y las llena con los datos definidos en `src/lib/data.ts`.
+-   **¿Cómo funciona?:** El archivo `src/lib/db-providers/dexie.ts` contiene una función `populateDatabase()` que se ejecuta al inicio. Si no detecta un usuario administrador (`user_1`), borra todas las tablas y las llena con los datos definidos en `src/lib/data.ts`.
 -   **Inicio de Sesión:** Puedes usar cualquiera de las cuentas de prueba definidas en `src/app/login/page.tsx` para acceder. Por ejemplo, el usuario administrador:
     -   **Email:** `elena.vargas@example.com`
     -   **Contraseña:** `password123`
--   **Sincronización:** Recuerda que estos datos iniciales solo existen en tu navegador. Para subirlos a Supabase, ve a `Ajustes > APIs & Sincronización` y ejecuta el proceso de sincronización manual.
+-   **Sincronización:** Recuerda que estos datos iniciales solo existen en tu navegador. Para subirlos a Supabase, ve a `Ajustes > Sincronización` y ejecuta el proceso de sincronización manual.
 
 ¡Y eso es todo! Ahora tienes un entorno de desarrollo de TalentOS completamente funcional.

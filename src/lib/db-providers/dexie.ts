@@ -1,3 +1,4 @@
+
 // src/lib/db-providers/dexie.ts
 
 /**
@@ -13,6 +14,7 @@ import { sendEmailNotification, sendPushNotification, sendWhatsAppNotification }
 import { getNavItems } from '@/lib/nav';
 import { differenceInDays, isAfter } from 'date-fns';
 import type { DBProvider } from './types';
+import { syncToSupabase } from '@/lib/supabase-sync';
 
 
 const LOGGED_IN_USER_KEY = 'loggedInUserId';
@@ -47,29 +49,29 @@ class AcademiaAIDB extends Dexie {
 
   constructor() {
     super('AcademiaAIDB');
-    this.version(33).stores({
-      courses: 'id, instructor, status, isScorm, isSynced, *mandatoryForRoles',
-      users: 'id, &email, status, points, isSynced',
-      enrollments: '++id, studentId, courseId, status, [studentId+status]',
-      userProgress: '++id, [userId+courseId], userId, courseId',
-      forumMessages: '++id, courseId, parentId, timestamp',
-      notifications: '++id, userId, isRead, timestamp, [userId+timestamp], [userId+type+relatedUrl]',
-      resources: '++id, name',
-      courseResources: '++id, [courseId+resourceId]',
-      announcements: '++id, timestamp',
-      chatChannels: 'id, name, type, *participantIds',
-      chatMessages: '++id, channelId, timestamp, [channelId+timestamp]',
-      calendarEvents: '++id, courseId, start, end, isSynced',
-      externalTrainings: '++id, userId',
-      costs: '++id, category, courseId, date',
+    this.version(34).stores({
+      courses: '++id, &dexieId, instructor, status, isScorm, isSynced, *mandatoryForRoles',
+      users: '++id, &dexieId, &email, status, points, isSynced',
+      enrollments: '++id, &dexieId, studentId, courseId, status, [studentId+status]',
+      userProgress: '++id, &dexieId, [userId+courseId], userId, courseId',
+      forumMessages: '++id, &dexieId, courseId, parentId, timestamp',
+      notifications: '++id, &dexieId, userId, isRead, timestamp, [userId+timestamp], [userId+type+relatedUrl]',
+      resources: '++id, &dexieId, name',
+      courseResources: '++id, &dexieId, [courseId+resourceId]',
+      announcements: '++id, &dexieId, timestamp',
+      chatChannels: '++id, &dexieId, name, type, *participantIds',
+      chatMessages: '++id, &dexieId, channelId, timestamp, [channelId+timestamp]',
+      calendarEvents: '++id, &dexieId, courseId, start, end, isSynced',
+      externalTrainings: '++id, &dexieId, userId',
+      costs: '++id, &dexieId, category, courseId, date',
       aiConfig: 'id',
-      aiUsageLog: '++id, timestamp',
+      aiUsageLog: '++id, &dexieId, timestamp',
       badges: 'id',
-      userBadges: '++id, [userId+badgeId]',
-      costCategories: '++id, &name',
-      learningPaths: '++id, targetRole',
-      userLearningPathProgress: '++id, [userId+learningPathId]',
-      courseRatings: '++id, [courseId+userId], courseId, instructorName',
+      userBadges: '++id, &dexieId, [userId+badgeId]',
+      costCategories: '++id, &dexieId, &name',
+      learningPaths: '++id, &dexieId, targetRole',
+      userLearningPathProgress: '++id, &dexieId, [userId+learningPathId]',
+      courseRatings: '++id, &dexieId, [courseId+userId], courseId, instructorName',
       rolePermissions: '&role',
       systemLogs: '++id, timestamp, level',
     });
@@ -183,11 +185,11 @@ export const dexieProvider: DBProvider = {
     }
     const userId = localStorage.getItem(LOGGED_IN_USER_KEY);
     if (!userId) return null;
-    const user = await dbInstance.users.get(userId);
+    const user = await dbInstance.users.get({ dexieId: userId });
     return user || null;
   },
 
-  async addUser(user: Omit<User, 'id' | 'avatar' | 'isSynced' | 'updatedAt' | 'notificationSettings' | 'points' | 'status' | 'fcmToken'>): Promise<User> {
+  async addUser(user: Omit<User, 'id' | 'dexieId' | 'avatar' | 'isSynced' | 'updatedAt' | 'notificationSettings' | 'points' | 'status' | 'fcmToken'>): Promise<User> {
     const existingUser = await dbInstance.users.where('email').equalsIgnoreCase(user.email).first();
     if (existingUser) {
         throw new Error('Este correo electrónico ya está en uso.');
@@ -195,7 +197,7 @@ export const dexieProvider: DBProvider = {
     const requiresApproval = ['Formador', 'Jefe de Formación', 'Gestor de RRHH', 'Administrador General'].includes(user.role);
     const newUser: User = {
         ...user,
-        id: `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+        dexieId: `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
         avatar: `https://i.pravatar.cc/150?u=user${Date.now()}`,
         status: requiresApproval ? 'pending_approval' : 'approved',
         isSynced: false,
@@ -204,7 +206,9 @@ export const dexieProvider: DBProvider = {
         notificationSettings: { consent: false, channels: [] },
     };
     await dbInstance.transaction('rw', dbInstance.users, dbInstance.learningPaths, dbInstance.userLearningPathProgress, async () => {
-        await dbInstance.users.add(newUser);
+        const newId = await dbInstance.users.add(newUser);
+        newUser.id = newId as number;
+
         if (newUser.status === 'approved') {
             const pathForRole = await dbInstance.learningPaths.where('targetRole').equals(user.role).first();
             if (pathForRole?.id) {
@@ -221,10 +225,10 @@ export const dexieProvider: DBProvider = {
     return newUser;
   },
 
-  async bulkAddUsers(users: Omit<User, 'id' | 'avatar' | 'isSynced' | 'updatedAt' | 'notificationSettings' | 'points' | 'status' | 'fcmToken'>[]): Promise<string[]> {
+  async bulkAddUsers(users: Omit<User, 'id' | 'dexieId' | 'avatar' | 'isSynced' | 'updatedAt' | 'notificationSettings' | 'points' | 'status' | 'fcmToken'>[]): Promise<number[]> {
     const newUsers: User[] = users.map(user => ({
         ...user,
-        id: `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+        dexieId: `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
         avatar: `https://i.pravatar.cc/150?u=user${Date.now()}${Math.random()}`,
         status: 'approved',
         isSynced: false,
@@ -233,16 +237,16 @@ export const dexieProvider: DBProvider = {
         notificationSettings: { consent: false, channels: [] },
     }));
     return dbInstance.transaction('rw', dbInstance.users, dbInstance.learningPaths, dbInstance.userLearningPathProgress, async () => {
-        const userIds = await dbInstance.users.bulkAdd(newUsers, { allKeys: true }) as string[];
+        const userIds = await dbInstance.users.bulkAdd(newUsers, { allKeys: true }) as number[];
         const allPaths = await dbInstance.learningPaths.toArray();
         const pathsByRole = new Map<Role, LearningPath>();
         allPaths.forEach(p => pathsByRole.set(p.targetRole, p));
         const progressToAdd: Omit<UserLearningPathProgress, 'id'>[] = [];
-        newUsers.forEach(user => {
+        newUsers.forEach((user, index) => {
             const pathForRole = pathsByRole.get(user.role);
             if (pathForRole?.id) {
                 progressToAdd.push({
-                    userId: user.id,
+                    userId: userIds[index],
                     learningPathId: pathForRole.id,
                     completedCourseIds: [],
                     isSynced: false,
@@ -261,11 +265,11 @@ export const dexieProvider: DBProvider = {
     return await dbInstance.users.toArray();
   },
 
-  async getUserById(id: string): Promise<User | undefined> {
+  async getUserById(id: number): Promise<User | undefined> {
     return await dbInstance.users.get(id);
   },
 
-  async updateUser(id: string, data: Partial<Omit<User, 'id' | 'isSynced' | 'password'>>): Promise<number> {
+  async updateUser(id: number, data: Partial<Omit<User, 'id' | 'dexieId' | 'isSynced' | 'password'>>): Promise<number> {
     const currentUser = await dbInstance.users.get(id);
     if (!currentUser) return 0;
     const roleIsChanging = data.role && currentUser.role !== data.role;
@@ -290,7 +294,7 @@ export const dexieProvider: DBProvider = {
     });
   },
 
-  async updateUserStatus(userId: string, status: UserStatus): Promise<number> {
+  async updateUserStatus(userId: number, status: UserStatus): Promise<number> {
     const user = await dbInstance.users.get(userId);
     if (!user) return 0;
     return dbInstance.transaction('rw', dbInstance.users, dbInstance.learningPaths, dbInstance.userLearningPathProgress, dbInstance.notifications, async () => {
@@ -322,17 +326,17 @@ export const dexieProvider: DBProvider = {
     });
   },
 
-  async saveFcmToken(userId: string, fcmToken: string): Promise<number> {
+  async saveFcmToken(userId: number, fcmToken: string): Promise<number> {
     return await dbInstance.users.update(userId, { fcmToken, isSynced: false, updatedAt: new Date().toISOString() });
   },
 
-  async deleteUser(id: string): Promise<void> {
+  async deleteUser(id: number): Promise<void> {
     await dbInstance.users.delete(id);
   },
 
-  async addCourse(course: Partial<Omit<Course, 'id' | 'isSynced' | 'updatedAt'>>): Promise<string> {
+  async addCourse(course: Partial<Omit<Course, 'id' | 'dexieId' | 'isSynced' | 'updatedAt'>>): Promise<number> {
     const newCourse: Course = {
-        id: `course_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+        dexieId: `course_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
         title: course.title || 'Sin Título',
         description: course.description || '',
         longDescription: course.longDescription || '',
@@ -353,26 +357,26 @@ export const dexieProvider: DBProvider = {
         ...(course.category && { category: course.category }),
         ...(course.capacity && { capacity: course.capacity }),
     };
-    return await dbInstance.courses.add(newCourse);
+    return await dbInstance.courses.add(newCourse) as number;
   },
 
   async getAllCourses(): Promise<Course[]> {
     return await dbInstance.courses.toArray();
   },
 
-  async getCourseById(id: string): Promise<Course | undefined> {
+  async getCourseById(id: number): Promise<Course | undefined> {
     return await dbInstance.courses.get(id);
   },
 
-  async updateCourse(id: string, data: Partial<Omit<Course, 'id' | 'isSynced'>>): Promise<number> {
+  async updateCourse(id: number, data: Partial<Omit<Course, 'id' | 'dexieId' | 'isSynced'>>): Promise<number> {
     return await dbInstance.courses.update(id, { ...data, isSynced: false, updatedAt: new Date().toISOString() });
   },
 
-  async updateCourseStatus(id: string, status: 'draft' | 'published'): Promise<number> {
+  async updateCourseStatus(id: number, status: 'draft' | 'published'): Promise<number> {
     return await dbInstance.courses.update(id, { status, isSynced: false, updatedAt: new Date().toISOString() });
   },
 
-  async deleteCourse(id: string): Promise<void> {
+  async deleteCourse(id: number): Promise<void> {
     return dbInstance.transaction('rw', dbInstance.courses, dbInstance.enrollments, dbInstance.userProgress, async () => {
         await dbInstance.enrollments.where('courseId').equals(id).delete();
         await dbInstance.userProgress.where('courseId').equals(id).delete();
@@ -380,7 +384,7 @@ export const dexieProvider: DBProvider = {
     });
   },
 
-  async requestEnrollment(courseId: string, studentId: string): Promise<number> {
+  async requestEnrollment(courseId: number, studentId: number): Promise<number> {
     const course = await dbInstance.courses.get(courseId);
     if (!course) throw new Error("El curso no existe.");
     const activeEnrollmentStatuses: EnrollmentStatus[] = ['pending', 'approved', 'active', 'waitlisted', 'needs_review', 'completed'];
@@ -393,11 +397,10 @@ export const dexieProvider: DBProvider = {
     const newEnrollment: Enrollment = {
         studentId, courseId, requestDate: new Date().toISOString(), status: 'pending', isSynced: false, updatedAt: new Date().toISOString(),
     };
-    const newId = await dbInstance.enrollments.add(newEnrollment);
-    return newId as number;
+    return await dbInstance.enrollments.add(newEnrollment) as number;
   },
 
-  async getApprovedEnrollmentCount(courseId: string): Promise<number> {
+  async getApprovedEnrollmentCount(courseId: number): Promise<number> {
     return await dbInstance.enrollments.where({ courseId }).and(e => e.status === 'approved' || e.status === 'active' || e.status === 'completed').count();
   },
 
@@ -435,7 +438,7 @@ export const dexieProvider: DBProvider = {
     }));
   },
 
-  async getEnrollmentsForStudent(userId: string): Promise<EnrollmentWithDetails[]> {
+  async getEnrollmentsForStudent(userId: number): Promise<EnrollmentWithDetails[]> {
     const studentEnrollments = await dbInstance.enrollments.where('studentId').equals(userId).toArray();
     if (studentEnrollments.length === 0) return [];
     const courseIds = [...new Set(studentEnrollments.map(e => e.courseId))];
@@ -474,7 +477,7 @@ export const dexieProvider: DBProvider = {
     return result;
   },
 
-  async getEnrolledCoursesForUser(userId: string): Promise<Course[]> {
+  async getEnrolledCoursesForUser(userId: number): Promise<Course[]> {
     const approvedEnrollments = await dbInstance.enrollments.where('studentId').equals(userId).filter(e => e.status === 'approved' || e.status === 'active').toArray();
     if (approvedEnrollments.length === 0) return [];
     const courseIds = approvedEnrollments.map(e => e.courseId);
@@ -485,24 +488,24 @@ export const dexieProvider: DBProvider = {
     const allCourses = await dbInstance.courses.toArray();
     const mandatoryCourses = allCourses.filter(c => c.status === 'published' && c.mandatoryForRoles?.includes(user.role));
     if (mandatoryCourses.length === 0) return [];
-    const userProgressRecords = await dbInstance.userProgress.where('userId').equals(user.id).toArray();
+    const userProgressRecords = await dbInstance.userProgress.where('userId').equals(user.id!).toArray();
     const progressMap = new Map(userProgressRecords.map(p => [p.courseId, p]));
     return mandatoryCourses.filter(course => {
-        const progress = progressMap.get(course.id);
+        const progress = progressMap.get(course.id!);
         const isCompleted = progress && course.modules && course.modules.length > 0 && progress.completedModules.length === course.modules.length;
         return !isCompleted;
     });
   },
 
-  async getUserProgress(userId: string, courseId: string): Promise<UserProgress | undefined> {
+  async getUserProgress(userId: number, courseId: number): Promise<UserProgress | undefined> {
     return await dbInstance.userProgress.where({ userId, courseId }).first();
   },
 
-  async getUserProgressForUser(userId: string): Promise<UserProgress[]> {
+  async getUserProgressForUser(userId: number): Promise<UserProgress[]> {
     return await dbInstance.userProgress.where({ userId }).toArray();
   },
 
-  async markModuleAsCompleted(userId: string, courseId: string, moduleId: string): Promise<void> {
+  async markModuleAsCompleted(userId: number, courseId: number, moduleId: string): Promise<void> {
     return dbInstance.transaction('rw', dbInstance.users, dbInstance.userProgress, dbInstance.badges, dbInstance.userBadges, dbInstance.notifications, dbInstance.courses, dbInstance.enrollments, dbInstance.learningPaths, dbInstance.userLearningPathProgress, async () => {
         const existingProgress = await this.getUserProgress(userId, courseId);
         const user = await this.getUserById(userId);
@@ -534,15 +537,15 @@ export const dexieProvider: DBProvider = {
         const user = await dbInstance.users.get(message.userId);
         if (!user) return;
         const pointsToAdd = message.parentId ? 2 : 5;
-        await dbInstance.users.update(user.id, { points: (user.points || 0) + pointsToAdd });
-        const userMessageCount = await dbInstance.forumMessages.where('userId').equals(user.id).count();
-        if (userMessageCount === 1) await this.awardBadge(user.id, 'forum_first_post');
-        if (userMessageCount === 5) await this.awardBadge(user.id, 'forum_collaborator');
+        await dbInstance.users.update(user.id!, { points: (user.points || 0) + pointsToAdd });
+        const userMessageCount = await dbInstance.forumMessages.where('userId').equals(user.id!).count();
+        if (userMessageCount === 1) await this.awardBadge(user.id!, 'forum_first_post');
+        if (userMessageCount === 5) await this.awardBadge(user.id!, 'forum_collaborator');
     });
     return newId as number;
   },
 
-  async getForumMessages(courseId: string): Promise<ForumMessageWithReplies[]> {
+  async getForumMessages(courseId: number): Promise<ForumMessageWithReplies[]> {
     const messages = await dbInstance.forumMessages.where('courseId').equals(courseId).sortBy('timestamp');
     const messageMap = new Map<number, ForumMessageWithReplies>();
     const rootMessages: ForumMessageWithReplies[] = [];
@@ -581,7 +584,7 @@ export const dexieProvider: DBProvider = {
 
   async addNotification(notification: Omit<Notification, 'id' | 'isSynced' | 'updatedAt'>): Promise<number> {
     const newNotification: Notification = { ...notification, isSynced: false, updatedAt: new Date().toISOString() };
-    const newId = await dbInstance.notifications.add(newNotification);
+    const newId = await dbInstance.notifications.add(newNotification) as number;
     const user = await dbInstance.users.get(notification.userId);
     if (user && user.notificationSettings?.consent) {
         const settings = user.notificationSettings;
@@ -591,13 +594,13 @@ export const dexieProvider: DBProvider = {
         if (settings.channels.includes('whatsapp') && user.phone) sendWhatsAppNotification(user, body).catch(e => this.logSystemEvent('ERROR', 'Failed to send WhatsApp notification', { error: (e as Error).message, userId: user.id }));
         if (settings.channels.includes('app') && user.fcmToken) {
             const title = 'Nueva Notificación de TalentOS';
-            sendPushNotification(user.id, title, body, notification.relatedUrl || '/dashboard').catch(e => this.logSystemEvent('ERROR', 'Failed to send Push notification', { error: (e as Error).message, userId: user.id }));
+            sendPushNotification(user.id!, title, body, notification.relatedUrl || '/dashboard').catch(e => this.logSystemEvent('ERROR', 'Failed to send Push notification', { error: (e as Error).message, userId: user.id }));
         }
     }
-    return newId as number;
+    return newId;
   },
 
-  async getNotificationsForUser(userId: string): Promise<Notification[]> {
+  async getNotificationsForUser(userId: number): Promise<Notification[]> {
     return await dbInstance.notifications.where({ userId }).reverse().sortBy('timestamp');
   },
 
@@ -605,7 +608,7 @@ export const dexieProvider: DBProvider = {
     return await dbInstance.notifications.update(notificationId, { isRead: true, updatedAt: new Date().toISOString(), isSynced: false });
   },
 
-  async markAllNotificationsAsRead(userId: string): Promise<void> {
+  async markAllNotificationsAsRead(userId: number): Promise<void> {
     const unreadNotifications = await dbInstance.notifications.where({ userId, isRead: false }).toArray();
     if (unreadNotifications.length > 0) {
         const idsToUpdate = unreadNotifications.map(n => n.id!);
@@ -614,7 +617,7 @@ export const dexieProvider: DBProvider = {
   },
 
   async checkAndSendDeadlineReminders(user: User): Promise<void> {
-    const enrolledCourses = await this.getEnrolledCoursesForUser(user.id);
+    const enrolledCourses = await this.getEnrolledCoursesForUser(user.id!);
     if (enrolledCourses.length === 0) return;
     const now = new Date();
     for (const course of enrolledCourses) {
@@ -625,7 +628,7 @@ export const dexieProvider: DBProvider = {
                 const existingReminder = await dbInstance.notifications.where({ userId: user.id }).filter(notif => notif.type === 'course_deadline_reminder' && notif.relatedUrl === `/dashboard/courses/${course.id}`).first();
                 if (!existingReminder) {
                     await this.addNotification({
-                        userId: user.id,
+                        userId: user.id!,
                         message: `¡Fecha límite próxima! El curso "${course.title}" finaliza en ${daysUntilDeadline + 1} día(s).`,
                         type: 'course_deadline_reminder',
                         relatedUrl: `/dashboard/courses/${course.id}`,
@@ -655,23 +658,23 @@ export const dexieProvider: DBProvider = {
     });
   },
 
-  async associateResourceWithCourse(courseId: string, resourceId: number): Promise<void> {
+  async associateResourceWithCourse(courseId: number, resourceId: number): Promise<void> {
     const existing = await dbInstance.courseResources.where({ courseId, resourceId }).first();
     if (!existing) await dbInstance.courseResources.add({ courseId, resourceId });
   },
 
-  async dissociateResourceFromCourse(courseId: string, resourceId: number): Promise<void> {
+  async dissociateResourceFromCourse(courseId: number, resourceId: number): Promise<void> {
     await dbInstance.courseResources.where({ courseId, resourceId }).delete();
   },
 
-  async getResourcesForCourse(courseId: string): Promise<Resource[]> {
+  async getResourcesForCourse(courseId: number): Promise<Resource[]> {
     const associations = await dbInstance.courseResources.where('courseId').equals(courseId).toArray();
     if (associations.length === 0) return [];
     const resourceIds = associations.map(a => a.resourceId);
     return await dbInstance.resources.where('id').anyOf(resourceIds).toArray();
   },
 
-  async getAssociatedResourceIdsForCourse(courseId: string): Promise<number[]> {
+  async getAssociatedResourceIdsForCourse(courseId: number): Promise<number[]> {
     const associations = await dbInstance.courseResources.where('courseId').equals(courseId).toArray();
     return associations.map(a => a.resourceId);
   },
@@ -702,7 +705,7 @@ export const dexieProvider: DBProvider = {
     return newId as number;
   },
 
-  async getChatMessages(channelId: string): Promise<ChatMessage[]> {
+  async getChatMessages(channelId: number): Promise<ChatMessage[]> {
     return await dbInstance.chatMessages.where('channelId').equals(channelId).sortBy('timestamp');
   },
 
@@ -710,12 +713,12 @@ export const dexieProvider: DBProvider = {
     return await dbInstance.chatChannels.where('type').equals('public').sortBy('name');
   },
 
-  async addPublicChatChannel(name: string, description: string): Promise<string> {
-    const newChannel: ChatChannel = { id: `channel_${name.toLowerCase().replace(/\s+/g, '-')}`, name, description, type: 'public', isSynced: false, updatedAt: new Date().toISOString() };
-    return await dbInstance.chatChannels.add(newChannel);
+  async addPublicChatChannel(name: string, description: string): Promise<number> {
+    const newChannel: ChatChannel = { dexieId: `channel_${name.toLowerCase().replace(/\s+/g, '-')}`, name, description, type: 'public', isSynced: false, updatedAt: new Date().toISOString() };
+    return await dbInstance.chatChannels.add(newChannel) as number;
   },
 
-  async getDirectMessageThreadsForUserWithDetails(userId: string): Promise<DirectMessageThread[]> {
+  async getDirectMessageThreadsForUserWithDetails(userId: number): Promise<DirectMessageThread[]> {
     const threads = await dbInstance.chatChannels.where('participantIds').equals(userId).toArray();
     const otherParticipantIds = threads.flatMap(t => t.participantIds!.filter(pid => pid !== userId));
     if (otherParticipantIds.length === 0) return [];
@@ -726,20 +729,21 @@ export const dexieProvider: DBProvider = {
         const otherUser = participantsMap.get(otherId);
         return {
             ...thread,
-            otherParticipant: otherUser ? { id: otherUser.id, name: otherUser.name, avatar: otherUser.avatar } : { id: 'unknown', name: 'Usuario Desconocido', avatar: '' }
+            otherParticipant: otherUser ? { id: otherUser.id!, name: otherUser.name, avatar: otherUser.avatar } : { id: -1, name: 'Usuario Desconocido', avatar: '' }
         };
     }).sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''));
   },
 
-  async getOrCreateDirectMessageThread(currentUserId: string, otherUserId: string): Promise<ChatChannel> {
-    const threadId = `dm_${[currentUserId, otherUserId].sort().join('_')}`;
-    const existingThread = await dbInstance.chatChannels.get(threadId);
+  async getOrCreateDirectMessageThread(currentUserId: number, otherUserId: number): Promise<ChatChannel> {
+    const dexieId = `dm_${[currentUserId, otherUserId].sort().join('_')}`;
+    const existingThread = await dbInstance.chatChannels.get({ dexieId });
     if (existingThread) return existingThread;
     const currentUser = await dbInstance.users.get(currentUserId);
     const otherUser = await dbInstance.users.get(otherUserId);
     if (!currentUser || !otherUser) throw new Error("Uno o ambos usuarios no existen.");
-    const newChannel: ChatChannel = { id: threadId, name: `${currentUser.name} & ${otherUser.name}`, type: 'private', participantIds: [currentUserId, otherUserId], isSynced: false, updatedAt: new Date().toISOString() };
-    await dbInstance.chatChannels.add(newChannel);
+    const newChannel: ChatChannel = { dexieId, name: `${currentUser.name} & ${otherUser.name}`, type: 'private', participantIds: [currentUserId, otherUserId], isSynced: false, updatedAt: new Date().toISOString() };
+    const newId = await dbInstance.chatChannels.add(newChannel) as number;
+    newChannel.id = newId;
     return newChannel;
   },
 
@@ -748,7 +752,7 @@ export const dexieProvider: DBProvider = {
     if (departmentFilter !== 'all') query = query.filter(u => u.department === departmentFilter);
     if (roleFilter !== 'all') query = query.filter(u => u.role === roleFilter);
     const usersToReport = await query.toArray();
-    const userIds = usersToReport.map(u => u.id);
+    const userIds = usersToReport.map(u => u.id!);
     const allCourses = await dbInstance.courses.toArray();
     const allProgress = await dbInstance.userProgress.where('userId').anyOf(userIds).toArray();
     const progressMap = new Map<string, UserProgress>();
@@ -757,7 +761,7 @@ export const dexieProvider: DBProvider = {
     for (const user of usersToReport) {
         const mandatoryCourses = allCourses.filter(c => c.status === 'published' && c.mandatoryForRoles?.includes(user.role));
         if (mandatoryCourses.length === 0) {
-            report.push({ userId: user.id, userName: user.name, userRole: user.role, mandatoryCoursesCount: 0, completedCoursesCount: 0, complianceRate: 100 });
+            report.push({ userId: user.id!, userName: user.name, userRole: user.role, mandatoryCoursesCount: 0, completedCoursesCount: 0, complianceRate: 100 });
             continue;
         }
         let completedCount = 0;
@@ -765,7 +769,7 @@ export const dexieProvider: DBProvider = {
             const progress = progressMap.get(`${user.id}-${course.id}`);
             if (progress && course.modules && course.modules.length > 0 && progress.completedModules.length === course.modules.length) completedCount++;
         }
-        report.push({ userId: user.id, userName: user.name, userRole: user.role, mandatoryCoursesCount: mandatoryCourses.length, completedCoursesCount: completedCount, complianceRate: (completedCount / mandatoryCourses.length) * 100 });
+        report.push({ userId: user.id!, userName: user.name, userRole: user.role, mandatoryCoursesCount: mandatoryCourses.length, completedCoursesCount: completedCount, complianceRate: (completedCount / mandatoryCourses.length) * 100 });
     }
     return report.sort((a,b) => a.complianceRate - b.complianceRate);
   },
@@ -774,7 +778,7 @@ export const dexieProvider: DBProvider = {
     return await dbInstance.calendarEvents.toArray();
   },
 
-  async getCalendarEvents(courseIds: string[]): Promise<CalendarEvent[]> {
+  async getCalendarEvents(courseIds: number[]): Promise<CalendarEvent[]> {
     if (courseIds.length === 0) return [];
     return await dbInstance.calendarEvents.where('courseId').anyOf(courseIds).toArray();
   },
@@ -793,7 +797,7 @@ export const dexieProvider: DBProvider = {
     await dbInstance.calendarEvents.delete(id);
   },
 
-  async getExternalTrainingsForUser(userId: string): Promise<ExternalTraining[]> {
+  async getExternalTrainingsForUser(userId: number): Promise<ExternalTraining[]> {
     return await dbInstance.externalTrainings.where('userId').equals(userId).reverse().sortBy('endDate');
   },
 
@@ -846,7 +850,7 @@ export const dexieProvider: DBProvider = {
     return await dbInstance.courses.where('instructor').equals(instructorName).toArray();
   },
 
-  async getStudentsForCourseManagement(courseId: string): Promise<StudentForManagement[]> {
+  async getStudentsForCourseManagement(courseId: number): Promise<StudentForManagement[]> {
     const enrollments = await dbInstance.enrollments.where({ courseId }).filter(e => e.status === 'approved' || e.status === 'active').toArray();
     const studentIds = enrollments.map(e => e.studentId);
     if (studentIds.length === 0) return [];
@@ -857,11 +861,11 @@ export const dexieProvider: DBProvider = {
     const progressMap = new Map(progresses.map(p => [p.userId, p]));
     const enrollmentMap = new Map(enrollments.map(e => [e.studentId, e]));
     return students.map(student => {
-        const progress = progressMap.get(student.id);
+        const progress = progressMap.get(student.id!);
         const completedModules = progress?.completedModules?.length || 0;
         const progressPercentage = moduleCount > 0 ? Math.round((completedModules / moduleCount) * 100) : 0;
-        const enrollmentStatus = enrollmentMap.get(student.id)?.status || 'active';
-        return { id: student.id, name: student.name, avatar: student.avatar, email: student.email, progress: progressPercentage, status: enrollmentStatus };
+        const enrollmentStatus = enrollmentMap.get(student.id!)?.status || 'active';
+        return { id: student.id!, name: student.name, avatar: student.avatar, email: student.email, progress: progressPercentage, status: enrollmentStatus };
     }).sort((a, b) => a.name.localeCompare(b.name));
   },
 
@@ -869,11 +873,11 @@ export const dexieProvider: DBProvider = {
     return await dbInstance.badges.toArray();
   },
 
-  async getBadgesForUser(userId: string): Promise<UserBadge[]> {
+  async getBadgesForUser(userId: number): Promise<UserBadge[]> {
     return await dbInstance.userBadges.where('userId').equals(userId).toArray();
   },
 
-  async awardBadge(userId: string, badgeId: string): Promise<void> {
+  async awardBadge(userId: number, badgeId: string): Promise<void> {
     return dbInstance.transaction('rw', dbInstance.userBadges, dbInstance.notifications, async () => {
         const existing = await dbInstance.userBadges.where({ userId, badgeId }).first();
         if (existing) return;
@@ -928,22 +932,22 @@ export const dexieProvider: DBProvider = {
     const paths = await dbInstance.learningPaths.where('targetRole').equals(user.role).toArray();
     const pathIds = paths.map(p => p.id!);
     if (pathIds.length === 0) return [];
-    const progresses = await dbInstance.userLearningPathProgress.where('userId').equals(user.id).and(p => pathIds.includes(p.learningPathId)).toArray();
+    const progresses = await dbInstance.userLearningPathProgress.where('userId').equals(user.id!).and(p => pathIds.includes(p.learningPathId)).toArray();
     const progressMap = new Map(progresses.map(p => [p.learningPathId, p]));
     return paths.map(path => ({ ...path, progress: progressMap.get(path.id!) }));
   },
 
   async addCourseRating(rating: Omit<CourseRating, 'id' | 'isPublic'>): Promise<number> {
-    const newRating: CourseRating = { ...rating, isPublic: false };
+    const newRating: CourseRating = { ...rating, isPublic: false, isSynced: false, updatedAt: new Date().toISOString() };
     const newId = await dbInstance.courseRatings.add(newRating);
     return newId as number;
   },
 
-  async getRatingByUserAndCourse(userId: string, courseId: string): Promise<CourseRating | undefined> {
+  async getRatingByUserAndCourse(userId: number, courseId: number): Promise<CourseRating | undefined> {
     return await dbInstance.courseRatings.where({ userId, courseId }).first();
   },
 
-  async getRatingsForCourse(courseId: string): Promise<CourseRating[]> {
+  async getRatingsForCourse(courseId: number): Promise<CourseRating[]> {
     return await dbInstance.courseRatings.where('courseId').equals(courseId).reverse().sortBy('timestamp');
   },
 
@@ -952,7 +956,7 @@ export const dexieProvider: DBProvider = {
   },
 
   async toggleCourseRatingVisibility(ratingId: number, isPublic: boolean): Promise<number> {
-    return await dbInstance.courseRatings.update(ratingId, { isPublic });
+    return await dbInstance.courseRatings.update(ratingId, { isPublic, isSynced: false, updatedAt: new Date().toISOString() });
   },
 
   async getPermissionsForRole(role: Role): Promise<string[]> {
@@ -982,8 +986,24 @@ export const dexieProvider: DBProvider = {
     await dbInstance.systemLogs.clear();
   },
 
+  async getUnsyncedItemsCount(): Promise<number> {
+    const unsyncedCounts = await Promise.all(
+        Object.values(dbInstance.tables).map(async table => {
+            if ('isSynced' in table.schema.primKey.keyPath) { // A bit of a hack to check if the table has isSynced
+                return table.where('isSynced').equals('false').count();
+            }
+            return 0;
+        })
+    );
+    return unsyncedCounts.reduce((acc, count) => acc + count, 0);
+  },
+  
+  async syncWithSupabase(): Promise<{ success: boolean; message: string; }> {
+      return await syncToSupabase(dbInstance);
+  },
+
   // Internal helper methods, prefixed with _ to avoid exposing them on the provider interface.
-  async _checkAndAwardModuleBadges(userId: string) {
+  async _checkAndAwardModuleBadges(userId: number) {
     const allProgress = await dbInstance.userProgress.where('userId').equals(userId).toArray();
     const totalModulesCompleted = allProgress.reduce((sum, p) => sum + p.completedModules.length, 0);
     if (totalModulesCompleted >= 1) await this.awardBadge(userId, 'first_module');
@@ -991,7 +1011,7 @@ export const dexieProvider: DBProvider = {
     if (totalModulesCompleted >= 15) await this.awardBadge(userId, 'maestro_del_saber');
   },
 
-  async _handleCourseCompletion(userId: string, courseId: string) {
+  async _handleCourseCompletion(userId: number, courseId: number) {
     return dbInstance.transaction('rw', dbInstance.users, dbInstance.enrollments, dbInstance.userLearningPathProgress, dbInstance.courses, dbInstance.badges, dbInstance.userBadges, dbInstance.notifications, async () => {
         const course = await dbInstance.courses.get(courseId);
         if (!course) return;

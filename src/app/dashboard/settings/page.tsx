@@ -7,10 +7,10 @@ import { Loader2 } from 'lucide-react';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ApiSettings } from '@/components/settings/api-settings';
-import { SyncManager } from '@/components/settings/sync-manager';
 import { PermissionSettings } from '@/components/settings/permission-settings';
 import { AISettings } from '@/components/settings/ai-settings';
 import { GeneralSettings } from '@/components/settings/general-settings';
+import { SyncManager } from '@/components/settings/sync-manager';
 
 
 export default function SettingsPage() {
@@ -32,7 +32,8 @@ export default function SettingsPage() {
         { value: 'general', label: 'General' },
         { value: 'permissions', label: 'Permisos' },
         { value: 'ai', label: 'Inteligencia Artificial' },
-        { value: 'api', label: 'APIs & Sincronización' },
+        { value: 'sync', label: 'Sincronización' },
+        { value: 'api', label: 'APIs Externas' },
     ];
     
     return (
@@ -57,11 +58,11 @@ export default function SettingsPage() {
                     <TabsContent value="ai" className="mt-4 md:mt-0">
                         <AISettings />
                     </TabsContent>
+                     <TabsContent value="sync" className="mt-4 md:mt-0">
+                        <SyncManager />
+                    </TabsContent>
                     <TabsContent value="api" className="mt-4 md:mt-0">
-                        <div className="space-y-6">
-                            <ApiSettings />
-                            <SyncManager />
-                        </div>
+                        <ApiSettings />
                     </TabsContent>
                 </Tabs>
             </div>

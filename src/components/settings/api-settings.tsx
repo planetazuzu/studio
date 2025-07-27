@@ -10,9 +10,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { saveApiKeysAction } from '@/app/dashboard/settings/actions';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { Server, HelpCircle, Mail, MessageSquare, Bell } from 'lucide-react';
-import Link from 'next/link';
-
+import { Server, HelpCircle, Mail, MessageSquare, Bell, Database } from 'lucide-react';
 
 export function ApiSettings() {
     const { toast } = useToast();
@@ -32,11 +30,20 @@ export function ApiSettings() {
     return (
          <Card>
             <CardHeader>
-                <CardTitle>Configuración de APIs</CardTitle>
-                <CardDescription>Gestiona las claves y URLs para servicios externos. Se guardan de forma segura como cookies de servidor.</CardDescription>
+                <CardTitle>Configuración de APIs Externas</CardTitle>
+                <CardDescription>Gestiona las claves para servicios externos como email, WhatsApp y notificaciones push.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
                 <form ref={formRef} action={formAction} className="space-y-6">
+                    <div className="space-y-4 rounded-lg border p-4">
+                        <h3 className="text-lg font-semibold flex items-center gap-2"><Database />Supabase (Sincronización)</h3>
+                        <p className="text-sm text-muted-foreground">Necesario para la sincronización de datos. Esta clave permite al servidor escribir en la base de datos de Supabase. Obténla en `Project Settings > API`.</p>
+                         <div className="space-y-2">
+                            <Label htmlFor="supabase_service_role_key">Clave de Rol de Servicio de Supabase</Label>
+                            <Input id="supabase_service_role_key" name="supabase_service_role_key" type="password" placeholder="Introduce la clave 'service_role'" />
+                        </div>
+                    </div>
+
                     <div className="space-y-4 rounded-lg border p-4">
                         <h3 className="text-lg font-semibold flex items-center gap-2"><Bell />Firebase (Notificaciones Push)</h3>
                         <p className="text-sm text-muted-foreground">Necesario para enviar notificaciones push. Consulta la guía de despliegue para obtener estas credenciales de tu cuenta de servicio de Firebase.</p>
@@ -51,7 +58,6 @@ export function ApiSettings() {
                             </div>
                         </div>
                     </div>
-
 
                      <div className="space-y-4 rounded-lg border p-4">
                         <h3 className="text-lg font-semibold flex items-center gap-2"><Mail/>SendGrid (Email)</h3>
@@ -90,7 +96,7 @@ export function ApiSettings() {
                     </div>
                     
                     <div className="flex justify-end">
-                        <Button type="submit">Guardar Todas las Configuraciones</Button>
+                        <Button type="submit">Guardar Configuraciones de APIs</Button>
                     </div>
                 </form>
                  

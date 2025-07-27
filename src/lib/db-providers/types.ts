@@ -29,58 +29,58 @@ export interface DBProvider {
   getLoggedInUser(): Promise<User | null>;
 
   // User
-  addUser(user: Omit<User, 'id' | 'avatar' | 'isSynced' | 'updatedAt' | 'notificationSettings' | 'points' | 'status' | 'fcmToken'>): Promise<User>;
-  bulkAddUsers(users: Omit<User, 'id' | 'avatar' | 'isSynced' | 'updatedAt' | 'notificationSettings' | 'points' | 'status' | 'fcmToken'>[]): Promise<string[]>;
+  addUser(user: Omit<User, 'id' | 'dexieId' | 'avatar' | 'isSynced' | 'updatedAt' | 'notificationSettings' | 'points' | 'status' | 'fcmToken'>): Promise<User>;
+  bulkAddUsers(users: Omit<User, 'id' | 'dexieId' | 'avatar' | 'isSynced' | 'updatedAt' | 'notificationSettings' | 'points' | 'status' | 'fcmToken'>[]): Promise<number[]>;
   getAllUsers(): Promise<User[]>;
-  getUserById(id: string): Promise<User | undefined>;
-  updateUser(id: string, data: Partial<Omit<User, 'id' | 'isSynced' | 'password'>>): Promise<number>;
-  updateUserStatus(userId: string, status: UserStatus): Promise<number>;
-  saveFcmToken(userId: string, fcmToken: string): Promise<number>;
-  deleteUser(id: string): Promise<void>;
+  getUserById(id: number): Promise<User | undefined>;
+  updateUser(id: number, data: Partial<Omit<User, 'id' | 'dexieId' | 'isSynced' | 'password'>>): Promise<number>;
+  updateUserStatus(userId: number, status: UserStatus): Promise<number>;
+  saveFcmToken(userId: number, fcmToken: string): Promise<number>;
+  deleteUser(id: number): Promise<void>;
 
   // Course
-  addCourse(course: Partial<Omit<Course, 'id' | 'isSynced' | 'updatedAt'>>): Promise<string>;
+  addCourse(course: Partial<Omit<Course, 'id' | 'dexieId' | 'isSynced' | 'updatedAt'>>): Promise<number>;
   getAllCourses(): Promise<Course[]>;
-  getCourseById(id: string): Promise<Course | undefined>;
-  updateCourse(id: string, data: Partial<Omit<Course, 'id' | 'isSynced'>>): Promise<number>;
-  updateCourseStatus(id: string, status: 'draft' | 'published'): Promise<number>;
-  deleteCourse(id: string): Promise<void>;
+  getCourseById(id: number): Promise<Course | undefined>;
+  updateCourse(id: number, data: Partial<Omit<Course, 'id' | 'dexieId' | 'isSynced'>>): Promise<number>;
+  updateCourseStatus(id: number, status: 'draft' | 'published'): Promise<number>;
+  deleteCourse(id: number): Promise<void>;
 
   // Enrollment
-  requestEnrollment(courseId: string, studentId: string): Promise<number>;
-  getApprovedEnrollmentCount(courseId: string): Promise<number>;
+  requestEnrollment(courseId: number, studentId: number): Promise<number>;
+  getApprovedEnrollmentCount(courseId: number): Promise<number>;
   getPendingEnrollmentsWithDetails(): Promise<PendingEnrollmentDetails[]>;
   getAllEnrollmentsWithDetails(): Promise<EnrollmentWithDetails[]>;
-  getEnrollmentsForStudent(userId: string): Promise<EnrollmentWithDetails[]>;
+  getEnrollmentsForStudent(userId: number): Promise<EnrollmentWithDetails[]>;
   updateEnrollmentStatus(enrollmentId: number, status: EnrollmentStatus, justification?: string): Promise<number>;
-  getEnrolledCoursesForUser(userId: string): Promise<Course[]>;
+  getEnrolledCoursesForUser(userId: number): Promise<Course[]>;
   getIncompleteMandatoryCoursesForUser(user: User): Promise<Course[]>;
 
   // User Progress
-  getUserProgress(userId: string, courseId: string): Promise<UserProgress | undefined>;
-  getUserProgressForUser(userId: string): Promise<UserProgress[]>;
-  markModuleAsCompleted(userId: string, courseId: string, moduleId: string): Promise<void>;
+  getUserProgress(userId: number, courseId: number): Promise<UserProgress | undefined>;
+  getUserProgressForUser(userId: number): Promise<UserProgress[]>;
+  markModuleAsCompleted(userId: number, courseId: number, moduleId: string): Promise<void>;
 
   // Forum
   addForumMessage(message: Omit<ForumMessage, 'id' | 'isSynced' | 'updatedAt'>): Promise<number>;
-  getForumMessages(courseId: string): Promise<ForumMessageWithReplies[]>;
+  getForumMessages(courseId: number): Promise<ForumMessageWithReplies[]>;
   deleteForumMessage(messageId: number): Promise<void>;
 
   // Notifications
   addNotification(notification: Omit<Notification, 'id' | 'isSynced' | 'updatedAt'>): Promise<number>;
-  getNotificationsForUser(userId: string): Promise<Notification[]>;
+  getNotificationsForUser(userId: number): Promise<Notification[]>;
   markNotificationAsRead(notificationId: number): Promise<number>;
-  markAllNotificationsAsRead(userId: string): Promise<void>;
+  markAllNotificationsAsRead(userId: number): Promise<void>;
   checkAndSendDeadlineReminders(user: User): Promise<void>;
 
   // Resources
   addResource(resource: Omit<Resource, 'id' | 'isSynced' | 'updatedAt'>): Promise<number>;
   getAllResources(): Promise<Resource[]>;
   deleteResource(resourceId: number): Promise<void>;
-  associateResourceWithCourse(courseId: string, resourceId: number): Promise<void>;
-  dissociateResourceFromCourse(courseId: string, resourceId: number): Promise<void>;
-  getResourcesForCourse(courseId: string): Promise<Resource[]>;
-  getAssociatedResourceIdsForCourse(courseId: string): Promise<number[]>;
+  associateResourceWithCourse(courseId: number, resourceId: number): Promise<void>;
+  dissociateResourceFromCourse(courseId: number, resourceId: number): Promise<void>;
+  getResourcesForCourse(courseId: number): Promise<Resource[]>;
+  getAssociatedResourceIdsForCourse(courseId: number): Promise<number[]>;
 
   // Announcements
   addAnnouncement(announcement: Omit<Announcement, 'id' | 'isSynced' | 'updatedAt'>): Promise<number>;
@@ -90,24 +90,24 @@ export interface DBProvider {
 
   // Chat
   addChatMessage(message: Omit<ChatMessage, 'id' | 'isSynced' | 'updatedAt'>): Promise<number>;
-  getChatMessages(channelId: string): Promise<ChatMessage[]>;
+  getChatMessages(channelId: number): Promise<ChatMessage[]>;
   getPublicChatChannels(): Promise<ChatChannel[]>;
   addPublicChatChannel(name: string, description: string): Promise<number>;
-  getDirectMessageThreadsForUserWithDetails(userId: string): Promise<DirectMessageThread[]>;
-  getOrCreateDirectMessageThread(currentUserId: string, otherUserId: string): Promise<ChatChannel>;
+  getDirectMessageThreadsForUserWithDetails(userId: number): Promise<DirectMessageThread[]>;
+  getOrCreateDirectMessageThread(currentUserId: number, otherUserId: number): Promise<ChatChannel>;
 
   // Compliance
   getComplianceReportData(departmentFilter?: string, roleFilter?: string): Promise<ComplianceReportData[]>;
 
   // Calendar
   getAllCalendarEvents(): Promise<CalendarEvent[]>;
-  getCalendarEvents(courseIds: string[]): Promise<CalendarEvent[]>;
+  getCalendarEvents(courseIds: number[]): Promise<CalendarEvent[]>;
   addCalendarEvent(event: Omit<CalendarEvent, 'id' | 'isSynced' | 'updatedAt'>): Promise<number>;
   updateCalendarEvent(id: number, data: Partial<Omit<CalendarEvent, 'id' | 'isSynced'>>): Promise<number>;
   deleteCalendarEvent(id: number): Promise<void>;
 
   // External Training
-  getExternalTrainingsForUser(userId: string): Promise<ExternalTraining[]>;
+  getExternalTrainingsForUser(userId: number): Promise<ExternalTraining[]>;
   addExternalTraining(training: Omit<ExternalTraining, 'id' | 'isSynced' | 'updatedAt'>): Promise<number>;
   updateExternalTraining(id: number, data: Partial<Omit<ExternalTraining, 'id'>>): Promise<number>;
   deleteExternalTraining(id: number): Promise<void>;
@@ -123,12 +123,12 @@ export interface DBProvider {
 
   // Instructors
   getCoursesByInstructorName(instructorName: string): Promise<Course[]>;
-  getStudentsForCourseManagement(courseId: string): Promise<StudentForManagement[]>;
+  getStudentsForCourseManagement(courseId: number): Promise<StudentForManagement[]>;
 
   // Gamification
   getAllBadges(): Promise<Badge[]>;
-  getBadgesForUser(userId: string): Promise<UserBadge[]>;
-  awardBadge(userId: string, badgeId: string): Promise<void>;
+  getBadgesForUser(userId: number): Promise<UserBadge[]>;
+  awardBadge(userId: number, badgeId: string): Promise<void>;
 
   // AI Config
   getAIConfig(): Promise<AIConfig>;
@@ -145,8 +145,8 @@ export interface DBProvider {
 
   // Ratings
   addCourseRating(rating: Omit<CourseRating, 'id' | 'isPublic'>): Promise<number>;
-  getRatingByUserAndCourse(userId: string, courseId: string): Promise<CourseRating | undefined>;
-  getRatingsForCourse(courseId: string): Promise<CourseRating[]>;
+  getRatingByUserAndCourse(userId: number, courseId: number): Promise<CourseRating | undefined>;
+  getRatingsForCourse(courseId: number): Promise<CourseRating[]>;
   getRatingsForInstructor(instructorName: string): Promise<CourseRating[]>;
   toggleCourseRatingVisibility(ratingId: number, isPublic: boolean): Promise<number>;
 
@@ -158,4 +158,8 @@ export interface DBProvider {
   logSystemEvent(level: LogLevel, message: string, details?: Record<string, any>): Promise<void>;
   getSystemLogs(filterLevel?: LogLevel): Promise<SystemLog[]>;
   clearAllSystemLogs(): Promise<void>;
+  
+  // Sync
+  getUnsyncedItemsCount(): Promise<number>;
+  syncWithSupabase(): Promise<{ success: boolean; message: string; }>;
 }

@@ -1,3 +1,4 @@
+
 // src/lib/db.ts
 
 /**
@@ -109,4 +110,6 @@ export const {
   logSystemEvent,
   getSystemLogs,
   clearAllSystemLogs,
+  getUnsyncedItemsCount,
+  syncWithSupabase,
 } = dbProvider;

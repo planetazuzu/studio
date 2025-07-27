@@ -16,6 +16,11 @@ export interface AuthProvider {
   login: (email: string, password?: string) => Promise<User | null>;
 
   /**
+   * Registers a new user.
+   */
+  register: (name: string, email: string, password?: string) => Promise<{user: any, error: any}>;
+
+  /**
    * Logs the current user out.
    */
   logout: () => Promise<void>;
