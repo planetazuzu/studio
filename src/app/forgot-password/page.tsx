@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useActionState, useEffect } from 'react';
@@ -28,14 +29,12 @@ export default function ForgotPasswordPage() {
     const { toast } = useToast();
     const router = useRouter();
 
-    const [state, formAction] = useActionState(handlePasswordRequest, { success: false, message: '' });
+    const [state, formAction, isPending] = useActionState(handlePasswordRequest, { success: false, message: '' });
 
     const form = useForm<ForgotPasswordFormValues>({
         resolver: zodResolver(forgotPasswordSchema),
         defaultValues: { email: '' },
     });
-
-    const { formState } = form;
 
     useEffect(() => {
         if (state.message) {
@@ -89,8 +88,8 @@ export default function ForgotPasswordPage() {
                                 )}
                             />
                             <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row-reverse sm:items-center sm:justify-between">
-                                <Button type="submit" disabled={formState.isSubmitting}>
-                                    {formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                <Button type="submit" disabled={isPending}>
+                                    {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                     Enviar Enlace
                                 </Button>
                                 <Button asChild variant="link" className="p-0 h-auto">

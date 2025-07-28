@@ -2,7 +2,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { useFormState } from 'react-dom';
+import { useActionState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,7 +15,7 @@ import { Server, HelpCircle, Mail, MessageSquare, Bell, Database } from 'lucide-
 export function ApiSettings() {
     const { toast } = useToast();
     const formRef = useRef<HTMLFormElement>(null);
-    const [state, formAction] = useFormState(saveApiKeysAction, { success: false, message: '' });
+    const [state, formAction] = useActionState(saveApiKeysAction, { success: false, message: '' });
 
     useEffect(() => {
         if (state.message) {

@@ -32,7 +32,7 @@ export default function RequestDemoPage() {
     const { toast } = useToast();
     const router = useRouter();
     
-    const [state, formAction] = useActionState(sendDemoRequestEmail, { success: false, message: '' });
+    const [state, formAction, isPending] = useActionState(sendDemoRequestEmail, { success: false, message: '' });
 
     const form = useForm<DemoRequestFormValues>({
         resolver: zodResolver(demoRequestSchema),
@@ -43,8 +43,6 @@ export default function RequestDemoPage() {
             message: '',
         }
     });
-
-    const { formState } = form;
 
     useEffect(() => {
         if (state.message) {
@@ -97,8 +95,8 @@ export default function RequestDemoPage() {
                         <FormField control={form.control} name="message" render={({ field }) => ( <FormItem><FormLabel>Mensaje (Opcional)</FormLabel><FormControl><Textarea placeholder="Cuéntanos un poco sobre tus necesidades..." {...field} /></FormControl><FormMessage /></FormItem> )}/>
 
                         <div className="flex justify-end pt-2">
-                            <Button type="submit" disabled={formState.isSubmitting}>
-                                {formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            <Button type="submit" disabled={isPending}>
+                                {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 Enviar Solicitud
                             </Button>
                         </div>

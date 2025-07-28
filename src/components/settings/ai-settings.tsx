@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useActionState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useToast } from '@/hooks/use-toast';
 import * as db from '@/lib/db';
@@ -20,7 +21,7 @@ import { Skeleton } from '../ui/skeleton';
 export function AISettings() {
     const { toast } = useToast();
     const formRef = useRef<HTMLFormElement>(null);
-    const [isPending, setIsPending] = useState(false);
+    const [state, formAction, isPending] = useActionState(saveAIConfigAction, { success: false, message: '' });
 
     const currentConfig = useLiveQuery(() => db.getAIConfig());
     const [localConfig, setLocalConfig] = useState<AIConfig | null>(null);
@@ -30,6 +31,31 @@ export function AISettings() {
             setLocalConfig(currentConfig);
         }
     }, [currentConfig]);
+
+    useEffect(() => {
+        if (state.message) {
+            toast({
+                title: state.success ? 'Configuración del Servidor Guardada' : 'Error del Servidor',
+                description: state.message,
+                variant: state.success ? 'default' : 'destructive',
+            });
+
+            if (state.success && localConfig) {
+                 db.saveAIConfig(localConfig).then(() => {
+                    toast({
+                        title: 'Configuración Local Guardada',
+                        description: 'La configuración de la IA se ha guardado en tu navegador.'
+                    });
+                }).catch(error => {
+                    toast({
+                        title: 'Error local',
+                        description: 'No se pudo guardar la configuración en el navegador.',
+                        variant: 'destructive',
+                    });
+                });
+            }
+        }
+    }, [state, toast, localConfig]);
 
     const handleFeatureToggle = (feature: AIFeature, checked: boolean) => {
         if (!localConfig) return;
@@ -42,38 +68,13 @@ export function AISettings() {
         }));
     };
     
-    const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    const handleFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         if (!localConfig || !formRef.current) return;
         
-        setIsPending(true);
         const formData = new FormData(formRef.current);
         formData.append('activeModel', localConfig.activeModel);
-
-        const result = await saveAIConfigAction(null, formData);
-
-        toast({
-            title: result.success ? 'Configuración del Servidor Guardada' : 'Error del Servidor',
-            description: result.message,
-            variant: result.success ? 'default' : 'destructive',
-        });
-
-        if (result.success) {
-            try {
-                await db.saveAIConfig(localConfig);
-                toast({
-                    title: 'Configuración Local Guardada',
-                    description: 'La configuración de la IA se ha guardado en tu navegador.'
-                });
-            } catch (error) {
-                 toast({
-                    title: 'Error local',
-                    description: 'No se pudo guardar la configuración en el navegador.',
-                    variant: 'destructive',
-                });
-            }
-        }
-        setIsPending(false);
+        formAction(formData);
     }
     
     if (!localConfig) {
