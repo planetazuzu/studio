@@ -553,5 +553,3 @@ export const PredictAbandonmentOutputSchema = z.object({
   justification: z.string().describe('A brief, 2-3 sentence justification for the predicted risk level, explaining the key factors.'),
 });
 export type PredictAbandonmentOutput = z.infer<typeof PredictAbandonmentOutputSchema>;
-
-    

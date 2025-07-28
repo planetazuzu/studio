@@ -29,9 +29,9 @@ export default function SettingsPage() {
     }
 
     const adminTabs = [
-        { value: 'general', label: 'General' },
         { value: 'permissions', label: 'Permisos' },
         { value: 'ai', label: 'Inteligencia Artificial' },
+        { value: 'certificates', label: 'Certificados' },
         { value: 'sync', label: 'Sincronización' },
         { value: 'api', label: 'APIs Externas' },
     ];
@@ -43,20 +43,20 @@ export default function SettingsPage() {
                 <p className="text-muted-foreground">Configuración global para administradores.</p>
             </div>
             <div className="grid grid-cols-1 gap-8">
-                <Tabs defaultValue="general" className="w-full" orientation="vertical">
+                <Tabs defaultValue="permissions" className="w-full" orientation="vertical">
                     <TabsList className="grid w-full max-w-xs grid-cols-1 h-auto">
                         {adminTabs.map(tab => (
                             <TabsTrigger key={tab.value} value={tab.value} className="justify-start">{tab.label}</TabsTrigger>
                         ))}
                     </TabsList>
-                    <TabsContent value="general" className="mt-4 md:mt-0">
-                        <GeneralSettings />
-                    </TabsContent>
                     <TabsContent value="permissions" className="mt-4 md:mt-0">
                         <PermissionSettings />
                     </TabsContent>
                     <TabsContent value="ai" className="mt-4 md:mt-0">
                         <AISettings />
+                    </TabsContent>
+                     <TabsContent value="certificates" className="mt-4 md:mt-0">
+                        <GeneralSettings />
                     </TabsContent>
                      <TabsContent value="sync" className="mt-4 md:mt-0">
                         <SyncManager />
