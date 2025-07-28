@@ -18,7 +18,7 @@ const supabase = createClient(
  * @param supabaseTable The name of the corresponding Supabase table.
  * @param transform A function to transform the Dexie item into the format expected by Supabase.
  */
-async function syncTable<T extends { id?: number; isSynced?: boolean; dexieId?: string }, U>(
+async function syncTable<T extends { id?: number | string; isSynced?: boolean; dexieId?: string }, U>(
   dexieTable: Dexie.Table<T, any>,
   supabaseTable: string,
   transform: (item: T) => U
@@ -56,12 +56,12 @@ export async function syncToSupabase(db: Dexie.Dexie & { [key: string]: Dexie.Ta
         {
             dexieTable: db.users,
             supabaseTable: 'Users',
-            transform: (item: any) => ({ ...item, id: undefined, isSynced: undefined }) // Exclude Dexie-only fields
+            transform: (item: any) => ({ ...item, isSynced: undefined }) // Exclude Dexie-only fields
         },
         {
             dexieTable: db.courses,
             supabaseTable: 'Courses',
-            transform: (item: any) => ({ ...item, id: undefined, isSynced: undefined })
+            transform: (item: any) => ({ ...item, isSynced: undefined })
         },
         {
             dexieTable: db.enrollments,
@@ -99,3 +99,5 @@ export async function syncToSupabase(db: Dexie.Dexie & { [key: string]: Dexie.Ta
         return { success: false, message: `Error crítico: ${e.message}` };
     }
 }
+
+    

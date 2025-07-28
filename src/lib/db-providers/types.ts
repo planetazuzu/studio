@@ -92,7 +92,7 @@ export interface DBProvider {
   addChatMessage(message: Omit<ChatMessage, 'id' | 'isSynced' | 'updatedAt'>): Promise<number>;
   getChatMessages(channelId: number | string): Promise<ChatMessage[]>;
   getPublicChatChannels(): Promise<ChatChannel[]>;
-  addPublicChatChannel(name: string, description: string): Promise<number>;
+  addPublicChatChannel(name: string, description: string): Promise<string>;
   getDirectMessageThreadsForUserWithDetails(userId: string): Promise<DirectMessageThread[]>;
   getOrCreateDirectMessageThread(currentUserId: string, otherUserId: string): Promise<ChatChannel>;
 
@@ -163,3 +163,5 @@ export interface DBProvider {
   getUnsyncedItemsCount(): Promise<number>;
   syncWithSupabase(): Promise<{ success: boolean; message: string; }>;
 }
+
+    

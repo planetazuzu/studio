@@ -20,9 +20,9 @@ import { syncToSupabase } from '@/lib/supabase-sync';
 const LOGGED_IN_USER_KEY = 'loggedInUserId';
 
 // --- DEXIE DATABASE DEFINITION ---
-class AcademiaAIDB extends Dexie {
-  courses!: Table<Course, number>;
-  users!: Table<User, number>;
+class TalentOSDB extends Dexie {
+  courses!: Table<Course, string>;
+  users!: Table<User, string>;
   enrollments!: Table<Enrollment, number>;
   userProgress!: Table<UserProgress, number>;
   forumMessages!: Table<ForumMessage, number>;
@@ -30,7 +30,7 @@ class AcademiaAIDB extends Dexie {
   resources!: Table<Resource, number>;
   courseResources!: Table<CourseResource, number>;
   announcements!: Table<Announcement, number>;
-  chatChannels!: Table<ChatChannel, number>;
+  chatChannels!: Table<ChatChannel, string>;
   chatMessages!: Table<ChatMessage, number>;
   calendarEvents!: Table<CalendarEvent, number>;
   externalTrainings!: Table<ExternalTraining, number>;
@@ -48,37 +48,37 @@ class AcademiaAIDB extends Dexie {
 
 
   constructor() {
-    super('AcademiaAIDB');
-    this.version(35).stores({
-      courses: '++id, &dexieId, instructor, status, isScorm, isSynced, *mandatoryForRoles',
-      users: '++id, &dexieId, &email, status, points, isSynced',
-      enrollments: '++id, &dexieId, studentId, courseId, status, [studentId+status]',
-      userProgress: '++id, &dexieId, [userId+courseId], userId, courseId',
-      forumMessages: '++id, &dexieId, courseId, parentId, timestamp',
-      notifications: '++id, &dexieId, userId, isRead, timestamp, [userId+timestamp], [userId+type+relatedUrl]',
-      resources: '++id, &dexieId, name',
-      courseResources: '++id, &dexieId, [courseId+resourceId]',
-      announcements: '++id, &dexieId, timestamp',
-      chatChannels: '++id, &dexieId, name, type, *participantIds',
-      chatMessages: '++id, &dexieId, channelId, timestamp, [channelId+timestamp]',
-      calendarEvents: '++id, &dexieId, courseId, start, end, isSynced',
-      externalTrainings: '++id, &dexieId, userId',
-      costs: '++id, &dexieId, category, courseId, date',
+    super('TalentOSDB');
+    this.version(40).stores({
+      courses: 'id, instructor, status, isScorm, isSynced, *mandatoryForRoles',
+      users: 'id, &email, status, points, isSynced',
+      enrollments: '++id, studentId, courseId, status, [studentId+status]',
+      userProgress: '++id, [userId+courseId], userId, courseId',
+      forumMessages: '++id, courseId, parentId, timestamp',
+      notifications: '++id, userId, isRead, timestamp, [userId+timestamp], [userId+type+relatedUrl]',
+      resources: '++id, name',
+      courseResources: '++id, [courseId+resourceId]',
+      announcements: '++id, timestamp',
+      chatChannels: 'id, name, type, *participantIds',
+      chatMessages: '++id, channelId, timestamp, [channelId+timestamp]',
+      calendarEvents: '++id, courseId, start, end, isSynced',
+      externalTrainings: '++id, userId',
+      costs: '++id, category, courseId, date',
       aiConfig: 'id',
-      aiUsageLog: '++id, &dexieId, timestamp',
+      aiUsageLog: '++id, timestamp',
       badges: 'id',
-      userBadges: '++id, &dexieId, [userId+badgeId]',
-      costCategories: '++id, &dexieId, &name',
-      learningPaths: '++id, &dexieId, targetRole',
-      userLearningPathProgress: '++id, &dexieId, [userId+learningPathId]',
-      courseRatings: '++id, &dexieId, [courseId+userId], courseId, instructorName',
+      userBadges: '++id, [userId+badgeId]',
+      costCategories: '++id, &name',
+      learningPaths: '++id, targetRole',
+      userLearningPathProgress: '++id, [userId+learningPathId]',
+      courseRatings: '++id, [courseId+userId], courseId, instructorName',
       rolePermissions: '&role',
       systemLogs: '++id, timestamp, level',
     });
   }
 }
 
-const dbInstance = new AcademiaAIDB();
+const dbInstance = new TalentOSDB();
 
 // Populate the database if it's empty
 dbInstance.on('populate', async () => {
@@ -705,7 +705,7 @@ export const dexieProvider: DBProvider = {
     return newId as number;
   },
 
-  async getChatMessages(channelId: number): Promise<ChatMessage[]> {
+  async getChatMessages(channelId: number | string): Promise<ChatMessage[]> {
     return await dbInstance.chatMessages.where('channelId').equals(channelId).sortBy('timestamp');
   },
 
@@ -713,9 +713,9 @@ export const dexieProvider: DBProvider = {
     return await dbInstance.chatChannels.where('type').equals('public').sortBy('name');
   },
 
-  async addPublicChatChannel(name: string, description: string): Promise<number> {
+  async addPublicChatChannel(name: string, description: string): Promise<string> {
     const newChannel: ChatChannel = { id: `channel_${name.toLowerCase().replace(/\s+/g, '-')}`, name, description, type: 'public', isSynced: false, updatedAt: new Date().toISOString() };
-    return await dbInstance.chatChannels.add(newChannel) as number;
+    return await dbInstance.chatChannels.add(newChannel) as string;
   },
 
   async getDirectMessageThreadsForUserWithDetails(userId: string): Promise<DirectMessageThread[]> {
@@ -742,7 +742,7 @@ export const dexieProvider: DBProvider = {
     const otherUser = await dbInstance.users.get(otherUserId);
     if (!currentUser || !otherUser) throw new Error("Uno o ambos usuarios no existen.");
     const newChannel: ChatChannel = { id: dexieId, name: `${currentUser.name} & ${otherUser.name}`, type: 'private', participantIds: [currentUserId, otherUserId], isSynced: false, updatedAt: new Date().toISOString() };
-    const newId = await dbInstance.chatChannels.add(newChannel) as number;
+    const newId = await dbInstance.chatChannels.add(newChannel) as string;
     newChannel.id = newId as any;
     return newChannel;
   },
@@ -1049,3 +1049,5 @@ export const dexieProvider: DBProvider = {
 dbInstance.open().catch(function (err) {
   console.error('Failed to open db: ' + (err.stack || err));
 });
+
+    

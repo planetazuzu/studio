@@ -9,9 +9,9 @@ Aquí tienes la estructura de las tablas principales que necesitas configurar en
 
 ---
 
-### Clave de Sincronización (`dexieId`)
+### Clave de Sincronización (`id`)
 
-Para que la sincronización entre la base de datos local (Dexie) y la remota (Supabase) funcione correctamente, cada tabla en Supabase debe tener una columna `dexieId` de tipo `text`. Esta columna debe tener una restricción **UNIQUE** para evitar duplicados. Esta será la clave que usaremos para identificar los registros entre ambas bases de datos.
+Para que la sincronización entre la base de datos local (Dexie) y la remota (Supabase) funcione correctamente, cada tabla en Supabase debe tener una columna `id` de tipo `text`. Esta columna debe ser la **Clave Primaria (Primary Key)** y **NO** debe ser autoincremental. Usaremos los IDs generados por Dexie (que son strings, ej: 'user_1') como la clave única en ambos sistemas.
 
 ---
 
@@ -33,8 +33,7 @@ Almacena la información de cada persona en la plataforma.
 
 | Nombre de la Columna | Tipo de Dato | Notas |
 | :--- | :--- | :--- |
-| `id` | `bigint` | **Clave Primaria (Primary Key)**, autoincremental. |
-| `dexieId` | `text` | **UNIQUE**. Clave de sincronización con Dexie. |
+| `id` | `text` | **Clave Primaria (Primary Key)**. No autoincremental. |
 | `name` | `text` | |
 | `email` | `text` | Debe ser único. |
 | `avatar` | `text` | URL de la imagen. |
@@ -54,8 +53,7 @@ Contiene todos los detalles de las formaciones.
 
 | Nombre de la Columna | Tipo de Dato | Notas |
 | :--- | :--- | :--- |
-| `id` | `bigint` | **Clave Primaria (Primary Key)**, autoincremental. |
-| `dexieId` | `text` | **UNIQUE**. Clave de sincronización con Dexie. |
+| `id` | `text` | **Clave Primaria (Primary Key)**. No autoincremental. |
 | `title` | `text` | |
 | `description` | `text` | |
 | `longDescription` | `text` | |
@@ -80,9 +78,8 @@ Registra qué usuario está inscrito en qué curso.
 | Nombre de la Columna | Tipo de Dato | Notas |
 | :--- | :--- | :--- |
 | `id` | `bigint` | **Clave Primaria (Primary Key)**, autoincremental. |
-| `dexieId` | `text` | **UNIQUE**. Clave de sincronización con Dexie. |
-| `studentId` | `text` | El `dexieId` del usuario. |
-| `courseId` | `text` | El `dexieId` del curso. |
+| `studentId` | `text` | El `id` del usuario en la tabla Users. |
+| `courseId` | `text` | El `id` del curso en la tabla Courses. |
 | `status` | `text` | `pending`, `approved`, `rejected`, etc. |
 | `requestDate` | `timestamptz` | Valor por defecto: `now()` |
 | `updatedAt` | `timestamptz` | Valor por defecto: `now()` |
@@ -96,12 +93,13 @@ Guarda el progreso de cada usuario en cada curso.
 | Nombre de la Columna | Tipo de Dato | Notas |
 | :--- | :--- | :--- |
 | `id` | `bigint` | **Clave Primaria (Primary Key)**, autoincremental. |
-| `dexieId` | `text` | **UNIQUE**. Clave de sincronización con Dexie. |
-| `userId` | `text` | El `dexieId` del usuario. |
-| `courseId` | `text` | El `dexieId` del curso. |
+| `userId` | `text` | El `id` del usuario en la tabla Users. |
+| `courseId` | `text` | El `id` del curso en la tabla Courses. |
 | `completedModules` | `jsonb` | |
 | `updatedAt` | `timestamptz` | Valor por defecto: `now()` |
 
 ---
 
 Con estas tablas configuradas en Supabase, tendrás una base de datos lista para funcionar con la aplicación. Asegúrate de que los nombres de las tablas y las columnas coincidan exactamente.
+
+    

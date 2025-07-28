@@ -1,3 +1,4 @@
+
 import { z } from 'zod';
 
 export type Role =
@@ -17,7 +18,6 @@ export type UserStatus = 'pending_approval' | 'approved' | 'suspended';
 
 export type User = {
   id: string;
-  dexieId?: string; // For sync purposes
   name: string;
   email: string;
   password?: string;
@@ -40,7 +40,6 @@ export type User = {
 
 export type Course = {
   id: string;
-  dexieId?: string;
   title: string;
   description: string;
   longDescription: string;
@@ -67,7 +66,6 @@ export type EnrollmentStatus = typeof enrollmentStatuses[number];
 
 export type Enrollment = {
     id?: number; // auto-incremented primary key
-    dexieId?: string;
     studentId: string;
     courseId: string;
     requestDate: string; // ISO date string
@@ -79,7 +77,6 @@ export type Enrollment = {
 
 export type UserProgress = {
     id?: number; // auto-incremented primary key
-    dexieId?: string;
     userId: string;
     courseId: string;
     completedModules: string[]; // Array of completed module IDs
@@ -96,13 +93,11 @@ export type Module = {
 
 export type CustomCostCategory = {
   id?: number;
-  dexieId?: string;
   name: string;
 };
 
 export type Cost = {
   id?: number;
-  dexieId?: string;
   item: string;
   category: string;
   amount: number;
@@ -115,7 +110,6 @@ export type Cost = {
 
 export type LearningPath = {
   id?: number;
-  dexieId?: string;
   title: string;
   description: string;
   targetRole: Role;
@@ -126,7 +120,6 @@ export type LearningPath = {
 
 export type UserLearningPathProgress = {
   id?: number;
-  dexieId?: string;
   userId: string;
   learningPathId: number;
   completedCourseIds: string[]; // Unordered list of completed course IDs from the path
@@ -151,7 +144,6 @@ export type EnrollmentWithDetails = Enrollment & {
 
 export type ForumMessage = {
   id?: number;
-  dexieId?: string;
   courseId: string;
   userId: string;
   userName: string;
@@ -169,7 +161,6 @@ export type ForumMessageWithReplies = ForumMessage & {
 
 export type Notification = {
   id?: number;
-  dexieId?: string;
   userId: string;
   message: string;
   type: 'enrollment_approved' | 'new_course' | 'forum_reply' | 'course_announcement' | 'badge_unlocked' | 'course_deadline_reminder' | 'push_test';
@@ -184,7 +175,6 @@ export type ResourceType = 'pdf' | 'video' | 'link' | 'document';
 
 export type Resource = {
   id?: number;
-  dexieId?: string;
   name: string;
   type: ResourceType;
   url: string; // For links, this is the URL. For files, it will be a data URI.
@@ -195,7 +185,6 @@ export type Resource = {
 
 export type CourseResource = {
     id?: number;
-    dexieId?: string;
     courseId: string;
     resourceId: number;
 };
@@ -206,7 +195,6 @@ export const announcementTypes: AnnouncementType[] = ['Urgente', 'Informativo', 
 
 export type Announcement = {
   id?: number;
-  dexieId?: string;
   title: string;
   content: string;
   type: AnnouncementType;
@@ -218,7 +206,6 @@ export type Announcement = {
 
 export type ChatChannel = {
   id: number | string; // Can be number (auto-inc) or string (manual)
-  dexieId?: string;
   name: string;
   description?: string;
   type: 'public' | 'private';
@@ -229,7 +216,6 @@ export type ChatChannel = {
 
 export type ChatMessage = {
   id?: number;
-  dexieId?: string;
   channelId: number | string;
   userId: string;
   userName: string;
@@ -262,7 +248,6 @@ export const calendarEventTypes: CalendarEventType[] = ['clase', 'examen', 'entr
 
 export type CalendarEvent = {
   id?: number;
-  dexieId?: string;
   title: string;
   description?: string;
   start: string;
@@ -283,7 +268,6 @@ export type ExternalTrainingType = typeof externalTrainingTypes[number];
 
 export type ExternalTraining = {
   id?: number;
-  dexieId?: string;
   userId: string;
   title: string;
   type: ExternalTrainingType;
@@ -317,7 +301,6 @@ export type Badge = {
 
 export type UserBadge = {
     id?: number;
-    dexieId?: string;
     userId: string;
     badgeId: string;
     earnedAt: string; // ISO date string
@@ -357,7 +340,6 @@ export type AIConfig = {
 
 export type AIUsageLog = {
     id?: number;
-    dexieId?: string;
     timestamp: string; // ISO string
     userId: string;
     feature: AIFeature;
@@ -369,7 +351,6 @@ export type AIUsageLog = {
 
 export type CourseRating = {
   id?: number;
-  dexieId?: string;
   courseId: string;
   userId: string;
   userName: string;
@@ -572,3 +553,5 @@ export const PredictAbandonmentOutputSchema = z.object({
   justification: z.string().describe('A brief, 2-3 sentence justification for the predicted risk level, explaining the key factors.'),
 });
 export type PredictAbandonmentOutput = z.infer<typeof PredictAbandonmentOutputSchema>;
+
+    
