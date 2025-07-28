@@ -1,35 +1,34 @@
 
 'use server';
 
-import { createClient } from '@supabase/supabase-js';
 import type Dexie from 'dexie';
-
-// This function will be called from a server action.
-// It needs the Supabase URL and the SERVICE_ROLE_KEY to bypass RLS for server-side operations.
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { getSupabaseClient } from './supabase-client';
 
 /**
  * Iterates through a Dexie table, finds unsynced items, pushes them to Supabase,
  * and marks them as synced in Dexie.
+ * @param supabase The Supabase client instance (with service_role key).
  * @param dexieTable The Dexie table to process.
  * @param supabaseTable The name of the corresponding Supabase table.
  * @param transform A function to transform the Dexie item into the format expected by Supabase.
+ * @param idColumn The name of the unique ID column in the Supabase table (usually 'id').
  */
-async function syncTable<T extends { id?: number | string; isSynced?: boolean; dexieId?: string }, U>(
+async function syncTable<T extends { id?: number | string; isSynced?: boolean }>(
+  supabase: any,
   dexieTable: Dexie.Table<T, any>,
   supabaseTable: string,
-  transform: (item: T) => U
+  transform: (item: T) => object,
+  idColumn: string = 'id'
 ): Promise<{ upserted: number; errors: number }> {
   const unsyncedItems = await dexieTable.where('isSynced').equals('false').toArray();
   if (unsyncedItems.length === 0) return { upserted: 0, errors: 0 };
 
+  console.log(`Found ${unsyncedItems.length} items to sync for table ${supabaseTable}`);
+
   const itemsToUpsert = unsyncedItems.map(transform);
 
   const { error } = await supabase.from(supabaseTable).upsert(itemsToUpsert, {
-    onConflict: 'dexieId', // Assumes a 'dexieId' unique column exists in Supabase table
+    onConflict: idColumn,
   });
 
   if (error) {
@@ -52,38 +51,62 @@ export async function syncToSupabase(db: Dexie.Dexie & { [key: string]: Dexie.Ta
     let totalUpserted = 0;
     let totalErrors = 0;
 
+    // Get the elevated-privilege Supabase client for server-side operations
+    const supabase = getSupabaseClient();
+
     const syncPlan = [
         {
             dexieTable: db.users,
             supabaseTable: 'Users',
-            transform: (item: any) => ({ ...item, isSynced: undefined }) // Exclude Dexie-only fields
+            transform: (item: any) => {
+                const { isSynced, password, ...rest } = item;
+                return rest;
+            }
         },
         {
             dexieTable: db.courses,
             supabaseTable: 'Courses',
-            transform: (item: any) => ({ ...item, isSynced: undefined })
+            transform: (item: any) => {
+                 const { isSynced, scormPackage, ...rest } = item;
+                 // Note: scormPackage is a Blob and cannot be directly serialized to JSON.
+                 // If you need to sync SCORM packages, you would handle this differently,
+                 // e.g., by uploading to Supabase Storage and storing the URL.
+                 // For now, we simply exclude it.
+                 return rest;
+            }
         },
         {
             dexieTable: db.enrollments,
             supabaseTable: 'Enrollments',
-            transform: (item: any) => ({ ...item, id: undefined, isSynced: undefined })
+            transform: (item: any) => {
+                const { isSynced, ...rest } = item;
+                return rest;
+            },
+            idColumn: 'id' // Primary key in Supabase
         },
         {
             dexieTable: db.userProgress,
             supabaseTable: 'UserProgress',
-            transform: (item: any) => ({ ...item, id: undefined, isSynced: undefined })
+            transform: (item: any) => {
+                const { isSynced, ...rest } = item;
+                return rest;
+            },
+            idColumn: 'id'
         },
          {
             dexieTable: db.costs,
             supabaseTable: 'Costs',
-            transform: (item: any) => ({ ...item, id: undefined, isSynced: undefined })
+            transform: (item: any) => {
+                const { isSynced, ...rest } = item;
+                return rest;
+            },
+            idColumn: 'id'
         },
-        // Add other tables here following the same pattern
     ];
 
     try {
         for (const plan of syncPlan) {
-            const { upserted, errors } = await syncTable(plan.dexieTable, plan.supabaseTable, plan.transform);
+            const { upserted, errors } = await syncTable(supabase, plan.dexieTable, plan.supabaseTable, plan.transform, plan.idColumn);
             totalUpserted += upserted;
             totalErrors += errors;
         }
@@ -99,5 +122,3 @@ export async function syncToSupabase(db: Dexie.Dexie & { [key: string]: Dexie.Ta
         return { success: false, message: `Error crítico: ${e.message}` };
     }
 }
-
-    
