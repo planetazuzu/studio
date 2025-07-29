@@ -1,8 +1,7 @@
 
 'use client';
 
-import { useEffect, useRef } from 'react';
-import { useActionState } from 'react';
+import { useEffect, useRef, useActionState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -55,20 +54,6 @@ export function ApiSettings() {
                              <div className="space-y-2">
                                 <Label htmlFor="firebase_private_key">Clave Privada de Firebase</Label>
                                 <Input id="firebase_private_key" name="firebase_private_key" type="password" placeholder="Introduce la clave privada (comienza con -----BEGIN PRIVATE KEY-----)" />
-                            </div>
-                        </div>
-                    </div>
-
-                     <div className="space-y-4 rounded-lg border p-4">
-                        <h3 className="text-lg font-semibold flex items-center gap-2"><Mail/>SendGrid (Email)</h3>
-                         <div className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="sendgrid_api_key">Clave API de SendGrid</Label>
-                                <Input id="sendgrid_api_key" name="sendgrid_api_key" type="password" placeholder="Introduce tu clave API de SendGrid" />
-                            </div>
-                             <div className="space-y-2">
-                                <Label htmlFor="sendgrid_from_email">Email Remitente</Label>
-                                <Input id="sendgrid_from_email" name="sendgrid_from_email" type="email" placeholder="notificaciones@tu-empresa.com" />
                             </div>
                         </div>
                     </div>

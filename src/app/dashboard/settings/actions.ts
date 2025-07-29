@@ -18,7 +18,6 @@ const cookieOptions = {
 export async function saveApiKeysAction(prevState: any, formData: FormData) {
   try {
     const fieldsToSet = [
-      'sendgrid_api_key', 'sendgrid_from_email',
       'twilio_account_sid', 'twilio_auth_token', 'twilio_whatsapp_from', 'twilio_whatsapp_to_test',
       'firebase_client_email', 'firebase_private_key',
       'supabase_service_role_key',

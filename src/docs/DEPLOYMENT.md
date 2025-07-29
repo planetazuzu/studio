@@ -37,8 +37,7 @@ Para que las funcionalidades de Inteligencia Artificial funcionen, debes proporc
 ### Variables de Notificaciones (Opcional)
 Si deseas que el envío de notificaciones por email o WhatsApp funcione, configura estas variables.
 
--   `SENDGRID_API_KEY`: Tu clave API de SendGrid.
--   `SENDGRID_FROM_EMAIL`: La dirección de correo electrónico desde la que se enviarán los emails.
+-   `RESEND_API_KEY`: Tu clave API de Resend para el envío de correos transaccionales.
 -   `TWILIO_ACCOUNT_SID`: El SID de tu cuenta de Twilio.
 -   `TWILIO_AUTH_TOKEN`: El token de autenticación de tu cuenta de Twilio.
 -   `TWILIO_WHATSAPP_FROM`: Tu número de teléfono de WhatsApp de Twilio (formato: `+14155238886`).

@@ -71,17 +71,19 @@ La aplicación necesita claves secretas para conectarse a servicios externos. Es
     # Clave de API para Google Gemini (para las funciones de IA)
     # Obtenla desde Google AI Studio
     GOOGLE_API_KEY="TU_CLAVE_API_DE_GOOGLE_AI"
+    
+    # --- Configuración de Email (Opcional pero Recomendado) ---
+    # Clave de API de Resend para enviar emails
+    RESEND_API_KEY="TU_CLAVE_API_DE_RESEND"
 
     # --- Variables Opcionales (para notificaciones) ---
-    # SENDGRID_API_KEY="TU_CLAVE_DE_SENDGRID"
-    # SENDGRID_FROM_EMAIL="notificaciones@tu-empresa.com"
     # TWILIO_ACCOUNT_SID="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
     # TWILIO_AUTH_TOKEN="TU_TOKEN_DE_TWILIO"
     # TWILIO_WHATSAPP_FROM="+14155238886"
     # TWILIO_WHATSAPP_TO_TEST="+34123456789" # Un número para tus pruebas
     ```
 
-> 📚 Para una explicación detallada de todas las variables posibles (incluidas las de Firebase, Auth0, etc.), consulta la [**Guía de Despliegue**](./DEPLOYMENT.md).
+> 📚 Para una explicación detallada de todas las variables posibles (incluidas las de Firebase, etc.), consulta la [**Guía de Despliegue**](./DEPLOYMENT.md).
 
 ---
 

@@ -4,7 +4,7 @@
 import { cookies } from 'next/headers';
 import type { User } from './types';
 import * as db from './db';
-import sgMail from '@sendgrid/mail';
+import { Resend } from 'resend';
 import twilio from 'twilio';
 import { GoogleAuth } from 'google-auth-library';
 
@@ -22,51 +22,53 @@ async function getFirebaseCredentials(): Promise<{ projectId?: string; clientEma
 }
 
 /**
- * Sends an email using SendGrid. Can be used for user notifications or system emails like form submissions.
+ * Sends an email using Resend.
  * @param options - Email options.
- * @param options.to - Optional recipient email. If not provided, sends to the configured admin/from email.
+ * @param options.to - Optional recipient email.
  * @param options.subject - The email subject.
- * @param options.body - The email body content (can be HTML).
+ * @param options.react - The React component for the email body.
  * @param options.replyTo - Optional email address to set as the reply-to header.
  */
-export async function sendEmail({ to, subject, body, replyTo }: { to?: string; subject: string; body: string; replyTo?: string }): Promise<void> {
-    const apiKey = getConfigValue('sendgrid_api_key', 'SENDGRID_API_KEY');
-    const fromEmail = getConfigValue('sendgrid_from_email', 'SENDGRID_FROM_EMAIL');
+export async function sendEmail({ to, subject, react, replyTo }: { to: string; subject: string; react: React.ReactElement; replyTo?: string }): Promise<void> {
+    const apiKey = process.env.RESEND_API_KEY;
+    const fromEmail = 'TalentOS <onboarding@resend.dev>';
 
-    if (!apiKey || !fromEmail) {
+    if (!apiKey) {
         console.warn(`--- [EMAIL SIMULATION] ---`);
-        console.warn('SendGrid API Key or From Email not set. Simulating email send.');
-        console.log(`To: ${to || fromEmail}`);
+        console.warn('Resend API Key not set. Simulating email send.');
+        console.log(`To: ${to}`);
         console.log(`From: ${fromEmail}`);
         console.log(`Reply-To: ${replyTo || 'N/A'}`);
         console.log(`Subject: ${subject}`);
-        console.log(`Body: ${body}`);
         console.log('---------------------------');
         return;
     }
 
-    sgMail.setApiKey(apiKey);
-    const msg = {
-        to: to || fromEmail, // If 'to' is not specified, sends to the admin email itself
-        from: fromEmail,
-        replyTo: replyTo,
-        subject,
-        html: `<p>${body.replace(/\n/g, '<br>')}</p>`,
-    };
+    const resend = new Resend(apiKey);
 
     try {
-        await sgMail.send(msg);
-        console.log(`Email sent successfully to ${msg.to}`);
+        await resend.emails.send({
+            from: fromEmail,
+            to: to,
+            subject: subject,
+            react: react,
+            reply_to: replyTo,
+        });
+        console.log(`Email sent successfully to ${to}`);
     } catch (error) {
-        console.error('Error sending email via SendGrid:', error);
-        throw error; // Re-throw to be handled by the calling action
+        console.error('Error sending email via Resend:', error);
+        throw error;
     }
 }
 
 
-// --- Email Service (SendGrid) ---
+// --- Email Service ---
 export async function sendEmailNotification(user: User, subject: string, body: string): Promise<void> {
-   await sendEmail({ to: user.email, subject, body });
+   await sendEmail({ 
+        to: user.email, 
+        subject, 
+        react: <div><p>{body.replace(/\n/g, '<br>')}</p></div>
+    });
 }
 
 // --- WhatsApp Service (Twilio) ---
