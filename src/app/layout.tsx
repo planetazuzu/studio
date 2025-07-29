@@ -12,11 +12,6 @@ export const metadata: Metadata = {
   title: 'TalentOS',
   description: 'La plataforma de formación impulsada por IA para tu equipo.',
   manifest: '/manifest.json',
-  icons: {
-    // This tells Next.js to use the favicon from the public folder
-    // and prevents it from generating a conflicting one.
-    icon: '/favicon.ico', 
-  },
 };
  
 export default function RootLayout({
