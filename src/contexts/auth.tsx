@@ -22,6 +22,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   
+  const publicPages = ['/', '/login', '/register', '/pending-approval', '/forgot-password', '/password-reset', '/features', '/terms', '/privacy-policy', '/request-demo'];
+  
   useEffect(() => {
     // We don't need to call populate here anymore,
     // it's handled on first import of the dexie provider.
@@ -29,10 +31,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
   
   useEffect(() => {
-      if (!isLoading && !user && !['/login', '/register', '/pending-approval', '/forgot-password', '/password-reset', '/features', '/terms', '/privacy-policy', '/request-demo', '/'].includes(pathname)) {
+      if (!isLoading && !user && !publicPages.includes(pathname)) {
           router.push('/login');
       }
-  }, [user, isLoading, router, pathname]);
+  }, [user, isLoading, router, pathname, publicPages]);
 
   const checkUserStatus = async () => {
     setIsLoading(true);
@@ -63,7 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value = { user, isLoading, login, logout };
 
-  const isPublicPage = ['/login', '/register', '/pending-approval', '/forgot-password', '/password-reset', '/features', '/terms', '/privacy-policy', '/request-demo', '/'].includes(pathname);
+  const isPublicPage = publicPages.includes(pathname);
   if (isLoading && !isPublicPage) {
       return (
           <div className="flex h-screen w-full items-center justify-center">
