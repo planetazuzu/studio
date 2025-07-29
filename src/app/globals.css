@@ -69,9 +69,4 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
-  
-  /* Very light blue background */
-  html:not(.dark) body {
-    background-color: #EBF5FF; /* Light Blue: #EBF5FF */
-  }
 }
