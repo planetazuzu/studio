@@ -77,13 +77,12 @@ export default function LandingPage() {
               </Button>
             </div>
           </div>
-          <div className="relative">
+          <div className="relative h-64 md:h-96">
             <Image
               src="https://placehold.co/600x400.png"
               alt="Dashboard de TalentOS"
-              width={600}
-              height={400}
-              className="rounded-xl shadow-2xl"
+              fill
+              className="rounded-xl shadow-2xl object-cover"
               data-ai-hint="dashboard professional"
             />
           </div>
@@ -129,13 +128,12 @@ export default function LandingPage() {
         {/* Business Benefits Section */}
          <section className="bg-muted py-16 md:py-24">
           <div className="container grid max-w-7xl items-center gap-12 md:grid-cols-2">
-             <div>
+             <div className="relative h-64 md:h-96">
                <Image
                 src="https://placehold.co/600x400.png"
                 alt="Gráficas de analíticas"
-                width={500}
-                height={500}
-                className="rounded-xl shadow-2xl"
+                fill
+                className="rounded-xl shadow-2xl object-cover"
                 data-ai-hint="analytics chart"
               />
             </div>
