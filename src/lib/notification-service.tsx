@@ -7,6 +7,7 @@ import * as db from './db';
 import { Resend } from 'resend';
 import twilio from 'twilio';
 import { GoogleAuth } from 'google-auth-library';
+import * as React from 'react';
 
 function getConfigValue(cookieName: string, envVarName: string): string | undefined {
     return cookies().get(cookieName)?.value || process.env[envVarName];
@@ -31,7 +32,7 @@ async function getFirebaseCredentials(): Promise<{ projectId?: string; clientEma
  */
 export async function sendEmail({ to, subject, react, replyTo }: { to: string; subject: string; react: React.ReactElement; replyTo?: string }): Promise<void> {
     const apiKey = process.env.RESEND_API_KEY;
-    const fromEmail = 'TalentOS <onboarding@resend.dev>';
+    const fromEmail = 'onboarding@resend.dev';
 
     if (!apiKey) {
         console.warn(`--- [EMAIL SIMULATION] ---`);
@@ -41,6 +42,7 @@ export async function sendEmail({ to, subject, react, replyTo }: { to: string; s
         console.log(`Reply-To: ${replyTo || 'N/A'}`);
         console.log(`Subject: ${subject}`);
         console.log('---------------------------');
+        await db.logSystemEvent('WARN', 'Email Simulation: Resend API Key not set.');
         return;
     }
 
@@ -54,9 +56,10 @@ export async function sendEmail({ to, subject, react, replyTo }: { to: string; s
             react: react,
             reply_to: replyTo,
         });
-        console.log(`Email sent successfully to ${to}`);
+        await db.logSystemEvent('INFO', `Email sent successfully to ${to}`, { subject });
     } catch (error) {
         console.error('Error sending email via Resend:', error);
+        await db.logSystemEvent('ERROR', `Failed to send email to ${to}`, { error: (error as Error).message });
         throw error;
     }
 }
@@ -67,7 +70,7 @@ export async function sendEmailNotification(user: User, subject: string, body: s
    await sendEmail({ 
         to: user.email, 
         subject, 
-        react: <div><p>{body.replace(/\n/g, '<br>')}</p></div>
+        react: <div><p>{body.replace(/\n/g, '<br />')}</p></div>
     });
 }
 
@@ -83,6 +86,7 @@ export async function sendWhatsAppNotification(user: User, message: string): Pro
         console.warn('Twilio credentials, From Phone, or User Phone not set. Simulating WhatsApp send.');
         console.log(`Message: ${message}`);
         console.log('------------------------------------');
+        await db.logSystemEvent('WARN', `WhatsApp Simulation: Twilio credentials not fully set for user ${user.id}`);
         return;
     }
 
@@ -94,9 +98,10 @@ export async function sendWhatsAppNotification(user: User, message: string): Pro
             to: `whatsapp:${toPhone}`,
             body: message,
         });
-        console.log(`WhatsApp message sent successfully to ${toPhone}`);
+        await db.logSystemEvent('INFO', `WhatsApp message sent to ${user.name}`);
     } catch (error) {
         console.error('Error sending WhatsApp message via Twilio:', error);
+        await db.logSystemEvent('ERROR', `Failed to send WhatsApp message to ${user.name}`, { error: (error as Error).message });
     }
 }
 
@@ -132,6 +137,7 @@ export async function sendPushNotification(userId: string, title: string, body: 
         console.log(`Body: ${body}`);
         console.log(`URL: ${url}`);
         console.log('---------------------------');
+        await db.logSystemEvent('WARN', `Push Notification Simulation: Firebase server credentials not set for user ${userId}`);
         return;
     }
 
@@ -177,9 +183,10 @@ export async function sendPushNotification(userId: string, title: string, body: 
             throw new Error(`FCM request failed with status ${response.status}: ${JSON.stringify(errorBody)}`);
         }
 
-        console.log(`Push notification sent successfully to ${user.name}`);
+       await db.logSystemEvent('INFO', `Push notification sent to ${user.name}`);
 
     } catch (error) {
         console.error('Error sending push notification via FCM:', error);
+        await db.logSystemEvent('ERROR', `Failed to send push notification to ${user.name}`, { error: (error as Error).message });
     }
 }

@@ -10,7 +10,7 @@
 import Dexie, { type Table } from 'dexie';
 import type { Course, User, Enrollment, UserProgress, PendingEnrollmentDetails, ForumMessage, ForumMessageWithReplies, Notification, Resource, CourseResource, Announcement, ChatChannel, ChatMessage, Role, ComplianceReportData, DirectMessageThread, CalendarEvent, ExternalTraining, EnrollmentStatus, EnrollmentWithDetails, Cost, StudentForManagement, AIConfig, AIUsageLog, Badge, UserBadge, UserStatus, CustomCostCategory, LearningPath, UserLearningPathProgress, CourseRating, RolePermission, SystemLog, LogLevel } from '@/lib/types';
 import { courses as initialCourses, users as initialUsers, initialChatChannels, initialCosts, defaultAIConfig, roles, departments, initialBadges, initialCostCategories } from '@/lib/data';
-import { sendEmailNotification, sendPushNotification, sendWhatsAppNotification } from '@/lib/notification-service';
+import { sendEmailNotification, sendPushNotification, sendWhatsAppNotification } from '@/lib/notification-service.tsx';
 import { getNavItems } from '@/lib/nav';
 import { differenceInDays, isAfter } from 'date-fns';
 import type { DBProvider } from './types';
