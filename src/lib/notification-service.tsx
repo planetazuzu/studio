@@ -8,6 +8,7 @@ import { Resend } from 'resend';
 import twilio from 'twilio';
 import { GoogleAuth } from 'google-auth-library';
 import * as React from 'react';
+import { NotificationEmail } from '@/emails/notification';
 
 function getConfigValue(cookieName: string, envVarName: string): string | undefined {
     return cookies().get(cookieName)?.value || process.env[envVarName];
@@ -66,11 +67,16 @@ export async function sendEmail({ to, subject, react, replyTo }: { to: string; s
 
 
 // --- Email Service ---
-export async function sendEmailNotification(user: User, subject: string, body: string): Promise<void> {
-   await sendEmail({ 
-        to: user.email, 
-        subject, 
-        react: <div><p>{body.replace(/\n/g, '<br />')}</p></div>
+export async function sendEmailNotification(user: User, subject: string, body: string, relatedUrl?: string): Promise<void> {
+   await sendEmail({
+        to: user.email,
+        subject,
+        react: <NotificationEmail
+                    userName={user.name}
+                    emailSubject={subject}
+                    emailBody={body}
+                    buttonUrl={relatedUrl}
+                />
     });
 }
 
@@ -111,7 +117,7 @@ export async function sendWhatsAppNotification(user: User, message: string): Pro
 async function getFirebaseAccessToken() {
     const scopes = ['https://www.googleapis.com/auth/firebase.messaging'];
     const { clientEmail, privateKey } = await getFirebaseCredentials();
-    
+
     if (!clientEmail || !privateKey) {
         throw new Error('Firebase server credentials (client email, private key) are not configured.');
     }
@@ -150,7 +156,7 @@ export async function sendPushNotification(userId: string, title: string, body: 
     try {
         const accessToken = await getFirebaseAccessToken();
         const fcmEndpoint = `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`;
-        
+
         const message = {
             message: {
                 token: user.fcmToken,

@@ -89,7 +89,7 @@ dbInstance.on('populate', async () => {
 // --- Population Logic (extracted to be called by 'populate' event) ---
 async function populateDatabase() {
     console.warn("Populating database with initial data...");
-    
+
     await Promise.all([
     dbInstance.courses.clear(),
     dbInstance.users.clear(),
@@ -143,7 +143,7 @@ async function populateDatabase() {
 
 export const dexieProvider: DBProvider = {
   db: dbInstance,
-  
+
   // This is a placeholder now, as the on('populate') event handles the real work.
   // We keep it in the interface for potential future manual-repopulation features.
   async populateDatabase() {
@@ -166,7 +166,7 @@ export const dexieProvider: DBProvider = {
     if (user.status === 'pending_approval') {
          throw new Error('Esta cuenta está pendiente de aprobación por un administrador.');
     }
-    
+
     if (typeof window !== 'undefined') {
         localStorage.setItem(LOGGED_IN_USER_KEY, user.id);
     }
@@ -590,7 +590,7 @@ export const dexieProvider: DBProvider = {
         const settings = user.notificationSettings;
         const subject = `Notificación de TalentOS: ${notification.type.replace(/_/g, ' ')}`;
         const body = notification.message;
-        if (settings.channels.includes('email')) sendEmailNotification(user, subject, body).catch(e => this.logSystemEvent('ERROR', 'Failed to send email notification', { error: (e as Error).message, userId: user.id }));
+        if (settings.channels.includes('email')) sendEmailNotification(user, subject, body, notification.relatedUrl).catch(e => this.logSystemEvent('ERROR', 'Failed to send email notification', { error: (e as Error).message, userId: user.id }));
         if (settings.channels.includes('whatsapp') && user.phone) sendWhatsAppNotification(user, body).catch(e => this.logSystemEvent('ERROR', 'Failed to send WhatsApp notification', { error: (e as Error).message, userId: user.id }));
         if (settings.channels.includes('app') && user.fcmToken) {
             const title = 'Nueva Notificación de TalentOS';
@@ -997,9 +997,9 @@ export const dexieProvider: DBProvider = {
     );
     return unsyncedCounts.reduce((acc, count) => acc + count, 0);
   },
-  
+
   async syncWithSupabase(): Promise<{ success: boolean; message: string; }> {
-      return await syncToSupabase(dbInstance);
+      return await syncToSupabase(db);
   },
 
   // Internal helper methods, prefixed with _ to avoid exposing them on the provider interface.
@@ -1049,5 +1049,3 @@ export const dexieProvider: DBProvider = {
 dbInstance.open().catch(function (err) {
   console.error('Failed to open db: ' + (err.stack || err));
 });
-
-    
