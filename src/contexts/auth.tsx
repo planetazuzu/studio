@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { User } from '@/lib/types';
 import * as db from '@/lib/db';
@@ -24,24 +24,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
   const publicPages = ['/', '/login', '/register', '/pending-approval', '/forgot-password', '/password-reset', '/features', '/terms', '/privacy-policy', '/request-demo'];
   
-  useEffect(() => {
-    // We don't need to call populate here anymore,
-    // it's handled on first import of the dexie provider.
-    checkUserStatus();
+  const checkUserStatus = useCallback(async () => {
+    setIsLoading(true);
+    const loggedInUser = await db.getLoggedInUser();
+    setUser(loggedInUser);
+    setIsLoading(false);
   }, []);
+
+  useEffect(() => {
+    checkUserStatus();
+  }, [checkUserStatus]);
   
   useEffect(() => {
       if (!isLoading && !user && !publicPages.includes(pathname)) {
           router.push('/login');
       }
-  }, [user, isLoading, router, pathname, publicPages]);
-
-  const checkUserStatus = async () => {
-    setIsLoading(true);
-    const loggedInUser = await db.getLoggedInUser();
-    setUser(loggedInUser);
-    setIsLoading(false);
-  };
+  }, [user, isLoading, pathname, router, publicPages]);
 
   const login = async (email: string, password?: string) => {
     setIsLoading(true);
@@ -64,15 +62,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const value = { user, isLoading, login, logout };
-
-  const isPublicPage = publicPages.includes(pathname);
-  if (isLoading && !isPublicPage) {
-      return (
-          <div className="flex h-screen w-full items-center justify-center">
-              <Loader2 className="h-12 w-12 animate-spin text-primary" />
-          </div>
-      )
-  }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
