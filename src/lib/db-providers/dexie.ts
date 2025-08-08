@@ -1049,3 +1049,5 @@ export const dexieProvider: DBProvider = {
 dbInstance.open().catch(function (err) {
   console.error('Failed to open db: ' + (err.stack || err));
 });
+
+    

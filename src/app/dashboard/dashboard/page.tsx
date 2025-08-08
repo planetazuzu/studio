@@ -379,3 +379,5 @@ export default function DashboardPage() {
   
   return <StudentDashboardView user={user} />
 }
+
+    
