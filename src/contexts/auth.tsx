@@ -36,10 +36,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [checkUserStatus]);
   
   useEffect(() => {
-      if (!isLoading && !user && !publicPages.includes(pathname)) {
-          router.push('/login');
-      }
-  }, [user, isLoading, pathname, router, publicPages]);
+    const isPublicPage = publicPages.includes(pathname);
+    if (!isLoading && !user && !isPublicPage) {
+        router.push('/login');
+    }
+  }, [user, isLoading, pathname, router]);
 
   const login = async (email: string, password?: string) => {
     setIsLoading(true);
