@@ -260,7 +260,6 @@ function AiSuggestions({ user }: { user: User }) {
           ? (e as Error).message
           : 'No se pudieron generar las sugerencias. Inténtelo de nuevo.';
       setError(errorMessage);
-      console.error(e);
     } finally {
       setLoading(false);
     }
@@ -314,12 +313,6 @@ function StudentDashboardView({ user }: { user: User }) {
   const allProgress = useLiveQuery(() => user ? db.getUserProgressForUser(user.id) : [], [user?.id]);
   const allCourses = useLiveQuery(() => db.getAllCourses(), []);
   const allCosts = useLiveQuery(() => db.getAllCosts(), []);
-
-  useEffect(() => {
-    if (user) {
-      db.checkAndSendDeadlineReminders(user);
-    }
-  }, [user]);
 
   // --- Stat Calculations ---
   const activeCoursesCount = enrolledCourses?.length ?? 0;

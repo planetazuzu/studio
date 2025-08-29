@@ -33,7 +33,7 @@ export async function saveApiKeysAction(prevState: any, formData: FormData) {
     revalidatePath('/dashboard/settings');
     return { success: true, message: 'La configuración de APIs ha sido guardada.' };
   } catch (error) {
-    console.error('Failed to save API keys', error);
+    await db.logSystemEvent('ERROR', 'Failed to save API keys', { error: (error as Error).message });
     return { success: false, message: 'Error al guardar la configuración de APIs.' };
   }
 }
@@ -68,7 +68,7 @@ export async function saveAIConfigAction(prevState: any, formData: FormData) {
     revalidatePath('/dashboard/settings');
     return { success: true, message: 'La configuración de IA ha sido actualizada.' };
   } catch (error) {
-    console.error('Failed to save AI config', error);
+    await db.logSystemEvent('ERROR', 'Failed to save AI config', { error: (error as Error).message });
     return { success: false, message: 'Error al guardar la configuración de IA.' };
   }
 }
@@ -82,7 +82,7 @@ export async function saveFcmTokenAction(token: string) {
         await db.saveFcmToken(user.id!, token);
         return { success: true, message: 'Token guardado correctamente.' };
     } catch (error) {
-        console.error('Failed to save FCM token', error);
+        await db.logSystemEvent('ERROR', 'Failed to save FCM token', { error: (error as Error).message });
         return { success: false, message: 'No se pudo guardar el token.' };
     }
 }
@@ -101,18 +101,17 @@ export async function sendTestPushNotificationAction() {
         );
         return { success: true, message: 'Notificación de prueba enviada.' };
     } catch (error) {
-        console.error('Failed to send test push notification', error);
+        await db.logSystemEvent('ERROR', 'Failed to send test push notification', { error: (error as Error).message });
         return { success: false, message: 'No se pudo enviar la notificación.' };
     }
 }
 
 export async function runSyncAction() {
-    console.log("Starting synchronization action...");
     try {
         const result = await db.syncWithSupabase();
         return result;
     } catch(e: any) {
-        console.error("Sync failed in action:", e);
+        await db.logSystemEvent('ERROR', 'Sync failed in action', { error: (e as Error).message });
         return { success: false, message: e.message || "An unknown error occurred during sync." };
     }
 }

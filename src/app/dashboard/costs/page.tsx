@@ -21,6 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import Link from 'next/link';
+import { downloadCsv } from '@/lib/utils';
 
 
 const costSchema = z.object({
@@ -75,7 +76,7 @@ function CostDialog({
             onOpenChange(false);
             form.reset();
         } catch (error) {
-            console.error("Failed to save cost", error);
+            db.logSystemEvent('ERROR', 'Failed to save cost', { error: (error as Error).message });
             toast({ title: "Error", description: "No se pudo guardar el gasto.", variant: "destructive" });
         }
     };
@@ -131,39 +132,13 @@ export default function CostsPage() {
             await db.deleteCost(itemToDelete.id);
             toast({ title: 'Gasto eliminado' });
         } catch (error) {
-            console.error(error);
+            db.logSystemEvent('ERROR', 'Failed to delete cost', { error: (error as Error).message });
             toast({ title: 'Error', description: 'No se pudo eliminar el gasto.', variant: 'destructive' });
         } finally {
             setItemToDelete(null);
         }
     };
     
-    const downloadCsv = (data: any[], filename: string) => {
-        if (!data || data.length === 0) return;
-        const headers = Object.keys(data[0]);
-        const csvContent = [
-            headers.join(','),
-            ...data.map(row =>
-                headers.map(header => {
-                    let cell = row[header] === null || row[header] === undefined ? '' : String(row[header]);
-                    cell = cell.replace(/"/g, '""');
-                    if (cell.search(/("|,|\n)/g) >= 0) cell = `"${cell}"`;
-                    return cell;
-                }).join(',')
-            )
-        ].join('\n');
-
-        const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        const url = URL.createObjectURL(blob);
-        link.setAttribute('href', url);
-        link.setAttribute('download', filename);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    };
-
     const handleExportCsv = () => {
         if (!costs) return;
         const dataToExport = costs.map(cost => ({

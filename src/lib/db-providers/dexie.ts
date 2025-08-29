@@ -82,60 +82,28 @@ const dbInstance = new TalentOSDB();
 
 // Populate the database if it's empty
 dbInstance.on('populate', async () => {
-    console.log("Database is being populated for the first time.");
     await populateDatabase();
 });
 
 // --- Population Logic (extracted to be called by 'populate' event) ---
 async function populateDatabase() {
-    console.warn("Populating database with initial data...");
+    await dbInstance.transaction('rw', ...dbInstance.tables, async () => {
+        const initialPermissions: RolePermission[] = roles.map(role => {
+            const visibleNavs = getNavItems()
+                .filter(item => item.roles.includes(role))
+                .map(item => item.href);
+            return { role, visibleNavs };
+        });
 
-    await Promise.all([
-    dbInstance.courses.clear(),
-    dbInstance.users.clear(),
-    dbInstance.enrollments.clear(),
-    dbInstance.userProgress.clear(),
-    dbInstance.forumMessages.clear(),
-    dbInstance.notifications.clear(),
-    dbInstance.resources.clear(),
-    dbInstance.courseResources.clear(),
-    dbInstance.announcements.clear(),
-    dbInstance.chatChannels.clear(),
-    dbInstance.chatMessages.clear(),
-    dbInstance.calendarEvents.clear(),
-    dbInstance.externalTrainings.clear(),
-    dbInstance.costs.clear(),
-    dbInstance.aiConfig.clear(),
-    dbInstance.aiUsageLog.clear(),
-    dbInstance.badges.clear(),
-    dbInstance.userBadges.clear(),
-    dbInstance.costCategories.clear(),
-    dbInstance.learningPaths.clear(),
-    dbInstance.userLearningPathProgress.clear(),
-    dbInstance.courseRatings.clear(),
-    dbInstance.rolePermissions.clear(),
-    dbInstance.systemLogs.clear(),
-    ]);
-
-    console.log("Tables cleared. Repopulating with initial data...");
-
-    const initialPermissions: RolePermission[] = roles.map(role => {
-        const visibleNavs = getNavItems()
-            .filter(item => item.roles.includes(role))
-            .map(item => item.href);
-        return { role, visibleNavs };
+        await dbInstance.courses.bulkAdd(initialCourses.map(c => ({...c, isSynced: true})));
+        await dbInstance.users.bulkAdd(initialUsers.map(u => ({...u, isSynced: true})));
+        await dbInstance.chatChannels.bulkAdd(initialChatChannels);
+        await dbInstance.costs.bulkAdd(initialCosts.map(c => ({...c, isSynced: true})));
+        await dbInstance.aiConfig.add(defaultAIConfig);
+        await dbInstance.badges.bulkAdd(initialBadges);
+        await dbInstance.costCategories.bulkAdd(initialCostCategories.map(name => ({ name })));
+        await dbInstance.rolePermissions.bulkAdd(initialPermissions);
     });
-
-    await dbInstance.courses.bulkAdd(initialCourses.map(c => ({...c, isSynced: true})));
-    await dbInstance.users.bulkAdd(initialUsers.map(u => ({...u, isSynced: true})));
-    await dbInstance.chatChannels.bulkAdd(initialChatChannels);
-    await dbInstance.costs.bulkAdd(initialCosts.map(c => ({...c, isSynced: true})));
-    await dbInstance.aiConfig.add(defaultAIConfig);
-    await dbInstance.badges.bulkAdd(initialBadges);
-    await dbInstance.costCategories.bulkAdd(initialCostCategories.map(name => ({ name })));
-    await dbInstance.rolePermissions.bulkAdd(initialPermissions);
-
-    console.log("Database population complete.");
 }
 
 
@@ -144,12 +112,8 @@ async function populateDatabase() {
 export const dexieProvider: DBProvider = {
   db: dbInstance,
 
-  // This is a placeholder now, as the on('populate') event handles the real work.
-  // We keep it in the interface for potential future manual-repopulation features.
   async populateDatabase() {
-    console.log("Manual population trigger called, but Dexie's 'populate' event handles the initial setup.");
-    // We can manually trigger a repopulation if needed by calling the standalone function
-    // await populateDatabase();
+    await populateDatabase();
   },
 
   async login(email: string, password?: string): Promise<User | null> {
@@ -973,7 +937,7 @@ export const dexieProvider: DBProvider = {
     try {
         await dbInstance.systemLogs.add({ timestamp: new Date().toISOString(), level, message, details });
     } catch (error) {
-        console.error("Failed to write to system log:", error);
+        // Must not crash the app if logging fails
     }
   },
 
@@ -1047,5 +1011,5 @@ export const dexieProvider: DBProvider = {
 
 // Open the database. This will also trigger the 'populate' event if it's the first time.
 dbInstance.open().catch(function (err) {
-  console.error('Failed to open db: ' + (err.stack || err));
+  dbInstance.logSystemEvent('ERROR', 'Failed to open Dexie DB', { error: (err as Error).message, stack: (err as Error).stack });
 });

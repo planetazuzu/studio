@@ -3,6 +3,7 @@
 
 import type Dexie from 'dexie';
 import { getSupabaseClient } from './supabase-client';
+import * as db from './db';
 
 /**
  * Iterates through a Dexie table, finds unsynced items, pushes them to Supabase,
@@ -23,8 +24,6 @@ async function syncTable<T extends { id?: number | string; isSynced?: boolean }>
   const unsyncedItems = await dexieTable.where('isSynced').equals('false').toArray();
   if (unsyncedItems.length === 0) return { upserted: 0, errors: 0 };
 
-  console.log(`Found ${unsyncedItems.length} items to sync for table ${supabaseTable}`);
-
   const itemsToUpsert = unsyncedItems.map(transform);
 
   const { error } = await supabase.from(supabaseTable).upsert(itemsToUpsert, {
@@ -32,7 +31,7 @@ async function syncTable<T extends { id?: number | string; isSynced?: boolean }>
   });
 
   if (error) {
-    console.error(`Supabase error syncing table ${supabaseTable}:`, error);
+    db.logSystemEvent('ERROR', `Supabase error syncing table ${supabaseTable}`, { error });
     return { upserted: 0, errors: unsyncedItems.length };
   }
 
@@ -47,7 +46,7 @@ async function syncTable<T extends { id?: number | string; isSynced?: boolean }>
 }
 
 
-export async function syncToSupabase(db: Dexie.Dexie & { [key: string]: Dexie.Table<any, any> }): Promise<{ success: boolean; message: string; }> {
+export async function syncToSupabase(dbInstance: Dexie & { [key: string]: Dexie.Table<any, any> }): Promise<{ success: boolean; message: string; }> {
     let totalUpserted = 0;
     let totalErrors = 0;
 
@@ -56,7 +55,7 @@ export async function syncToSupabase(db: Dexie.Dexie & { [key: string]: Dexie.Ta
 
     const syncPlan = [
         {
-            dexieTable: db.users,
+            dexieTable: dbInstance.users,
             supabaseTable: 'Users',
             transform: (item: any) => {
                 const { isSynced, password, ...rest } = item;
@@ -64,7 +63,7 @@ export async function syncToSupabase(db: Dexie.Dexie & { [key: string]: Dexie.Ta
             }
         },
         {
-            dexieTable: db.courses,
+            dexieTable: dbInstance.courses,
             supabaseTable: 'Courses',
             transform: (item: any) => {
                  const { isSynced, scormPackage, ...rest } = item;
@@ -76,7 +75,7 @@ export async function syncToSupabase(db: Dexie.Dexie & { [key: string]: Dexie.Ta
             }
         },
         {
-            dexieTable: db.enrollments,
+            dexieTable: dbInstance.enrollments,
             supabaseTable: 'Enrollments',
             transform: (item: any) => {
                 const { isSynced, ...rest } = item;
@@ -85,7 +84,7 @@ export async function syncToSupabase(db: Dexie.Dexie & { [key: string]: Dexie.Ta
             idColumn: 'id' // Primary key in Supabase
         },
         {
-            dexieTable: db.userProgress,
+            dexieTable: dbInstance.userProgress,
             supabaseTable: 'UserProgress',
             transform: (item: any) => {
                 const { isSynced, ...rest } = item;
@@ -94,7 +93,7 @@ export async function syncToSupabase(db: Dexie.Dexie & { [key: string]: Dexie.Ta
             idColumn: 'id'
         },
          {
-            dexieTable: db.costs,
+            dexieTable: dbInstance.costs,
             supabaseTable: 'Costs',
             transform: (item: any) => {
                 const { isSynced, ...rest } = item;
@@ -118,7 +117,7 @@ export async function syncToSupabase(db: Dexie.Dexie & { [key: string]: Dexie.Ta
         return { success: true, message: `Sincronización completada. ${totalUpserted} registros actualizados en la nube.` };
 
     } catch (e: any) {
-        console.error("Critical error during sync process:", e);
+        db.logSystemEvent('ERROR', 'Critical error during sync process', { error: e.message });
         return { success: false, message: `Error crítico: ${e.message}` };
     }
 }
