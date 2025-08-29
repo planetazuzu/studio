@@ -9,7 +9,6 @@ import {
   SidebarMenuButton,
   SidebarFooter,
 } from '@/components/ui/sidebar';
-import { AppLogo } from '@/components/icons';
 import { useAuth } from '@/contexts/auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getNavItems } from '@/lib/nav';
@@ -18,7 +17,7 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useLiveQuery } from 'dexie-react-hooks';
 import * as db from '@/lib/db';
-import { ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { ChevronsLeft, ChevronsRight, GraduationCap } from 'lucide-react';
 import { Button } from './ui/button';
 
 export function SidebarContents() {
@@ -54,7 +53,7 @@ export function SidebarContents() {
     <>
       <SidebarHeader>
         <Link href="/dashboard" className="flex items-center gap-2 p-2">
-          <AppLogo className="h-8 w-8 text-primary" />
+          <GraduationCap className="h-8 w-8 text-primary" />
           {isOpen && <span className="text-xl font-semibold">TalentOS</span>}
         </Link>
       </SidebarHeader>
