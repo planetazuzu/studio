@@ -79,11 +79,11 @@ export default function LandingPage() {
           </div>
           <div className="relative h-64 md:h-96">
             <Image
-              src="https://picsum.photos/600/400"
-              alt="Dashboard de TalentOS"
+              src="https://images.unsplash.com/photo-1542744173-8e7e53415bb0?q=80&w=2070&auto=format&fit=crop"
+              alt="Un equipo colaborando en una oficina moderna durante una sesión de formación."
               fill
               className="rounded-xl shadow-2xl object-cover"
-              data-ai-hint="dashboard professional"
+              data-ai-hint="team training"
             />
           </div>
         </section>
@@ -130,11 +130,11 @@ export default function LandingPage() {
           <div className="container grid max-w-7xl items-center gap-12 md:grid-cols-2">
              <div className="relative h-64 md:h-96">
                <Image
-                src="https://picsum.photos/600/400"
-                alt="Gráficas de analíticas"
+                src="https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=2070&auto=format&fit=crop"
+                alt="Una persona presentando gráficos de crecimiento en una pizarra a un equipo atento."
                 fill
                 className="rounded-xl shadow-2xl object-cover"
-                data-ai-hint="analytics chart"
+                data-ai-hint="business analytics"
               />
             </div>
             <div className="space-y-8">
