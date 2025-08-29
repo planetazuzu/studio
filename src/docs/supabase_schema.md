@@ -1,4 +1,3 @@
-
 # Esquema de Tablas para Supabase
 
 > **Nota sobre la Arquitectura:** Este archivo define el esquema para la base de datos en **Supabase**, que actúa como el backend persistente para la sincronización. La base de datos principal de la aplicación sigue siendo **Dexie.js** en el navegador.
@@ -101,5 +100,3 @@ Guarda el progreso de cada usuario en cada curso.
 ---
 
 Con estas tablas configuradas en Supabase, tendrás una base de datos lista para funcionar con la aplicación. Asegúrate de que los nombres de las tablas y las columnas coincidan exactamente.
-
-    

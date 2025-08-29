@@ -163,5 +163,3 @@ export interface DBProvider {
   getUnsyncedItemsCount(): Promise<number>;
   syncWithSupabase(): Promise<{ success: boolean; message: string; }>;
 }
-
-    

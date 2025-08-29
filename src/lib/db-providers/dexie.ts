@@ -999,7 +999,7 @@ export const dexieProvider: DBProvider = {
   },
 
   async syncWithSupabase(): Promise<{ success: boolean; message: string; }> {
-      return await syncToSupabase(db);
+      return await syncToSupabase(dbInstance);
   },
 
   // Internal helper methods, prefixed with _ to avoid exposing them on the provider interface.
@@ -1049,5 +1049,3 @@ export const dexieProvider: DBProvider = {
 dbInstance.open().catch(function (err) {
   console.error('Failed to open db: ' + (err.stack || err));
 });
-
-    
