@@ -79,7 +79,7 @@ export default function LandingPage() {
           </div>
           <div className="relative h-64 md:h-96">
             <Image
-              src="https://placehold.co/600x400.png"
+              src="https://picsum.photos/600/400"
               alt="Dashboard de TalentOS"
               fill
               className="rounded-xl shadow-2xl object-cover"
@@ -130,7 +130,7 @@ export default function LandingPage() {
           <div className="container grid max-w-7xl items-center gap-12 md:grid-cols-2">
              <div className="relative h-64 md:h-96">
                <Image
-                src="https://placehold.co/600x400.png"
+                src="https://picsum.photos/600/400"
                 alt="Gráficas de analíticas"
                 fill
                 className="rounded-xl shadow-2xl object-cover"
