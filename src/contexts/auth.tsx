@@ -24,6 +24,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const publicPages = ['/', '/login', '/register', '/pending-approval', '/forgot-password', '/password-reset', '/features', '/terms', '/privacy-policy', '/request-demo'];
   
   const checkUserStatus = useCallback(async () => {
+    // This function must only run on the client side
+    if (typeof window === 'undefined') {
+        setIsLoading(false);
+        return;
+    }
     setIsLoading(true);
     const loggedInUser = await db.getLoggedInUser();
     setUser(loggedInUser);
@@ -35,6 +40,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [checkUserStatus]);
   
   useEffect(() => {
+    // This effect should also only run on the client side
+    if (typeof window === 'undefined') return;
+
     const isPublicPage = publicPages.includes(pathname);
     if (!isLoading && !user && !isPublicPage) {
         router.push('/login');

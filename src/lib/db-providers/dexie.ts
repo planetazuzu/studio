@@ -1010,6 +1010,8 @@ export const dexieProvider: DBProvider = {
 };
 
 // Open the database. This will also trigger the 'populate' event if it's the first time.
-dbInstance.open().catch(function (err) {
-  dbInstance.logSystemEvent('ERROR', 'Failed to open Dexie DB', { error: (err as Error).message, stack: (err as Error).stack });
-});
+if (typeof window !== 'undefined') {
+  dbInstance.open().catch(function (err) {
+    dbInstance.logSystemEvent('ERROR', 'Failed to open Dexie DB', { error: (err as Error).message, stack: (err as Error).stack });
+  });
+}

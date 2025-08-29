@@ -4,12 +4,22 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error('Supabase URL or anonymous key is not set in environment variables.');
+let supabaseClientInstance: ReturnType<typeof createClient>;
+
+if (supabaseUrl && supabaseAnonKey) {
+  supabaseClientInstance = createClient(supabaseUrl, supabaseAnonKey);
+} else {
+    // In a server environment during build, these might be undefined.
+    // We handle this gracefully to allow the build to succeed.
+    // The actual functionality will fail at runtime if the env vars are missing,
+    // which is the expected behavior.
+    if (typeof window !== 'undefined') {
+        console.error('Supabase URL or anonymous key is not set in environment variables.');
+    }
 }
 
 // This is the client-side instance (uses the public anon key)
-const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+const supabaseClient = supabaseClientInstance;
 
 /**
  * Gets a Supabase client instance.
@@ -22,13 +32,16 @@ export function getSupabaseClient() {
     // This is crucial for operations that need to bypass Row Level Security.
     if (typeof window === 'undefined') {
         const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-        if (!serviceRoleKey) {
-             throw new Error('Supabase service role key is not set in server environment variables.');
+        if (!supabaseUrl || !serviceRoleKey) {
+             throw new Error('Supabase URL or service role key is not set in server environment variables.');
         }
         return createClient(supabaseUrl, serviceRoleKey);
     }
     
     // If on the client, return the singleton instance with the anon key.
+    if (!supabaseClient) {
+        throw new Error('Supabase client not initialized. Check your environment variables.');
+    }
     return supabaseClient;
 }
 

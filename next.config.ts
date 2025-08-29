@@ -32,6 +32,13 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  webpack: (config, { isServer }) => {
+    // This is to prevent a build error for a missing optional dependency in genkit
+    config.externals.push({
+      '@opentelemetry/exporter-jaeger': 'commonjs @opentelemetry/exporter-jaeger',
+    });
+    return config;
+  }
 };
 
 export default nextConfig;

@@ -1,12 +1,11 @@
-
 'use client';
 
 import { useState, useMemo, Suspense, useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { PlusCircle, ListFilter, Loader2, Sparkles, Upload } from 'lucide-react';
+import { PlusCircle, ListFilter, Loader2 } from 'lucide-react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { getAllCourses, getUserProgressForUser } from '@/lib/db';
+import * as db from '@/lib/db';
 import { useAuth } from '@/contexts/auth';
 import { CourseCard } from '@/components/course-card';
 import { Button } from '@/components/ui/button';
@@ -33,12 +32,12 @@ function CoursesPageContent() {
   }, []);
 
   const courses = useLiveQuery(
-    () => (isClient ? getAllCourses() : []),
+    () => (isClient ? db.getAllCourses() : Promise.resolve([])),
     [isClient],
     []
   );
   const userProgressData = useLiveQuery(
-    () => (isClient && user ? getUserProgressForUser(user.id) : []),
+    () => (isClient && user ? db.getUserProgressForUser(user.id) : Promise.resolve([])),
     [isClient, user?.id],
     []
   );
