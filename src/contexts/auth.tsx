@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
@@ -59,7 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     db.logout();
     setUser(null);
-    router.push('/login');
+    router.push('/');
   };
 
   const value = { user, isLoading, login, logout };
