@@ -59,7 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     db.logout();
     setUser(null);
-    router.push('/');
+    router.push('/login');
   };
 
   const value = { user, isLoading, login, logout };
