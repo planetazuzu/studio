@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -15,7 +14,6 @@ import { users as testUsers } from '@/lib/data';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ThemeToggle } from '@/components/theme-toggle';
 import { supabase } from '@/lib/supabase-client';
 
 export default function LoginPage() {
