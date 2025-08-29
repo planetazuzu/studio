@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { AppLogo } from '@/components/icons';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal, Loader2 } from 'lucide-react';
+import { Terminal, Loader2, Gitlab } from 'lucide-react';
 import * as db from '@/lib/db';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/auth';
@@ -20,6 +20,7 @@ import { roles } from '@/lib/data';
 import type { Role } from '@/lib/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { supabase } from '@/lib/supabase-client';
 
 const registerSchema = z.object({
   name: z.string().min(2, { message: "El nombre es obligatorio." }),
@@ -74,6 +75,15 @@ export default function RegisterPage() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleOAuthLogin = async (provider: 'google' | 'github') => {
+    await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
   };
 
   const formIsDisabled = isAuthLoading || isSubmitting;
@@ -162,6 +172,30 @@ export default function RegisterPage() {
                 </Button>
             </div>
           </form>
+
+           <div className="mt-6">
+              <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-background px-2 text-muted-foreground">
+                          O regístrate con un proveedor
+                      </span>
+                  </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4 mt-4">
+                  <Button variant="outline" onClick={() => handleOAuthLogin('google')}>
+                      <svg role="img" viewBox="0 0 24 24" className="mr-2 h-4 w-4"><path fill="currentColor" d="M12.48 10.92v3.28h7.84c-.24 1.84-.85 3.18-1.73 4.1-1.02 1.02-2.3 1.62-3.85 1.62-4.75 0-8.58-3.83-8.58-8.58s3.83-8.58 8.58-8.58c2.6 0 4.5 1.05 5.9 2.4l2.17-2.17C19.33 1.62 16.25 0 12.48 0 5.6 0 0 5.6 0 12.48s5.6 12.48 12.48 12.48c7.34 0 12.04-4.92 12.04-12.04 0-.76-.08-1.5-.2-2.24h-9.84z"></path></svg>
+                      Google
+                  </Button>
+                   <Button variant="outline" onClick={() => handleOAuthLogin('github')}>
+                      <Gitlab className="mr-2 h-4 w-4" />
+                      Gitlab
+                  </Button>
+              </div>
+          </div>
+
         </CardContent>
       </Card>
     </div>

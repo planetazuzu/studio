@@ -49,7 +49,22 @@ function initializeSupabase() {
 initializeSupabase();
 
 export async function login(email: string, password?: string): Promise<User | null> {
-    if (!supabase || !password) return null;
+    if (!supabase) return null;
+
+    // Handle OAuth providers if no password is provided
+    if (!password) {
+        // This is a simplified approach. In a real app, you would handle the
+        // OAuth flow more robustly, likely initiated from the UI.
+        const { data, error } = await supabase.auth.signInWithOAuth({
+            provider: 'google', // Or another provider
+        });
+        if (error) {
+            console.error("Supabase OAuth login error:", error.message);
+            throw new Error(error.message);
+        }
+        // The redirect will handle the rest, so we won't return a user here.
+        return null;
+    }
 
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     
