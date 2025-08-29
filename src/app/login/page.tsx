@@ -120,7 +120,7 @@ export default function LoginPage() {
                 />
             </div>
             <Button type="submit" className="w-full text-lg h-12" disabled={formIsDisabled}>
-              {formIsDisabled ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/> {isAuthLoading ? "Iniciando..." : "Iniciando..."}</></> : "Iniciar Sesión"}
+              {formIsDisabled ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/> {isAuthLoading ? "Iniciando..." : "Iniciando..."}</> : "Iniciar Sesión"}
             </Button>
             <div className="text-center text-sm space-x-1">
                 <span>¿No tienes cuenta?</span>
