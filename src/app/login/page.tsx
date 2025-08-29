@@ -122,7 +122,7 @@ export default function LoginPage() {
                 />
             </div>
             <Button type="submit" className="w-full text-lg h-12" disabled={formIsDisabled}>
-              {formIsDisabled ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/> {isAuthLoading ? "Iniciando..." : "Iniciando..."}</> : "Iniciar Sesión"}
+              {formIsDisabled ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/> {isAuthLoading ? "Iniciando..." : "Iniciando..."}</></> : "Iniciar Sesión"}
             </Button>
             <div className="text-center text-sm space-x-1">
                 <span>¿No tienes cuenta?</span>
@@ -154,6 +154,32 @@ export default function LoginPage() {
                   </Button>
               </div>
           </div>
+        </CardContent>
+      </Card>
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle>Cuentas de Prueba</CardTitle>
+          <CardDescription>Haz clic en un usuario para rellenar automáticamente sus credenciales.</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-wrap items-center justify-center gap-4">
+          {testUsers.map(testUser => (
+            <button
+              key={testUser.id}
+              onClick={() => {
+                setEmail(testUser.email);
+                setPassword(testUser.password!);
+              }}
+              className="flex flex-col items-center gap-2 text-center text-xs hover:bg-muted p-2 rounded-lg transition-colors"
+              disabled={formIsDisabled}
+            >
+              <Avatar>
+                <AvatarImage src={testUser.avatar} alt={testUser.name} />
+                <AvatarFallback>{testUser.name.slice(0, 2)}</AvatarFallback>
+              </Avatar>
+              <span className="font-semibold">{testUser.name}</span>
+              <span className="text-muted-foreground">{testUser.role}</span>
+            </button>
+          ))}
         </CardContent>
       </Card>
     </div>
