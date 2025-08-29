@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -61,14 +62,14 @@ export default function LoginPage() {
     }
   };
 
-  const handleOAuthLogin = async (provider: 'google' | 'github') => {
+  async function handleOAuthLogin(provider: 'google' | 'github') {
     await supabase.auth.signInWithOAuth({
       provider,
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
       },
     });
-  };
+  }
   
   const formIsDisabled = isAuthLoading || isSubmitting;
 
